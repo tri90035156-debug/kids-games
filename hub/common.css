@@ -1,0 +1,46 @@
+/* 首頁共用樣式：跟每個遊戲同一套色票、字體、注音、膠囊按鈕。 */
+:root{
+  --bg:#FBF7F1; --paper:#FFFFFF; --paper2:#FFFDF8; --ink:#2A2020; --muted:#8A7A70; --line:#EADFD3;
+  --red:#DB2E27; --maroon:#6C2024; --gold:#BD9558; --goldsoft:#F3E8D6; --zy:#6C2024;
+  --f:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC",PMingLiU,serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:22px;line-height:1.5;touch-action:none;user-select:none;-webkit-user-select:none}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+[hidden]{display:none!important}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab}
+#c.drag{cursor:grabbing}
+
+.zc{display:inline-flex;align-items:center;vertical-align:middle;margin-block:.08em}
+.zh{line-height:1.12}
+.zy{display:inline-flex;align-items:center;position:relative;margin-left:.06em;font-size:.46em;font-weight:500;color:var(--zy);font-family:var(--f)}
+.zy.has-t{padding-right:.45em}
+.zs{display:flex;flex-direction:column;align-items:center}
+.zs i{font-style:normal;line-height:1.04;display:block}
+.tn{position:absolute;right:0;top:50%;transform:translateY(-64%);font-weight:700;line-height:1}
+.tl{position:absolute;left:50%;top:-.78em;transform:translateX(-50%);font-weight:700;line-height:1}
+
+#ui{position:fixed;inset:0;display:flex;flex-direction:column;pointer-events:none;padding:0 max(16px,env(safe-area-inset-left,0px)) max(14px,env(safe-area-inset-bottom,0px))}
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-top:18px}
+h1{font-family:var(--serif);font-weight:900;font-size:clamp(30px,5.4vw,46px);line-height:1.2;margin:0}
+header p{margin:4px 0 0;color:var(--muted);font-size:16px}
+.pill{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:999px;background:var(--paper2);border:1px solid var(--line);color:var(--maroon);font-size:16px;font-weight:700;box-shadow:0 0 0 4px var(--goldsoft);flex:none;margin-top:6px}
+.pill svg{width:18px;height:18px}
+.kc{display:inline-grid;place-items:center;min-width:1.4em;height:1.4em;padding:0 .3em;border-radius:.3em;background:var(--paper);border:1.5px solid #cdbfaf;border-bottom-width:3px;font:700 .72em/1 ui-monospace,Menlo,Consolas,monospace;color:var(--maroon);vertical-align:middle}
+
+/* 跟著 3D 物件走的入口標籤（紅圈圖釘＋名字） */
+.tag{position:fixed;left:0;top:0;transform:translate(-50%,0);pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:6px;transition:opacity .2s}
+.tag .pin{width:16px;height:16px;border-radius:50%;border:2.5px solid var(--red);background:var(--paper2);box-shadow:0 0 0 3px var(--goldsoft)}
+.tag .lab{display:inline-flex;align-items:center;gap:10px;padding:8px 18px;border-radius:999px;background:var(--paper);border:1px solid var(--line);box-shadow:0 0 0 4px var(--goldsoft);font-family:var(--serif);font-weight:900;font-size:clamp(18px,2.8vw,26px);color:var(--maroon);white-space:nowrap;transition:transform .15s,background .15s,color .15s}
+.tag.on .pin{background:var(--red)}
+.tag.on .lab{background:var(--red);color:#fff;transform:scale(1.06)}
+.tag.on .lab .zy{color:#F3E8D6}
+.tag.on .lab .kc{background:#fff;color:var(--red);border-color:#fff}
+.tag.far .lab{transform:scale(.85);opacity:.85}
+@media (max-width:640px){ body{font-size:20px} .tag .lab{padding:6px 12px} }
+@media (max-height:560px){ header p{display:none} }

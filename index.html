@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>小朋友的遊戲</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap">
+<link rel="stylesheet" href="hub/common.css">
+<style>
+/* 風格 E：黏土玩具世界。暖陽光、米白＋鼠尾草綠＋木頭色、圓圓的大頭小人、軟軟的影子。
+   小車用方向鍵／手指拖著開，撞到東西會倒、會響；四個方向各有一個木頭拱門，開進去就進遊戲。
+   刻意拿掉：黑描邊、金色小點、路上的虛線、旗子——畫面只留需要的。 */
+:root{ --sage:#6F9A72; --sage2:#A9C4A3; --wood:#D9B27A; --cream:#FFF8EE; --zy:#5D7B58; --maroon:#4F6B4A; --gold:#B9A684; --goldsoft:#EEF0DF; --line:#E6E2D6; --bg:#F7F0E4; --paper2:#FFFBF3 }
+body{background:var(--bg)}
+h1{color:#3B3430;font-size:clamp(22px,5.4vw,46px);white-space:nowrap}
+@media (hover:none){ #hint .keys{display:none} }   /* 觸控裝置不用顯示鍵帽 */
+#c{cursor:default}
+#hint{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);pointer-events:none;display:flex;align-items:center;gap:18px;padding:10px 20px;border-radius:999px;background:var(--paper2);border:1px solid var(--line);color:var(--maroon);box-shadow:0 0 0 4px var(--goldsoft);transition:opacity .4s}
+#hint .keys{display:grid;grid-template-columns:repeat(3,auto);gap:3px}
+#hint .keys .kc:first-child{grid-column:2}
+#hint .kc{font-size:16px;min-width:1.6em;height:1.6em}
+#hint svg{width:52px;height:36px}
+.pill.icon{padding:8px 12px}
+.pill.icon svg{width:22px;height:22px}
+/* 入口徽章：圓形圖示＋數字；名字只在靠近或選到時出現 */
+.tag{gap:0}
+.tag .badge{position:relative;width:72px;height:72px;border-radius:50%;background:var(--cream);border:3px solid var(--acc,var(--sage));box-shadow:0 6px 18px rgba(80,60,30,.14),0 0 0 4px var(--goldsoft);display:grid;place-items:center;transition:transform .2s,background .2s}
+.tag .badge svg{width:46px;height:46px;stroke:var(--acc,#5D7B58)}
+.tag .badge svg .f{fill:color-mix(in srgb,var(--acc,#5D7B58) 18%,white)}
+.tag .badge .kc{position:absolute;right:-8px;bottom:-6px;font-size:14px}
+.tag .lab{margin-top:8px;font-size:clamp(17px,2.4vw,24px);opacity:0;transform:translateY(-6px) scale(.9);transition:opacity .25s,transform .25s;pointer-events:none}
+.tag.edge .badge{transform:scale(.8);opacity:.85}
+.tag:not(.on) .lab,.tag.edge .lab{opacity:0;transform:translateY(-6px) scale(.9)}
+.tag.on .badge{background:var(--acc,var(--sage));transform:scale(1.1)}
+.tag.on .badge svg{stroke:#fff}
+.tag.on .badge svg .f{fill:rgba(255,255,255,.25)}
+.tag.on .lab{opacity:1;transform:none;background:var(--cream);color:var(--acc,var(--maroon));box-shadow:0 6px 18px rgba(80,60,30,.12),0 0 0 3px var(--acc,var(--goldsoft))}
+.tag.on .lab .zy{color:var(--zy)}
+.tag.on .lab .kc{background:var(--cream);color:var(--maroon);border-color:#D6CFC0}
+@media (max-width:640px){ .tag .badge{width:60px;height:60px} .tag .badge svg{width:38px;height:38px} }
+#hint.off{opacity:0}
+.kc{color:var(--maroon);border-color:#D6CFC0}
+.tag .lab{font-size:clamp(18px,2.6vw,26px);background:var(--cream);box-shadow:0 6px 18px rgba(80,60,30,.12),0 0 0 4px var(--goldsoft)}
+.tag .pin{border-color:var(--sage);background:var(--cream)}
+.tag.on .pin{background:var(--sage)}
+#sky{position:fixed;left:50%;top:max(12px,env(safe-area-inset-top,0px));transform:translateX(-50%);width:140px;pointer-events:none;color:var(--maroon)}
+#sky svg{width:100%;height:auto;overflow:visible}
+#skySun,#skyMoon{transition:opacity .6s}
+@media (max-width:640px){ #sky{width:100px;top:66px} }
+#stick{position:fixed;left:0;top:0;width:120px;height:120px;border-radius:50%;border:2px solid var(--sage2);background:rgba(255,248,238,.55);pointer-events:none;transform:translate(-50%,-50%);display:none}
+#stick i{position:absolute;left:50%;top:50%;width:44px;height:44px;border-radius:50%;background:var(--sage);transform:translate(-50%,-50%);box-shadow:0 0 0 4px var(--goldsoft)}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <header>
+    <div><h1 id="title"></h1></div>
+    <button class="pill icon" id="sndBtn" aria-label="聲音開關"></button>
+  </header>
+</div>
+<div id="sky" aria-hidden="true"><svg viewBox="0 -22 160 82"><path d="M10 54 A70 70 0 0 1 150 54" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 5" opacity=".5"/><circle id="skySun" cx="80" cy="54" r="9" fill="#F7C948"/><circle id="skyMoon" cx="80" cy="54" r="7" fill="#FFF4D6"/></svg></div>
+<div id="tags"></div>
+<div id="stick"><i></i></div>
+<div id="hint">
+  <span class="keys"><span class="kc">↑</span><span class="kc">←</span><span class="kc">↓</span><span class="kc">→</span></span>
+  <svg viewBox="0 0 48 32" aria-hidden="true"><path d="M20 26c-5-3-9-7-9-12 0-2 2-3 3-1l3 5V6c0-2 3-2 3 0v9c0-2 3-2 3 0v2c0-2 3-2 3 0v2c0-2 3-2 3 0v6c0 4-3 6-6 6h-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M34 8h8m0 0-3-3m3 3-3 3M14 8H6m0 0 3-3M6 8l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</div>
+<script src="vendor/three.min.js"></script>
+<script src="hub/common.js"></script>
+<script>
+(() => {
+'use strict';
+const { $, clamp, lerp, GAMES, Z, ac, SFX, KIND, wireSound, BUILD, toScreen, numberKeys, goTo } = HUB;
+$('#title').innerHTML = HUB.title(); wireSound($('#sndBtn'));
+
+// ---------- 色票：照參考圖（米白、鼠尾草綠、木頭、暖白） ----------
+const ACC = [0x4CB05A, 0x3C9BE0, 0xF2A33A, 0x8B6FD6];   // 種子綠、AI 藍、缽琥珀、太空紫
+const ACC_CSS = ['#4CB05A', '#3C9BE0', '#F2A33A', '#8B6FD6'];
+const P = { bg:0xF7F0E4, coral:0xF05A3C, yellow:0xF7C948, ground:0xF7EEDD, road:0xEEE2CC, cream:0xFFF8EE, wood:0xD9B27A, woodDark:0xB98E5A, sage:0x6F9A72, sage2:0xA9C4A3, leaf:0x8DB487, skin:0xF6D7C3, hair:0x3A2A24, cheek:0xF2A6A0, sky:0xBFD8E8, blue:0x7FB0C4, pink:0xE9B4B0 };
+const clay = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: .92, metalness: 0 }, o));
+const T = { ground: clay(P.ground), road: clay(P.road), cream: clay(P.cream), wood: clay(P.wood), woodDark: clay(P.woodDark), sage: clay(P.sage), sage2: clay(P.sage2), leaf: clay(P.leaf), skin: clay(P.skin), hair: clay(P.hair), cheek: clay(P.cheek), blue: clay(P.blue), pink: clay(P.pink), ink: clay(0x3B3430), coral: clay(P.coral), yellow: clay(P.yellow) };
+const ACCM = ACC.map(c => clay(c));
+
+// ---------- 場景：暖光＋軟影子 ----------
+const renderer = new THREE.WebGLRenderer({ canvas: $('#c'), antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.18;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(P.bg); scene.fog = new THREE.Fog(P.bg, 34, 70);
+const camera = new THREE.PerspectiveCamera(36, 1, .1, 120);
+const hemi = new THREE.HemisphereLight(0xFFF6E6, 0xD9DCC4, 1.9); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xFFE7C6, 2.6); sun.position.set(-18, 28, 14); sun.castShadow = true; scene.add(sun.target);
+sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 6; sun.shadow.bias = -.0004;
+Object.assign(sun.shadow.camera, { left: -34, right: 34, top: 34, bottom: -34, near: 1, far: 90 }); scene.add(sun);
+const shadowed = root => root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+
+// ---------- 地面：一大塊米白圓桌＋一圈淺色的路 ----------
+const WORLD = 26;
+const MT = { canopy1: clay(P.leaf), canopy2: clay(P.sage2), bush: clay(P.sage2), snow: clay(0xFFFFFF), ground: clay(P.ground), road: clay(P.road) };
+const ground = new THREE.Mesh(new THREE.CircleGeometry(WORLD, 80), MT.ground); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const edge = new THREE.Mesh(new THREE.CylinderGeometry(WORLD, WORLD, 1.2, 80, 1, true), T.wood); edge.position.y = -.6; scene.add(edge);   // 桌子的側邊：木頭
+const road = new THREE.Mesh(new THREE.RingGeometry(9.0, 11.6, 96), MT.road); road.rotation.x = -Math.PI / 2; road.position.y = .01; road.receiveShadow = true; scene.add(road);
+
+// ---------- 四個拱門：木頭柱子＋綠色拱、門前一塊米白墊子、旁邊那個遊戲的模型 ----------
+const GATE_R = 16;
+const gates = GAMES.map((g, i) => {
+  const a = i / GAMES.length * Math.PI * 2 - Math.PI / 2;
+  const x = Math.cos(a) * GATE_R, z = Math.sin(a) * GATE_R;
+  const grp = new THREE.Group(); grp.position.set(x, 0, z); grp.lookAt(0, 0, 0); scene.add(grp);
+  const arch = new THREE.Mesh(new THREE.TorusGeometry(2.6, .3, 12, 48, Math.PI), ACCM[i]); arch.position.y = 2.4; grp.add(arch);
+  [-2.6, 2.6].forEach(dx => { const post = new THREE.Mesh(new THREE.CylinderGeometry(.3, .34, 2.5, 14), T.wood); post.position.set(dx, 1.25, 0); grp.add(post); const cap = new THREE.Mesh(new THREE.SphereGeometry(.34, 14, 10), T.wood); cap.position.set(dx, 2.5, 0); grp.add(cap); });
+  const mat = new THREE.Mesh(new THREE.CircleGeometry(2.4, 36), T.cream); mat.rotation.x = -Math.PI / 2; mat.position.y = .02; mat.receiveShadow = true; grp.add(mat);
+  const glow = new THREE.Mesh(new THREE.RingGeometry(2.3, 3.2, 48), new THREE.MeshBasicMaterial({ color: ACC[i], transparent: true, opacity: .0, depthWrite: false })); glow.rotation.x = -Math.PI / 2; glow.position.y = .03; grp.add(glow);
+  const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.6, .4, 28), T.cream); ped.position.set(4.4, .2, -.8); grp.add(ped);
+  const model = BUILD[i](); model.position.set(4.4, .4, -.8); model.scale.setScalar(1.3); grp.add(model);
+  shadowed(grp);
+  return { grp, model, glow, x, z, excite: 0, near: 0, told: false };
+});
+
+// ---------- 可以撞倒的東西：少少幾樣就好 ----------
+const props = [];
+function addProp(mesh, x, z, r, kind, h) { mesh.position.set(x, 0, z); shadowed(mesh); scene.add(mesh); props.push({ mesh, x, z, vx: 0, vz: 0, r, kind, tip: 0, tipDir: 0, spin: 0, h }); }
+function pin(x, z) { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.CapsuleGeometry(.3, .9, 4, 12), T.cream); b.position.y = .75; g.add(b); const band = new THREE.Mesh(new THREE.TorusGeometry(.3, .06, 8, 24), ACCM[2]); band.position.y = 1.0; band.rotation.x = Math.PI / 2; g.add(band); addProp(g, x, z, .38, 'pin', 1.4); }
+function block(x, z, m) { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), m); b.position.y = .5; g.add(b); addProp(g, x, z, .6, 'block', 1); }
+function tree(x, z, s = 1) { const g = new THREE.Group(); const t = new THREE.Mesh(new THREE.CylinderGeometry(.16, .22, 1.2, 10), T.woodDark); t.position.y = .6; g.add(t); const c1 = new THREE.Mesh(new THREE.SphereGeometry(1.1, 18, 14), MT.canopy1); c1.position.y = 2.0; g.add(c1); const c2 = new THREE.Mesh(new THREE.SphereGeometry(.8, 16, 12), MT.canopy2); c2.position.set(.6, 2.6, .2); g.add(c2);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(1.12, 18, 14, 0, Math.PI * 2, 0, Math.PI * .42), MT.snow); cap.position.y = 2.02; cap.scale.y = .001; g.add(cap); g.userData.cap = cap; g.scale.setScalar(s); addProp(g, x, z, .7 * s, 'tree', 3 * s); }
+function bush(x, z) { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.SphereGeometry(.7, 16, 12), MT.bush); b.position.y = .5; b.scale.y = .8; g.add(b); addProp(g, x, z, .6, 'bush', 1); }
+[[0, 0], [-.65, 1], [.65, 1], [-1.3, 2], [0, 2], [1.3, 2]].forEach(([dx, dz]) => pin(6 + dx, -4 + dz));
+[[-7, 5, ACCM[1]], [-8.05, 5, T.yellow], [-7.5, 6.05, ACCM[0]], [-6.45, 6.05, T.cream]].forEach(([x, z, m]) => block(x, z, m));
+[[3, 5.5, 1.1], [-4, -5, 1], [14, 8, 1.2], [-15, -7, 1], [12, -13, .9], [-13, 12, 1.1], [20, -3, 1], [-20, 2, 1.1]].forEach(([x, z, s]) => tree(x, z, s));
+[[-2, 7], [8, 2], [-9, -2], [18, 10], [-17, -13]].forEach(([x, z]) => bush(x, z));
+
+// ---------- 小車＋大頭小孩駕駛 ----------
+const car = new THREE.Group(); scene.add(car);
+const body = new THREE.Mesh(new THREE.BoxGeometry(1.7, .6, 1.05), T.coral); body.position.y = .55; car.add(body);
+const bumper = new THREE.Mesh(new THREE.BoxGeometry(1.78, .22, 1.1), T.cream); bumper.position.y = .36; car.add(bumper);
+const seat = new THREE.Mesh(new THREE.BoxGeometry(.7, .35, .9), T.cream); seat.position.set(-.35, .95, 0); car.add(seat);
+const lamps = [[.86, .62, .33], [.86, .62, -.33]].map(([x, y, z]) => { const l = new THREE.Mesh(new THREE.SphereGeometry(.1, 10, 8), T.yellow); l.position.set(x, y, z); car.add(l); return l; });
+const wheels = [[.55, .56], [.55, -.56], [-.55, .56], [-.55, -.56]].map(([x, z]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .24, 18), T.ink); w.rotation.x = Math.PI / 2; w.position.set(x, .3, z); car.add(w); const hub = new THREE.Mesh(new THREE.CylinderGeometry(.14, .14, .26, 10), T.cream); hub.rotation.x = Math.PI / 2; hub.position.copy(w.position); car.add(hub); return w; });
+// 大頭小孩：圓頭、瀏海、丸子頭、兩顆眼睛、紅臉頰
+const kid = new THREE.Group(); kid.position.set(-.15, 1.0, 0); car.add(kid);
+const torso = new THREE.Mesh(new THREE.CapsuleGeometry(.22, .25, 4, 10), T.cream); torso.position.y = .25; kid.add(torso);
+const head = new THREE.Mesh(new THREE.SphereGeometry(.42, 24, 18), T.skin); head.position.y = .85; kid.add(head);
+const hair = new THREE.Mesh(new THREE.SphereGeometry(.45, 24, 18, 0, Math.PI * 2, 0, Math.PI * .55), T.hair); hair.position.y = .9; hair.rotation.y = Math.PI / 2; kid.add(hair);
+const bun = new THREE.Mesh(new THREE.SphereGeometry(.17, 14, 10), T.hair); bun.position.set(-.25, 1.25, 0); kid.add(bun);
+[.16, -.16].forEach(z => { const e = new THREE.Mesh(new THREE.SphereGeometry(.045, 8, 6), T.ink); e.position.set(.36, .82, z); kid.add(e); const c = new THREE.Mesh(new THREE.SphereGeometry(.07, 8, 6), T.cheek); c.position.set(.3, .72, z * 1.5); c.scale.z = .5; kid.add(c); });
+shadowed(car);
+const S = { x: 0, z: 0, h: Math.PI / 2, v: 0, steer: 0 };
+car.position.set(S.x, 0, S.z);
+
+// ---------- 聲音：木琴、木魚、水滴、輕和弦（全部現場合成，沒有尖銳的卡通音） ----------
+const ACX = () => { const A = ac(); return A; };
+const on = () => localStorage.getItem('hub-sound') !== '0';
+function mallet(f, t0 = 0, vol = .18, len = .7) {   // 木琴：基音＋一點點第三泛音，很快衰減
+  const A = ACX(), t = A.currentTime + t0;
+  [[1, 1], [3, .22], [6.1, .05]].forEach(([r, g]) => { const o = A.createOscillator(), gg = A.createGain(); o.type = 'sine'; o.frequency.value = f * r; gg.gain.setValueAtTime(0, t); gg.gain.linearRampToValueAtTime(vol * g, t + .006); gg.gain.exponentialRampToValueAtTime(.0001, t + len / (1 + r * .4)); o.connect(gg).connect(A.destination); o.start(t); o.stop(t + len + .05); });
+}
+function woodblock(t0 = 0, vol = .16) {               // 木魚：短短一聲「叩」
+  const A = ACX(), t = A.currentTime + t0, o = A.createOscillator(), g = A.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(900, t); o.frequency.exponentialRampToValueAtTime(420, t + .05); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + .12); o.connect(g).connect(A.destination); o.start(t); o.stop(t + .15);
+}
+function drop(t0 = 0, vol = .14) {                    // 水滴：高音快速往下滑，再一點點餘韻
+  const A = ACX(), t = A.currentTime + t0, o = A.createOscillator(), g = A.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(1400, t); o.frequency.exponentialRampToValueAtTime(520, t + .09); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .35); o.connect(g).connect(A.destination); o.start(t); o.stop(t + .4);
+}
+const PENT = [262, 294, 330, 392, 440, 523, 587, 659, 784];
+const chord = (root = 262) => [0, .06, .12].forEach((d, i) => mallet(root * [1, 1.25, 1.5][i], d, .14, 1.4));   // 大三和弦，輕輕的
+const SND = {
+  bump: k => on() && mallet(PENT[k % PENT.length], 0, .16),          // 撞方塊、球瓶：木琴一聲
+  soft: () => on() && drop(0, .1),                                      // 撞樹、灌木：水滴
+  tick: () => on() && woodblock(0, .1),                                 // 碰到邊緣、滑鼠碰到東西
+  near: k => on() && mallet(PENT[(k * 2 + 4) % PENT.length], 0, .08, 1.2),   // 靠近門：高一點的木琴
+  go:   () => on() && chord(262),                                       // 進門：和弦
+  pick: k => on() && chord([262, 330, 392, 294][k % 4]),               // 點入口：那個門的和弦
+};
+const safe2 = fn => (...a) => { try { fn(...a); } catch (e) {} };
+Object.keys(SND).forEach(k => SND[k] = safe2(SND[k]));
+let eng = null;
+function engine() {
+  if (eng) return;
+  try { const A = ac(); const o = A.createOscillator(), g = A.createGain(), f = A.createBiquadFilter(); o.type = 'sine'; o.frequency.value = 55; f.type = 'lowpass'; f.frequency.value = 220; g.gain.value = 0; o.connect(f).connect(g); g.connect(A.destination); o.start(); eng = { o, g, A }; } catch (e) { eng = null; }
+}
+function engineSet(speed) { if (!eng) return; const v = Math.abs(speed); eng.o.frequency.setTargetAtTime(50 + v * 60, eng.A.currentTime, .1); eng.g.gain.setTargetAtTime((on() ? .04 : 0) * Math.min(1, .2 + v), eng.A.currentTime, .15); }
+
+// ---------- 控制：鍵盤 ＋ 手指搖桿 ----------
+const keys = {};
+addEventListener('keydown', ev => { keys[ev.code] = true; if (/Arrow|KeyW|KeyA|KeyS|KeyD/.test(ev.code)) { ev.preventDefault(); engine(); hintOff(); autoTarget = null; } });
+addEventListener('keyup', ev => { keys[ev.code] = false; });
+let stick = null; const stickEl = $('#stick'), knob = stickEl.firstElementChild;
+const canvas = $('#c');
+canvas.addEventListener('pointerdown', ev => { ac(); engine(); hintOff();
+  if (hovered && !hovered.mesh) { const i = gates.indexOf(hovered); SND.pick(i); gates[i].excite = 1; autoTarget = i; return; }
+  stick = { x: ev.clientX, y: ev.clientY, dx: 0, dy: 0 }; stickEl.style.display = 'block'; stickEl.style.left = ev.clientX + 'px'; stickEl.style.top = ev.clientY + 'px'; knob.style.transform = 'translate(-50%,-50%)'; canvas.setPointerCapture(ev.pointerId); autoTarget = null; });
+const hoverRay = new THREE.Raycaster(), hv = new THREE.Vector2(); let hovered = null;
+canvas.addEventListener('pointermove', ev => {
+  if (!stick && ev.pointerType === 'mouse') {
+    hv.set(ev.clientX / innerWidth * 2 - 1, -(ev.clientY / innerHeight) * 2 + 1); hoverRay.setFromCamera(hv, camera);
+    const hit = hoverRay.intersectObjects(props.map(p => p.mesh).concat(gates.map(g => g.grp)), true)[0];
+    let target = null; if (hit) { let o = hit.object; while (o && !target) { const p = props.find(q => q.mesh === o); const g = gates.find(q => q.grp === o); target = p || g || null; o = o.parent; } }
+    if (target !== hovered) { hovered = target; canvas.style.cursor = target ? 'pointer' : 'default'; if (target) { if (target.mesh) jelly(target, .18); else target.excite = Math.max(target.excite, .4); SND.tick(); } }
+  }
+  if (!stick) return; let dx = ev.clientX - stick.x, dy = ev.clientY - stick.y; const d = Math.hypot(dx, dy); if (d > 50) { dx *= 50 / d; dy *= 50 / d; } stick.dx = dx / 50; stick.dy = dy / 50; knob.style.transform = `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`; });
+const stickUp = () => { stick = null; stickEl.style.display = 'none'; };
+canvas.addEventListener('pointerup', stickUp); canvas.addEventListener('pointercancel', stickUp);
+let hintShown = true; function hintOff() { if (hintShown) { hintShown = false; $('#hint').classList.add('off'); } }
+
+let autoTarget = null;
+const ICON = {
+  seed:  `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 40V22"/><path class="f" d="M24 30c-9 1-14-4-14-12 9-1 14 4 14 12z" fill="#D9E6D2"/><path class="f" d="M24 24c9 1 14-4 14-12-9-1-14 4-14 12z" fill="#D9E6D2"/><ellipse cx="24" cy="41" rx="9" ry="3"/></svg>`,
+  robot: `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect class="f" x="11" y="14" width="26" height="22" rx="5" fill="#D9E6D2"/><path d="M24 14V7m-3 0h6"/><circle cx="19" cy="24" r="2.2" fill="currentColor" stroke="none"/><circle cx="29" cy="24" r="2.2" fill="currentColor" stroke="none"/><path d="M19 31h10"/></svg>`,
+  bowl:  `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path class="f" d="M8 20h32c0 11-7 18-16 18S8 31 8 20z" fill="#D9E6D2"/><path d="M8 20c8-3 24-3 32 0"/><path d="M34 14l8-8" stroke-width="3.5"/><path d="M5 26c-2-2-2-6 0-8M43 30c2 2 2 6 0 8"/></svg>`,
+  space: `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle class="f" cx="24" cy="24" r="9" fill="#D9E6D2"/><path d="M12 20c-7 2-9 5-8 7 2 4 13 4 25 0s17-9 13-11c-1-1-4-1-7 0"/></svg>`,
+};
+$('#tags').innerHTML = GAMES.map((g, i) => `<a class="tag" data-i="${i}" href="${HUB.href(g)}" style="--acc:${ACC_CSS[i]}"><span class="badge">${ICON[KIND[i]]}<span class="kc">${i + 1}</span></span><span class="lab">${Z(g.name, g.zy)}</span></a>`).join('');
+const tags = [...document.querySelectorAll('.tag')];
+tags.forEach(t => t.addEventListener('click', ev => { ev.preventDefault(); const i = +t.dataset.i; ac(); engine(); hintOff(); SND.pick(i); gates[i].excite = 1; autoTarget = i; }));
+numberKeys(i => { SND.pick(i); gates[i].excite = 1; autoTarget = i; });
+
+// ---------- 果凍感：壓一下會彈回來（彈簧＋阻尼） ----------
+function squash(obj, k) { obj.userData.sq = (obj.userData.sq || 0) - k; }
+function springStep(obj, dt, stiff = 160, damp = 9) {
+  const u = obj.userData; u.sq = u.sq || 0; u.sv = u.sv || 0;
+  u.sv += (-u.sq * stiff - u.sv * damp) * dt; u.sq += u.sv * dt;
+  return u.sq;   // 負＝被壓扁，正＝拉長
+}
+function jelly(p, k) { p.mesh.userData.sq = (p.mesh.userData.sq || 0) - k; }
+
+// ---------- 物理（很簡單的那種） ----------
+let entering = -1;
+function enterGate(i) { if (entering >= 0) return; entering = i; SND.go(); gates[i].excite = 1; squash(car, .5); setTimeout(() => { location.href = HUB.href(GAMES[i]); }, 900); }
+
+function step(dt, t) {
+  let thr = 0, st = 0;
+  if (keys.ArrowUp || keys.KeyW) thr += 1; if (keys.ArrowDown || keys.KeyS) thr -= .6;
+  if (keys.ArrowLeft || keys.KeyA) st += 1; if (keys.ArrowRight || keys.KeyD) st -= 1;
+  if (stick) {
+    const want = Math.atan2(-stick.dy, stick.dx), mag = Math.hypot(stick.dx, stick.dy);
+    if (mag > .15) { let d = want - S.h; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; st = clamp(d * 2.5, -1, 1); thr = mag * (Math.abs(d) < Math.PI * .6 ? 1 : -.4); }
+  }
+  if (autoTarget !== null) {
+    const g = gates[autoTarget]; const want = Math.atan2(-(g.z - S.z), g.x - S.x); let d = want - S.h; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2;
+    st = clamp(d * 2.5, -1, 1); thr = .9;
+  }
+  const acc = 14, maxV = 9;
+  S.v += thr * acc * dt; S.v -= S.v * (thr ? .8 : 2.5) * dt; S.v = clamp(S.v, -maxV * .5, maxV);
+  S.steer = lerp(S.steer, st, 1 - Math.pow(.001, dt));
+  S.h += S.steer * 2.2 * dt * clamp(S.v / 3, -1, 1);
+  S.x += Math.cos(S.h) * S.v * dt; S.z -= Math.sin(S.h) * S.v * dt;
+  const rr = Math.hypot(S.x, S.z); if (rr > WORLD - 1.2) { S.x *= (WORLD - 1.2) / rr; S.z *= (WORLD - 1.2) / rr; if (Math.abs(S.v) > 1) { SND.tick(); squash(car, .4); } S.v *= -.3; }
+  car.position.set(S.x, 0, S.z); car.rotation.y = S.h; car.rotation.z = -S.steer * .07 * clamp(S.v / 5, 0, 1);
+  // 加速往後仰、煞車往前點頭；撞到會壓扁再彈回來（squash & stretch）
+  const aX = (S.v - (S.pv || 0)) / Math.max(dt, .001); S.pv = S.v;
+  car.rotation.x = lerp(car.rotation.x, 0, 1 - Math.pow(.01, dt)); car.rotation.z += clamp(-aX * .004, -.08, .08);
+  const sq = springStep(car, dt);
+  car.scale.set(1 - sq * .6, 1 + sq * 1.1, 1 - sq * .6);
+  kid.rotation.z = -S.steer * .15; kid.position.y = 1.0 + Math.abs(Math.sin(t * 18)) * .015 * Math.abs(S.v);
+  wheels.forEach(w => w.rotation.z -= S.v * dt * 3.3);
+  engineSet(S.v / maxV);
+
+  props.forEach(p => {
+    const dx = p.x - S.x, dz = p.z - S.z, d = Math.hypot(dx, dz), minD = p.r + .9;
+    if (d < minD && d > .001) {
+      const nx = dx / d, nz = dz / d, push = Math.max(1.5, Math.abs(S.v) * .9);
+      p.vx += nx * push; p.vz += nz * push; p.tip = 1; p.tipDir = Math.atan2(nz, nx); p.spin = (Math.random() - .5) * 6;
+      S.x -= nx * (minD - d) * .6; S.z -= nz * (minD - d) * .6; S.v *= .6;
+      if (p.kind === 'tree' || p.kind === 'bush') SND.soft(); else SND.bump(Math.floor(Math.random() * 9));
+      jelly(p, .6); squash(car, .35);
+    }
+    p.x += p.vx * dt; p.z += p.vz * dt; p.vx *= Math.pow(.05, dt); p.vz *= Math.pow(.05, dt);
+    const r2 = Math.hypot(p.x, p.z); if (r2 > WORLD - 1.2) { p.x *= (WORLD - 1.2) / r2; p.z *= (WORLD - 1.2) / r2; }
+    p.mesh.position.set(p.x, 0, p.z);
+    const psq = springStep(p.mesh, dt, 140, 7); p.mesh.scale.set(1 - psq * .5, 1 + psq, 1 - psq * .5);
+    if (p.tip > 0) {
+      const k = Math.sin(Math.min(1, p.tip) * Math.PI);
+      p.mesh.rotation.set(Math.sin(p.tipDir) * -k * 1.1, p.mesh.rotation.y + p.spin * dt, Math.cos(p.tipDir) * k * 1.1);
+      p.tip -= dt * .55;
+      if (p.tip <= 0) p.mesh.rotation.set(0, p.mesh.rotation.y, 0);
+    }
+  });
+
+  gates.forEach((g, i) => {
+    const d = Math.hypot(g.x - S.x, g.z - S.z);
+    g.near = clamp(1 - (d - 3) / 6, 0, 1);
+    if (d < 2.2 && entering < 0) enterGate(i);
+    g.excite = Math.max(0, g.excite - dt);
+    // 光暈呼吸：越近越亮；第一次靠近時叮一聲
+    const breathe = .5 + .5 * Math.sin(t * 2.2 + i);
+    g.glow.material.opacity = lerp(g.glow.material.opacity, (.18 + .3 * g.near + night * .25) * breathe + (autoTarget === i ? .25 : 0), 1 - Math.pow(.02, dt));
+    g.glow.scale.setScalar(1 + .06 * breathe + g.near * .1);
+    if (g.near > .6 && !g.told) { g.told = true; SND.near(i); } if (g.near < .2) g.told = false;
+    g.model.position.y = .4 + Math.sin(t * 2 + i) * .06 + g.near * .3 + Math.sin(g.excite * Math.PI) * .8;
+    g.model.rotation.y = t * .3 + g.excite * 6;
+    g.model.userData.anim(t, g.excite);
+    const s = toScreen(g.grp, camera, 5.4);
+    // 門不在畫面裡時，徽章沿著「畫面中心→門」的方向貼到邊緣，像指北針
+    const cx = innerWidth / 2, cy = innerHeight / 2, mx = cx - 70, my = cy - 140;
+    let dx = s.x - cx, dy = s.y - cy; if (s.z > 1) { dx = -dx; dy = -dy; }
+    const k = Math.max(Math.abs(dx) / mx, Math.abs(dy) / my, 1); const px = cx + dx / k, py = cy + dy / k;
+    const tg = tags[i]; tg.style.transform = `translate(${px}px,${py}px) translate(-50%,-50%)`;
+    tg.classList.toggle('on', g.near > .5 || autoTarget === i);
+    tg.classList.toggle('edge', k > 1);
+  });
+  if (autoTarget !== null && entering >= 0) autoTarget = null;
+}
+
+// ---------- 時間：太陽升起落下、月亮星星、四季，自己一直循環 ----------
+const DAY = 100, YEAR = DAY * 4;                      // 一天 100 秒，一年四天（春夏秋冬各一天）
+const Q = new URLSearchParams(location.search);          // 測試用：?t=0.8 設時刻（0~1）、?s=2 設季節（0 春 1 夏 2 秋 3 冬）
+const t0 = performance.now() / 1000 - DAY * ((+Q.get('s') || 0) + (Q.has('t') ? +Q.get('t') : .32));
+const col = h => new THREE.Color(h);
+// 一天的關鍵畫面：[時刻, 天空, 半球光天, 半球光地, 太陽色, 太陽強度, 半球強度]
+const DAYKEYS = [
+  [0.00, 0x3F4A66, 0x4E5C80, 0x2C3246, 0xA7BCE0, 1.0, 0.75],   // 半夜：月光
+  [0.20, 0x5A5F7C, 0x7D7A95, 0x4A4458, 0xFFB889, 1.2, 0.9 ],   // 天快亮
+  [0.27, 0xF4CDB4, 0xFFDCC4, 0xC9B4A4, 0xFFB07A, 2.2, 1.2 ],   // 日出
+  [0.38, 0xF7F0E4, 0xFFF6E6, 0xD9DCC4, 0xFFE7C6, 3.0, 1.7 ],   // 白天
+  [0.62, 0xF7F0E4, 0xFFF6E6, 0xD9DCC4, 0xFFE2B8, 3.0, 1.7 ],
+  [0.74, 0xF2BCA2, 0xFFC9AC, 0xB89C90, 0xFF9A6A, 2.0, 1.15],   // 夕陽
+  [0.82, 0x6A5A78, 0x8A7A98, 0x4E4458, 0xC9A0C0, 1.2, 0.9 ],   // 天黑
+  [0.90, 0x3F4A66, 0x4E5C80, 0x2C3246, 0xA7BCE0, 1.0, 0.75],
+  [1.00, 0x3F4A66, 0x4E5C80, 0x2C3246, 0xA7BCE0, 1.0, 0.75],
+].map(k => [k[0], col(k[1]), col(k[2]), col(k[3]), col(k[4]), k[5], k[6]]);
+// 四季：[樹冠 1, 樹冠 2, 灌木, 地面, 路, 飄的東西顏色, 飄的東西多寡]
+const SEASONS = [
+  [0x9CCB8E, 0xF3BFCB, 0xB7D3A6, 0xF5EEDD, 0xECE0CB, 0xF7C6D0, 1],   // 春：嫩綠＋粉花、花瓣
+  [0x6FA868, 0x8DB487, 0xA9C4A3, 0xF7F0E4, 0xEEE2CC, 0xFFFFFF, 0],   // 夏：深綠
+  [0xE09A4A, 0xF2B866, 0xD1A66A, 0xF3E6CF, 0xEBDCC2, 0xE3933F, 1],   // 秋：金黃、落葉
+  [0xC9D3C6, 0xFFFFFF, 0xDDE3DA, 0xF6F4EE, 0xEFEDE6, 0xDCE8F5, 1],   // 冬：灰綠＋白雪、雪花
+].map(k => [col(k[0]), col(k[1]), col(k[2]), col(k[3]), col(k[4]), col(k[5]), k[6]]);
+const smooth = x => x * x * (3 - 2 * x);
+const _c = new THREE.Color();
+function lerpCol(target, a, b, f) { target.copy(a).lerp(b, f); return target; }
+
+// 圓點貼圖：花瓣、雪花、星星都用它（不然 Points 預設是方塊）
+const dotTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const r = g.createRadialGradient(32, 32, 4, 32, 32, 30); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.7, 'rgba(255,255,255,.9)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+// 畫面上方的小天空：太陽白天走弧線，晚上換月亮
+const skySun = $('#skySun'), skyMoon = $('#skyMoon');
+function skyDot(el, up, cosA) { const x = 80 + cosA * 70, y = 54 - Math.max(0, up) * 70; el.setAttribute('cx', x.toFixed(1)); el.setAttribute('cy', y.toFixed(1)); el.style.opacity = up > -.05 ? 1 : 0; }
+// 車燈：晚上才亮
+const lampL = new THREE.PointLight(0xFFE2A8, 0, 14, 1.5); lampL.position.set(1.4, .6, 0); car.add(lampL);
+// 季節飄的東西：花瓣／落葉／雪，跟著車子附近飄
+const FN = 90, fPos = new Float32Array(FN * 3), fSeed = new Float32Array(FN);
+for (let i = 0; i < FN; i++) { fPos[i * 3] = (Math.random() - .5) * 30; fPos[i * 3 + 1] = Math.random() * 9; fPos[i * 3 + 2] = (Math.random() - .5) * 30; fSeed[i] = Math.random() * 6.28; }
+const fGeo = new THREE.BufferGeometry(); fGeo.setAttribute('position', new THREE.BufferAttribute(fPos, 3));
+const flakes = new THREE.Points(fGeo, new THREE.PointsMaterial({ color: 0xF7C6D0, size: .34, map: dotTex, transparent: true, opacity: 0, depthWrite: false })); scene.add(flakes);
+
+let night = 0, season = 0;
+function cycle(now, dt) {
+  const T = ((now - t0) / DAY) % 1, Yr = ((now - t0) / YEAR) % 1;
+  // --- 一天：找到前後兩個關鍵畫面，混合 ---
+  let k = 0; while (DAYKEYS[k + 1][0] < T) k++;
+  const A = DAYKEYS[k], B = DAYKEYS[k + 1], f = smooth((T - A[0]) / (B[0] - A[0]));
+  lerpCol(scene.background, A[1], B[1], f); scene.fog.color.copy(scene.background);
+  lerpCol(hemi.color, A[2], B[2], f); lerpCol(hemi.groundColor, A[3], B[3], f); hemi.intensity = lerp(A[6], B[6], f);
+  lerpCol(sun.color, A[4], B[4], f); sun.intensity = lerp(A[5], B[5], f);
+  // 太陽從東邊（畫面右）升起、西邊落下；晚上換月亮從另一邊走
+  const a = (T - .25) * Math.PI * 2, up = Math.sin(a);
+  const sx = Math.cos(a) * 55, sy = up * 55, sz = -22;
+  skyDot(skySun, up, Math.cos(a)); skyDot(skyMoon, -up, -Math.cos(a));
+  night = clamp((-up + .12) / .3, 0, 1);
+  const lx = up > .08 ? sx : -sx, ly = Math.max(10, Math.abs(sy)), lz = sz;        // 光的方向：白天跟太陽，晚上跟月亮
+  sun.position.set(S.x + lx * .5, ly * .5 + 6, S.z + lz * .5); sun.target.position.set(S.x, 0, S.z); sun.target.updateMatrixWorld();
+  lampL.intensity = night * 30;
+  // --- 四季：每季最後 15% 慢慢換成下一季 ---
+  const sIdx = Math.floor(Yr * 4), sFrac = Yr * 4 - sIdx, sf = smooth(clamp((sFrac - .85) / .15, 0, 1));
+  const SA = SEASONS[sIdx], SB = SEASONS[(sIdx + 1) % 4]; season = sIdx + sf;
+  lerpCol(MT.canopy1.color, SA[0], SB[0], sf); lerpCol(MT.canopy2.color, SA[1], SB[1], sf); lerpCol(MT.bush.color, SA[2], SB[2], sf);
+  lerpCol(MT.ground.color, SA[3], SB[3], sf); lerpCol(MT.road.color, SA[4], SB[4], sf);
+  const snow = sIdx === 3 ? 1 - sf : (sIdx === 2 ? sf : 0);
+  props.forEach(p => { if (p.mesh.userData.cap) p.mesh.userData.cap.scale.y = Math.max(.001, snow); });
+  // 飄的東西：春花瓣、秋落葉、冬雪；夏天沒有
+  const amount = lerp(SA[6], SB[6], sf); lerpCol(flakes.material.color, SA[5], SB[5], sf);
+  flakes.material.opacity = amount * .9; flakes.material.size = sIdx === 3 ? .3 : .36;
+  if (amount > .01) {
+    const fall = sIdx === 3 ? 1.2 : 1.8;
+    for (let i = 0; i < FN; i++) {
+      fPos[i * 3 + 1] -= fall * dt; fPos[i * 3] += Math.sin(now * 1.3 + fSeed[i]) * dt * .8; fPos[i * 3 + 2] += Math.cos(now * .9 + fSeed[i]) * dt * .5;
+      if (fPos[i * 3 + 1] < 0) { fPos[i * 3 + 1] = 8 + Math.random() * 2; fPos[i * 3] = (Math.random() - .5) * 30; fPos[i * 3 + 2] = (Math.random() - .5) * 30; }
+    }
+    fGeo.attributes.position.needsUpdate = true; flakes.position.set(S.x, 0, S.z);
+  }
+}
+
+// ---------- 相機：像看一個玩具桌，斜斜地跟著車 ----------
+function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+const camH = () => innerWidth < innerHeight ? 18 : 12, camBack = () => innerWidth < innerHeight ? 21 : 16;
+camera.position.set(S.x, camH(), S.z + camBack());
+
+let prev = performance.now(), raf = 0;
+setInterval(() => { if (performance.now() - prev > 45) { if (raf) cancelAnimationFrame(raf); raf = 0; frame(performance.now()); } }, 20);
+function frame(now) {
+  raf = requestAnimationFrame(frame);
+  const dt = Math.min(.04, (now - prev) / 1000); prev = now; const t = now / 1000;
+  step(dt, t);
+  cycle(t, dt);
+  const k = 1 - Math.pow(.02, dt);
+  camera.position.x = lerp(camera.position.x, S.x + Math.cos(S.h) * S.v * .25, k);
+  camera.position.z = lerp(camera.position.z, S.z + camBack() - Math.sin(S.h) * S.v * .25, k);
+  camera.position.y = lerp(camera.position.y, camH(), k);
+  camera.lookAt(camera.position.x, 0, camera.position.z - camBack() + 2);
+  renderer.render(scene, camera);
+}
+raf = requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

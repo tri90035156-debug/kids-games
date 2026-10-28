@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+.claude/
+首頁草稿/
+*/audio/_unused/
+*/audio/_sample*.mp3
+*.part
+.DS_Store

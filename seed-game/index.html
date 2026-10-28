@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>種子小偵探</title>
+<meta name="description" content="給 6 歲小朋友的種子互動遊戲：注音、鍵盤 ABC、VoAI 配音，十五分鐘認識樹的種子。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <a class="pill" id="hubBtn" href="../" aria-label="回到所有遊戲"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14l2-5h11l3 5v4H3z"/><path d="M7 9V6h7l2 3"/><circle cx="7" cy="18" r="1.6" fill="currentColor"/><circle cx="17" cy="18" r="1.6" fill="currentColor"/></svg></a>
+    <button class="pill" id="homeBtn" aria-label="回首頁">首頁</button>
+    <div id="dots" aria-hidden="true"></div>
+    <button class="pill" id="sndBtn" aria-label="聲音開關"></button>
+  </header>
+  <main id="main">
+    <div id="say" hidden><button id="bubble" aria-label="再聽一次"></button></div>
+    <div id="stage"></div>
+  </main>
+  <footer id="foot"></footer>
+</div>
+<script src="content.js"></script>
+<script src="art.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
