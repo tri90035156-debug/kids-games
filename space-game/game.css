@@ -72,7 +72,7 @@ body{color:var(--ink2)}
 #ship.gone{visibility:hidden}
 
 /* 第四關：從地球看月亮的小視窗、左邊的太陽 */
-.inset{position:absolute;right:16px;top:50%;transform:translateY(-50%);border:4px solid var(--cream);border-radius:10px;box-shadow:0 6px 0 rgba(0,0,0,.3)}
+.inset{position:absolute;right:16px;top:50%;transform:translateY(-50%);border:4px solid var(--cream);border-radius:50%;box-shadow:0 6px 0 rgba(0,0,0,.3)}
 .inset .il{position:absolute;top:100%;left:0;right:0;margin-top:10px;text-align:center;color:#FFF4DE;font-size:18px}
 .suntag{position:absolute;left:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;color:#FFF4DE;font-size:20px}
 .suntag svg{width:46px;height:46px}
@@ -82,9 +82,9 @@ body{color:var(--ink2)}
 .enter{position:absolute;transform:translate(-50%,-100%);display:flex;align-items:center;gap:8px;padding:8px 18px 8px 10px;border-radius:999px;font-size:26px;font-weight:700;color:var(--ink2);white-space:nowrap;animation:pop .3s ease-out}
 .enter .tasks{color:var(--orange);font-size:20px;letter-spacing:2px}
 /* 入口徽章：圓形、同色外圈，角落放數字鍵；不在畫面裡時貼到邊緣、指向它 */
-.badge3{position:absolute;width:60px;height:60px;transform:translate(-50%,-100%);border-radius:50%;background:var(--cream);box-shadow:0 0 0 4px var(--c),0 5px 0 rgba(0,0,0,.3);display:grid;place-items:center;cursor:pointer;transition:transform .15s}
+.badge3{position:absolute;width:60px;height:60px;transform:translate(-50%,-100%);border-radius:50%;background:var(--cream);box-shadow:0 5px 0 rgba(0,0,0,.25);display:grid;place-items:center;cursor:pointer;transition:transform .15s}
 .badge3:hover{transform:translate(-50%,-100%) scale(1.08)}
-.badge3 .pimg{width:46px;height:46px}
+.badge3 .pimg{width:50px;height:50px}
 .badge3 .kc{position:absolute;right:-8px;bottom:-8px;font-size:14px;min-width:1.3em;height:1.3em}
 .badge3 i{position:absolute;inset:0;pointer-events:none;display:none}
 .badge3 i:after{content:"";position:absolute;right:-14px;top:50%;margin-top:-8px;border:8px solid transparent;border-left:12px solid var(--c)}

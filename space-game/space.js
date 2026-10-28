@@ -291,7 +291,7 @@ window.S3 = (() => {
   function clay(opts = {}) {
     return new T.MeshPhysicalMaterial(Object.assign({
       roughness: .9, metalness: 0,
-      bumpMap: clayBump(), bumpScale: .25,
+      bumpMap: clayBump(), bumpScale: .12,
     }, opts));
   }
   // 果凍回彈：poke 一下會被壓扁再彈回來（彈簧＋阻尼，每一小步算一次才不會爆掉）
@@ -306,46 +306,83 @@ window.S3 = (() => {
   }
   // 同一個物件也投影子、也接影子
   const shade = o => { o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } }); return o; };
+  // 每顆星球的黏土顏色（高彩焦點色；顏色＝身分）
+  const PAL = {
+    sun: 0xffc24a, mercury: 0xb8b0a6, venus: 0xf2a33a, earth: 0x3c9be0, moon: 0xe2ded6, mars: 0xf05a3c,
+    jupiter: 0xe8c79a, saturn: 0xf1d9a4, uranus: 0x8fdde3, neptune: 0x4a6fe0, earthHot: 0xa5603a, earthIce: 0xe9f3f6,
+  };
+  // 貼在球面上的小塊黏土（大陸、極冠、斑點、隕石坑）：位置用貼圖座標 (u,v)，朝外、壓扁
+  function blob(parent, r, u, v, size, color, flat = .32, sink = 0) {
+    const m = new T.Mesh(new T.SphereGeometry(size, 24, 16), clay({ color }));
+    m.scale.set(1, 1, flat);
+    const p = uvToPos(u, v, r - sink);
+    m.position.copy(p); m.lookAt(p.clone().multiplyScalar(2));
+    m.castShadow = m.receiveShadow = true;
+    parent.add(m);
+    return m;
+  }
+  // 一圈緯度帶（木星、土星的條紋）：同一顆球的一片，顏色不一樣
+  function band(parent, r, lat1, lat2, color) {
+    const a = (90 - lat2) * Math.PI / 180, b = (90 - lat1) * Math.PI / 180;
+    const m = new T.Mesh(new T.SphereGeometry(r * 1.006, 64, 16, 0, Math.PI * 2, a, b - a), clay({ color }));
+    m.receiveShadow = true;
+    parent.add(m);
+    return m;
+  }
   function planet(kind, rad = 1, seg = 48) {
     const g = new T.SphereGeometry(rad, seg, Math.round(seg * .66));
     const m = kind === 'sun'
-      ? new T.MeshBasicMaterial({ map: tex('sun'), toneMapped: false })
-      : clay({ map: tex(kind) });
+      ? new T.MeshBasicMaterial({ color: PAL.sun, toneMapped: false })
+      : clay({ color: PAL[kind] || 0xcccccc });
     const mesh = new T.Mesh(g, m);
     mesh.userData.kind = kind;
-    if (kind !== 'sun') { mesh.castShadow = true; mesh.receiveShadow = true; }
+    if (kind === 'sun') return mesh;
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    const r = rng(kind.length * 131);
+    const R0 = rad;
+    if (kind === 'earth') {
+      const land = [0x4cb05a, 0x5bb86a, 0x3f9d4e];
+      [[.22, .3, .34], [.3, .62, .3], [.52, .3, .36], [.55, .58, .28], [.75, .32, .3], [.84, .66, .26], [.12, .45, .22], [HOME.u, HOME.v, .3]]
+        .forEach(([u, v, k], i) => blob(mesh, R0, u, v, R0 * k, land[i % 3], .3));
+      blob(mesh, R0, 0, .02, R0 * .3, 0xfff6e6, .25); blob(mesh, R0, 0, .98, R0 * .3, 0xfff6e6, .25);     // 極冠
+    } else if (kind === 'mars') {
+      blob(mesh, R0, 0, .03, R0 * .26, 0xfff3e6, .22); blob(mesh, R0, 0, .97, R0 * .22, 0xfff3e6, .22);
+      [[.3, .45, .3], [.62, .55, .24], [.85, .4, .2]].forEach(([u, v, k]) => blob(mesh, R0, u, v, R0 * k, 0xc9472d, .18));
+    } else if (kind === 'mercury' || kind === 'moon') {
+      const c = kind === 'moon' ? 0xc4bfb6 : 0x978f86;
+      for (let i = 0; i < 9; i++) blob(mesh, R0, r(), .15 + r() * .7, R0 * (.08 + r() * .14), c, .14, R0 * .03);
+    } else if (kind === 'jupiter') {
+      band(mesh, R0, 8, 20, 0xc9955e); band(mesh, R0, -18, -6, 0xc9955e); band(mesh, R0, 32, 40, 0xd8ab78); band(mesh, R0, -42, -34, 0xd8ab78);
+      blob(mesh, R0, .62, .62, R0 * .22, 0xe0533c, .22).scale.x = 1.7;      // 大紅斑
+    } else if (kind === 'saturn') {
+      band(mesh, R0, 6, 16, 0xd6b46f); band(mesh, R0, -22, -12, 0xd6b46f); band(mesh, R0, 34, 42, 0xe4c98a);
+    } else if (kind === 'venus') {
+      band(mesh, R0, 10, 24, 0xf7b85a); band(mesh, R0, -30, -16, 0xf7b85a);
+    } else if (kind === 'neptune') {
+      blob(mesh, R0, .4, .6, R0 * .2, 0x2e4bb0, .2).scale.x = 1.5;
+    } else if (kind === 'uranus') {
+      band(mesh, R0, -6, 6, 0x9fe5ea);
+    }
     return mesh;
   }
   function sun(rad = 1) {
     const grp = new T.Group();
     grp.add(planet('sun', rad, 48));
-    grp.add(glow(0xffb24a, rad * 4.2, .85));
-    grp.add(glow(0xfff1c4, rad * 2.5, .7));
+    grp.add(glow(0xffb24a, rad * 4.2, .7));
+    grp.add(glow(0xfff1c4, rad * 2.5, .55));
     return grp;
   }
-  // 土星環：用一條一條的同心圓貼圖
-  let ringTex = null;
-  function ring(inner, outer, opacity = .9) {
-    if (!ringTex) {
-      const c = document.createElement('canvas'); c.width = 512; c.height = 4;
-      const x = c.getContext('2d');
-      for (let i = 0; i < 512; i++) {
-        const k = i / 512;
-        let a = .25 + .55 * Math.abs(Math.sin(k * 40) * Math.sin(k * 7 + 1));
-        if (k < .12) a *= .35;                       // 內圈比較暗
-        if (k > .68 && k < .74) a = .04;             // 卡西尼縫
-        const s = 200 + Math.round(40 * Math.sin(k * 13));
-        x.fillStyle = 'rgba(' + s + ',' + (s - 18) + ',' + (s - 52) + ',' + a + ')'; x.fillRect(i, 0, 1, 4);
-      }
-      ringTex = new T.CanvasTexture(c); ringTex.colorSpace = T.SRGBColorSpace;
-    }
-    const g = new T.RingGeometry(inner, outer, 128, 1);
-    const p = g.attributes.position, uv = g.attributes.uv, v = new T.Vector3();
-    for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); uv.setXY(i, (v.length() - inner) / (outer - inner), .5); }
-    const m = new T.Mesh(g, clay({ map: ringTex, side: T.DoubleSide, transparent: true, opacity, depthWrite: false, alphaTest: .12, bumpMap: null }));
-    m.castShadow = true; m.receiveShadow = true;
-    m.rotation.x = -Math.PI / 2;
-    return m;
+  // 土星環：兩圈扁扁的黏土環（淺、深各一圈），中間留一條縫
+  function ring(inner, outer, opacity = 1) {
+    const g = new T.Group();
+    const mk = (a, b, color) => {
+      const m = new T.Mesh(new T.RingGeometry(a, b, 96, 1), clay({ color, side: T.DoubleSide, transparent: opacity < 1, opacity }));
+      m.rotation.x = -Math.PI / 2; m.castShadow = m.receiveShadow = true; g.add(m);
+    };
+    const w = outer - inner;
+    mk(inner, inner + w * .55, 0xe9d3a3); mk(inner + w * .62, outer, 0xcfb27a);
+    g.userData.mats = () => { const a = []; g.traverse(o => { if (o.material) a.push(o.material); }); return a; };
+    return g;
   }
   // 細細的軌道線
   function orbit(rad, color = 0xbd9558, opacity = .45) {
@@ -356,32 +393,37 @@ window.S3 = (() => {
   // 平面上的角度 a（逆時針、從 +x 開始）→ 位置
   const onOrbit = (a, rad, y = 0) => new T.Vector3(Math.cos(a) * rad, y, -Math.sin(a) * rad);
 
-  // ---------- 2D 小頭像（給卡片、按鈕用）：把貼圖畫進圓形，加上陰影 ----------
+  // ---------- 2D 小頭像（給徽章用）：和 3D 同一個顏色的圓，加一點簡單特徵 ----------
   const PORT = {};
+  const hex = c => '#' + c.toString(16).padStart(6, '0');
   function portrait(kind, size = 160) {
     const key = kind + size;
     if (PORT[key]) return PORT[key];
     const c = document.createElement('canvas'); c.width = c.height = size;
-    const x = c.getContext('2d'), src = paint(kind), R0 = size * (kind === 'saturn' ? .3 : .44), cx = size / 2, cy = size / 2;
+    const x = c.getContext('2d'), cx = size / 2, cy = size / 2, R0 = size * (kind === 'saturn' ? .3 : .42);
+    const disc = (col, r = R0) => { x.fillStyle = col; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill(); };
     const ringPart = front => {
-      x.save(); x.translate(cx, cy); x.rotate(-.35); x.scale(1, .32);
-      x.beginPath();
-      if (front) x.rect(-size, 0, size * 2, size); else x.rect(-size, -size, size * 2, size);
-      x.clip();
-      x.lineWidth = R0 * .55; x.strokeStyle = 'rgba(222,200,150,.9)';
-      x.beginPath(); x.arc(0, 0, R0 * 1.75, 0, 7); x.stroke();
-      x.lineWidth = R0 * .12; x.strokeStyle = 'rgba(23,18,28,.6)';
-      x.beginPath(); x.arc(0, 0, R0 * 1.9, 0, 7); x.stroke();
+      x.save(); x.translate(cx, cy); x.rotate(-.3); x.scale(1, .34);
+      x.beginPath(); x.rect(-size, front ? 0 : -size, size * 2, size); x.clip();
+      x.lineWidth = R0 * .5; x.strokeStyle = '#e9d3a3'; x.beginPath(); x.arc(0, 0, R0 * 1.7, 0, 7); x.stroke();
       x.restore();
     };
     if (kind === 'saturn') ringPart(false);
+    disc(hex(PAL[kind] || 0xcccccc));
     x.save(); x.beginPath(); x.arc(cx, cy, R0, 0, 7); x.clip();
-    x.drawImage(src, src.width * .3, 0, src.width * .45, src.height, cx - R0 * 1.15, cy - R0, R0 * 2.3, R0 * 2);
-    if (kind !== 'sun') {
-      const g = x.createRadialGradient(cx - R0 * .45, cy - R0 * .45, R0 * .1, cx, cy, R0 * 1.15);
-      g.addColorStop(0, 'rgba(255,255,255,.18)'); g.addColorStop(.55, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(10,6,14,.6)');
-      x.fillStyle = g; x.fillRect(0, 0, size, size);
-    }
+    const dot = (dx, dy, r, col) => { x.fillStyle = col; x.beginPath(); x.ellipse(cx + dx * R0, cy + dy * R0, r * R0, r * R0 * .8, 0, 0, 7); x.fill(); };
+    const stripe = (dy, h, col) => { x.fillStyle = col; x.fillRect(0, cy + dy * R0 - h * R0 / 2, size, h * R0); };
+    if (kind === 'earth') { dot(-.3, -.25, .4, '#4cb05a'); dot(.35, .3, .32, '#4cb05a'); dot(.3, -.5, .22, '#5bb86a'); }
+    else if (kind === 'mars') { dot(.2, .2, .3, '#c9472d'); dot(0, -.9, .3, '#fff3e6'); }
+    else if (kind === 'jupiter') { stripe(-.35, .18, '#c9955e'); stripe(.3, .16, '#c9955e'); dot(.35, .35, .18, '#e0533c'); }
+    else if (kind === 'saturn') { stripe(-.3, .16, '#d6b46f'); stripe(.35, .14, '#d6b46f'); }
+    else if (kind === 'venus') { stripe(-.3, .2, '#f7b85a'); stripe(.4, .18, '#f7b85a'); }
+    else if (kind === 'neptune') { dot(-.2, .2, .22, '#2e4bb0'); }
+    else if (kind === 'mercury' || kind === 'moon') { const c2 = kind === 'moon' ? '#c4bfb6' : '#978f86'; dot(-.3, -.2, .18, c2); dot(.35, .25, .14, c2); dot(.1, .5, .1, c2); }
+    // 一點點立體感：左上亮、右下暗
+    const g = x.createRadialGradient(cx - R0 * .4, cy - R0 * .4, R0 * .2, cx, cy, R0 * 1.1);
+    g.addColorStop(0, 'rgba(255,255,255,.22)'); g.addColorStop(.6, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(40,30,50,.28)');
+    x.fillStyle = g; x.fillRect(0, 0, size, size);
     x.restore();
     if (kind === 'saturn') ringPart(true);
     PORT[key] = c.toDataURL('image/png');
@@ -389,5 +431,5 @@ window.S3 = (() => {
   }
   const img = (kind, cls = '') => '<img class="pimg ' + cls + '" alt="" src="' + portrait(kind) + '">';
 
-  return { T, view, stop, current: () => cur, clay, shade, jelly, poke, wobble, stars, glow, tex, planet, sun, ring, orbit, onOrbit, uvToPos, HOME, portrait, img, lerp, ease, wrap, rng };
+  return { T, view, stop, current: () => cur, clay, shade, jelly, poke, wobble, PAL, blob, stars, glow, tex, planet, sun, ring, orbit, onOrbit, uvToPos, HOME, portrait, img, lerp, ease, wrap, rng };
 })();

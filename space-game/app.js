@@ -395,7 +395,7 @@
     const f = WORLD.face(k, R); f.lookAt(camDir); if (k === 'uranus') f.rotateZ(Math.PI / 2); S3.shade(f); v.scene.add(f);
     let cloud = null;
     if (!rock) {                                      // 氣體行星：外面一層厚厚的雲
-      cloud = new T.Mesh(new T.SphereGeometry(R * 1.12, 48, 32), S3.clay({ map: S3.tex(k), transparent: true, opacity: .35, depthWrite: false, bumpMap: null }));
+      cloud = new T.Mesh(new T.SphereGeometry(R * 1.12, 48, 32), S3.clay({ color: 0xfff6e6, transparent: true, opacity: .35, depthWrite: false, bumpMap: null }));
       cloud.visible = false; v.scene.add(cloud);
     }
     const lander = WORLD.rocket();
@@ -462,6 +462,7 @@
     const sat = S3.planet('saturn', 1, 64); v.scene.add(sat);
     const satFace = faceOn(v, sat, 'saturn', 1);
     const band = S3.ring(1.24, 2.27, .95); v.scene.add(band);
+    const bandMats = band.userData.mats();
     // 環裡面的一塊塊冰和石頭
     const N = 6000, rr = S3.rng(5);
     const chunks = new T.InstancedMesh(new T.IcosahedronGeometry(1, 0), new T.MeshLambertMaterial({ color: 0xffffff, transparent: true }), N);
@@ -485,14 +486,14 @@
     [kw, kd].forEach(b => { b.addEventListener('pointerdown', () => b.classList.add('down')); ['pointerup', 'pointerleave', 'pointercancel'].forEach(x => b.addEventListener(x, () => b.classList.remove('down'))); });
     let phase = 1;
     v.on(dt => {
-      ringGrp.rotation.y -= dt * .04; band.rotation.z += dt * .04; sat.rotation.y += dt * .3;
+      ringGrp.rotation.y -= dt * .04; band.rotation.y += dt * .04; sat.rotation.y += dt * .3;
       if (phase === 1 && (keys.on('w', 'up') || kw.classList.contains('down'))) p = Math.min(1, p + dt * (FAST ? 4 : .45));
       if (phase === 1 && keys.on('s', 'down')) p = Math.max(0, p - dt * .45);
       if (phase === 2 && (keys.on('d', 'right', 'a', 'left') || kd.classList.contains('down'))) el2 = Math.min(1, el2 + dt * (FAST ? 4 : .5));
       const k = ease(p);
       v.cam.position.lerpVectors(farPos(), nearPos, k);
       v.cam.lookAt(new T.Vector3().lerpVectors(new T.Vector3(), nearLook, k));
-      band.material.opacity = .95 * (1 - clamp((p - .45) / .4, 0, 1));
+      bandMats.forEach(mm => { mm.opacity = .95 * (1 - clamp((p - .45) / .4, 0, 1)); });
       const ck = clamp((p - .15) / .3, 0, 1);            // 遠遠看是一片環，飛近了才看得到一塊一塊
       chunks.visible = ck > 0; chunks.material.opacity = ck;
     });

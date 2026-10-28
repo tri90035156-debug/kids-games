@@ -30,14 +30,14 @@ window.WORLD = (() => {
   let W = null;
 
   // ---------- 黏土小臉：豆豆眼、彎彎嘴、腮紅，每顆星球的表情不一樣 ----------
-  const BLACK = new T.MeshStandardMaterial({ color: 0x1b1519, roughness: .22 });
+  const BLACK = new T.MeshStandardMaterial({ color: 0x3b3430, roughness: .35 });      // 深棕色，不是純黑
   const WHITE = new T.MeshBasicMaterial({ color: 0xffffff });
   const PINK = S3.clay({ color: 0xff8f9e, bumpMap: null });
   const DROP = new T.MeshPhysicalMaterial({ color: 0x9fd8ff, roughness: .1, clearcoat: 1 });
   function face(kind, r) {
     const g = new T.Group();
     const at = (x, y, out = 1) => new T.Vector3(x, y, Math.sqrt(Math.max(0, 1 - x * x - y * y))).multiplyScalar(r * out);
-    const stick = (obj, x, y, out = 1) => {           // 貼在球面上、朝外
+    const stick = (obj, x, y, out = 1.07) => {        // 貼在球面上、朝外（稍微浮出來，才不會被大陸擋住）
       const p = new T.Group(); p.position.copy(at(x, y, out)); p.lookAt(p.position.clone().multiplyScalar(2)); p.add(obj); g.add(p); return p;
     };
     const bead = (x, y, s = .11, dx = 0, dy = 0) => {
@@ -45,8 +45,8 @@ window.WORLD = (() => {
       const hl = new T.Mesh(new T.SphereGeometry(r * s * .28, 10, 8), WHITE); hl.position.set(r * s * (-.3 + dx), r * s * (.35 + dy), r * s * .5);
       e.add(hl); stick(e, x, y);
     };
-    const arc = (x, y, w, up, tube = .025) => {      // up=true：開心的 ^ ；false：微笑的 U
-      const m = new T.Mesh(new T.TorusGeometry(r * w, r * tube, 8, 24, Math.PI), BLACK);
+    const arc = (x, y, w, up, tube = .045) => {      // up=true：開心的 ^ ；false：微笑的 U（圓圓胖胖的黏土條）
+      const m = new T.Mesh(new T.TorusGeometry(r * w, r * tube, 10, 24, Math.PI), BLACK);
       if (!up) m.rotation.z = Math.PI;
       stick(m, x, y);
     };
@@ -55,8 +55,8 @@ window.WORLD = (() => {
     if (kind === 'sun') {                             // 戴墨鏡：眼睛不可以直接看太陽
       const lens = new T.MeshStandardMaterial({ color: 0x241b2a, roughness: .15, metalness: .3 });
       [-1, 1].forEach(sx => { const l = new T.Mesh(new T.SphereGeometry(r * .17, 20, 14), lens); l.scale.set(1.25, .9, .3); stick(l, sx * .25, .16, 1.01); });
-      const bar = new T.Mesh(new T.CylinderGeometry(r * .02, r * .02, r * .2, 8), lens); bar.rotation.z = Math.PI / 2; stick(bar, 0, .2, 1.02);
-      arc(0, -.22, .2, false, .035);
+      const bar = new T.Mesh(new T.CylinderGeometry(r * .04, r * .04, r * .2, 8), lens); bar.rotation.z = Math.PI / 2; stick(bar, 0, .2, 1.02);
+      arc(0, -.22, .18, false, .05);
     } else if (kind === 'mercury') {                  // 好熱、跑好快：流汗
       bead(-.28, .14, .12); bead(.28, .14, .12); mouthO(0, -.22, .08);
       const d = new T.Mesh(new T.SphereGeometry(r * .09, 14, 10), DROP); d.scale.y = 1.4; stick(d, .62, .36);
@@ -67,9 +67,7 @@ window.WORLD = (() => {
     } else if (kind === 'moon') {                     // 想睡覺
       arc(-.28, .1, .1, false); arc(.28, .1, .1, false); arc(0, -.25, .08, false);
     } else if (kind === 'mars') {
-      bead(-.26, .12); bead(.26, .12);
-      [-1, 1].forEach(sx => { const b = new T.Mesh(new T.CapsuleGeometry(r * .025, r * .14, 4, 8), BLACK); b.rotation.z = Math.PI / 2 + sx * .35; stick(b, sx * .27, .34); });
-      arc(0, -.2, .14, false);
+      bead(-.26, .12); bead(.26, .12); arc(0, -.2, .14, false); blush(-.46, -.06); blush(.46, -.06);
     } else if (kind === 'jupiter') {                  // 好大：哇！
       bead(-.26, .16, .1); bead(.26, .16, .1); mouthO(0, -.2, .09); blush(-.45, -.04); blush(.45, -.04);
     } else if (kind === 'saturn') {                   // 眨眼
@@ -77,9 +75,7 @@ window.WORLD = (() => {
     } else if (kind === 'uranus') {                   // 躺著轉：整張臉轉 90 度
       bead(-.25, .14); bead(.25, .14); arc(0, -.2, .14, false);
     } else if (kind === 'neptune') {                  // 好冷：眼睛看旁邊、嘴巴抖抖
-      bead(-.25, .14, .12, .5, 0); bead(.25, .14, .12, .5, 0);
-      const pts = []; for (let i = 0; i <= 16; i++) pts.push(new T.Vector3((i / 16 - .5) * r * .34, Math.sin(i * 1.6) * r * .025, 0));
-      const m = new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts), 24, r * .022, 6), BLACK); stick(m, 0, -.24);
+      bead(-.25, .14, .12, .5, 0); bead(.25, .14, .12, .5, 0); mouthO(0, -.24, .07);
     }
     return g;
   }
@@ -151,7 +147,7 @@ window.WORLD = (() => {
         grp.add(S3.glow(0xffb24a, s.r * 4.5, .7), S3.glow(0xfff1c4, s.r * 2.6, .6));
       } else {
         mesh = S3.planet(s.k, s.r, 48); grp.add(mesh);
-        if (s.k === 'saturn') { const rg = S3.ring(s.r * 1.3, s.r * 2.25); rg.rotation.y = .3; const tilt = new T.Group(); tilt.rotation.z = .42; tilt.add(rg); grp.add(tilt); }
+        if (s.k === 'saturn') { const tilt = new T.Group(); tilt.rotation.z = .42; tilt.add(S3.ring(s.r * 1.3, s.r * 2.25)); grp.add(tilt); }
         if (s.k === 'uranus') mesh.rotation.z = 1.7;
       }
       const h = s.pos.y - s.r - BASE_Y;

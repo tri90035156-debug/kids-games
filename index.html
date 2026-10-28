@@ -48,7 +48,7 @@ h1{color:#3B3430;font-size:clamp(22px,5.4vw,46px);white-space:nowrap}
 #sky{position:fixed;left:50%;top:max(12px,env(safe-area-inset-top,0px));transform:translateX(-50%);width:140px;pointer-events:none;color:var(--maroon)}
 #sky svg{width:100%;height:auto;overflow:visible}
 #skySun,#skyMoon{transition:opacity .6s}
-@media (max-width:640px){ #sky{width:100px;top:66px} }
+@media (max-width:640px){ #sky{width:84px;left:auto;right:16px;top:72px;transform:none} }
 #stick{position:fixed;left:0;top:0;width:120px;height:120px;border-radius:50%;border:2px solid var(--sage2);background:rgba(255,248,238,.55);pointer-events:none;transform:translate(-50%,-50%);display:none}
 #stick i{position:absolute;left:50%;top:50%;width:44px;height:44px;border-radius:50%;background:var(--sage);transform:translate(-50%,-50%);box-shadow:0 0 0 4px var(--goldsoft)}
 </style>
@@ -191,7 +191,7 @@ addEventListener('keyup', ev => { keys[ev.code] = false; });
 let stick = null; const stickEl = $('#stick'), knob = stickEl.firstElementChild;
 const canvas = $('#c');
 canvas.addEventListener('pointerdown', ev => { ac(); engine(); hintOff();
-  if (hovered && !hovered.mesh) { const i = gates.indexOf(hovered); SND.pick(i); gates[i].excite = 1; autoTarget = i; return; }
+  if (hovered && !hovered.mesh) { pickGate(gates.indexOf(hovered)); return; }
   stick = { x: ev.clientX, y: ev.clientY, dx: 0, dy: 0 }; stickEl.style.display = 'block'; stickEl.style.left = ev.clientX + 'px'; stickEl.style.top = ev.clientY + 'px'; knob.style.transform = 'translate(-50%,-50%)'; canvas.setPointerCapture(ev.pointerId); autoTarget = null; });
 const hoverRay = new THREE.Raycaster(), hv = new THREE.Vector2(); let hovered = null;
 canvas.addEventListener('pointermove', ev => {
@@ -202,7 +202,13 @@ canvas.addEventListener('pointermove', ev => {
     if (target !== hovered) { hovered = target; canvas.style.cursor = target ? 'pointer' : 'default'; if (target) { if (target.mesh) jelly(target, .18); else target.excite = Math.max(target.excite, .4); SND.tick(); } }
   }
   if (!stick) return; let dx = ev.clientX - stick.x, dy = ev.clientY - stick.y; const d = Math.hypot(dx, dy); if (d > 50) { dx *= 50 / d; dy *= 50 / d; } stick.dx = dx / 50; stick.dy = dy / 50; knob.style.transform = `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`; });
-const stickUp = () => { stick = null; stickEl.style.display = 'none'; };
+const tapRay = new THREE.Raycaster(), tv = new THREE.Vector2();
+function tapAt(x, y) {   // 點一下：門→車子開過去（再點一次就進去）；東西→晃一下、響一聲
+  tv.set(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1); tapRay.setFromCamera(tv, camera);
+  const hit = tapRay.intersectObjects(props.map(p => p.mesh).concat(gates.map(g => g.grp)), true)[0]; if (!hit) return;
+  let o = hit.object; while (o) { const g = gates.find(q => q.grp === o); if (g) { pickGate(gates.indexOf(g)); return; } const p = props.find(q => q.mesh === o); if (p) { jelly(p, .5); p.spin = (Math.random() - .5) * 4; p.tip = Math.max(p.tip, .4); p.tipDir = Math.random() * 6.28; SND.bump(Math.floor(Math.random() * 9)); return; } o = o.parent; }
+}
+const stickUp = ev => { if (stick && Math.hypot(stick.dx, stick.dy) < .12 && ev.type === 'pointerup') tapAt(ev.clientX, ev.clientY); stick = null; stickEl.style.display = 'none'; };
 canvas.addEventListener('pointerup', stickUp); canvas.addEventListener('pointercancel', stickUp);
 let hintShown = true; function hintOff() { if (hintShown) { hintShown = false; $('#hint').classList.add('off'); } }
 
@@ -215,8 +221,9 @@ const ICON = {
 };
 $('#tags').innerHTML = GAMES.map((g, i) => `<a class="tag" data-i="${i}" href="${HUB.href(g)}" style="--acc:${ACC_CSS[i]}"><span class="badge">${ICON[KIND[i]]}<span class="kc">${i + 1}</span></span><span class="lab">${Z(g.name, g.zy)}</span></a>`).join('');
 const tags = [...document.querySelectorAll('.tag')];
-tags.forEach(t => t.addEventListener('click', ev => { ev.preventDefault(); const i = +t.dataset.i; ac(); engine(); hintOff(); SND.pick(i); gates[i].excite = 1; autoTarget = i; }));
-numberKeys(i => { SND.pick(i); gates[i].excite = 1; autoTarget = i; });
+function pickGate(i) { ac(); engine(); hintOff(); if (autoTarget === i || gates[i].near > .5) { enterGate(i); return; } SND.pick(i); gates[i].excite = 1; autoTarget = i; }
+tags.forEach(t => t.addEventListener('click', ev => { ev.preventDefault(); pickGate(+t.dataset.i); }));
+numberKeys(pickGate);
 
 // ---------- 果凍感：壓一下會彈回來（彈簧＋阻尼） ----------
 function squash(obj, k) { obj.userData.sq = (obj.userData.sq || 0) - k; }
@@ -241,9 +248,9 @@ function step(dt, t) {
   }
   if (autoTarget !== null) {
     const g = gates[autoTarget]; const want = Math.atan2(-(g.z - S.z), g.x - S.x); let d = want - S.h; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2;
-    st = clamp(d * 2.5, -1, 1); thr = .9;
+    st = clamp(d * 2.5, -1, 1); thr = 1;
   }
-  const acc = 14, maxV = 9;
+  const acc = 14, maxV = autoTarget !== null ? 13 : 9;
   S.v += thr * acc * dt; S.v -= S.v * (thr ? .8 : 2.5) * dt; S.v = clamp(S.v, -maxV * .5, maxV);
   S.steer = lerp(S.steer, st, 1 - Math.pow(.001, dt));
   S.h += S.steer * 2.2 * dt * clamp(S.v / 3, -1, 1);
@@ -283,7 +290,7 @@ function step(dt, t) {
   gates.forEach((g, i) => {
     const d = Math.hypot(g.x - S.x, g.z - S.z);
     g.near = clamp(1 - (d - 3) / 6, 0, 1);
-    if (d < 2.2 && entering < 0) enterGate(i);
+    if (d < 2.8 && entering < 0) enterGate(i);
     g.excite = Math.max(0, g.excite - dt);
     // 光暈呼吸：越近越亮；第一次靠近時叮一聲
     const breathe = .5 + .5 * Math.sin(t * 2.2 + i);
