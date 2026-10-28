@@ -221,8 +221,15 @@ const ICON = {
 };
 $('#tags').innerHTML = GAMES.map((g, i) => `<a class="tag" data-i="${i}" href="${HUB.href(g)}" style="--acc:${ACC_CSS[i]}"><span class="badge">${ICON[KIND[i]]}<span class="kc">${i + 1}</span></span><span class="lab">${Z(g.name, g.zy)}</span></a>`).join('');
 const tags = [...document.querySelectorAll('.tag')];
-function pickGate(i) { ac(); engine(); hintOff(); if (autoTarget === i || gates[i].near > .5) { enterGate(i); return; } SND.pick(i); gates[i].excite = 1; autoTarget = i; }
-tags.forEach(t => t.addEventListener('click', ev => { ev.preventDefault(); pickGate(+t.dataset.i); }));
+let autoSince = 0, lastPick = 0;
+function pickGate(i) {
+  const now = performance.now(); if (now - lastPick < 350) return; lastPick = now;   // 同一下觸控可能同時送 touch 跟 click，只算一次
+  try { ac(); engine(); } catch (e) {}   // 聲音開不了也不能擋住進遊戲
+  hintOff();
+  if (autoTarget === i || gates[i].near > .5) { enterGate(i); return; }
+  SND.pick(i); gates[i].excite = 1; autoTarget = i; autoSince = now;
+}
+tags.forEach(t => { const h = ev => { ev.preventDefault(); pickGate(+t.dataset.i); }; t.addEventListener('click', h); t.addEventListener('touchend', h, { passive: false }); });
 numberKeys(pickGate);
 
 // ---------- 果凍感：壓一下會彈回來（彈簧＋阻尼） ----------
@@ -236,7 +243,7 @@ function jelly(p, k) { p.mesh.userData.sq = (p.mesh.userData.sq || 0) - k; }
 
 // ---------- 物理（很簡單的那種） ----------
 let entering = -1;
-function enterGate(i) { if (entering >= 0) return; entering = i; SND.go(); gates[i].excite = 1; squash(car, .5); setTimeout(() => { location.href = HUB.href(GAMES[i]); }, 900); }
+function enterGate(i) { if (entering >= 0) return; entering = i; try { SND.go(); squash(car, .5); } catch (e) {} gates[i].excite = 1; setTimeout(() => { location.href = HUB.href(GAMES[i]); }, 900); }
 
 function step(dt, t) {
   let thr = 0, st = 0;
@@ -310,6 +317,8 @@ function step(dt, t) {
     tg.classList.toggle('edge', k > 1);
   });
   if (autoTarget !== null && entering >= 0) autoTarget = null;
+  // 保險：點了入口，就算車子卡住，3.5 秒內一定進去
+  if (autoTarget !== null && entering < 0 && performance.now() - autoSince > 3500) enterGate(autoTarget);
 }
 
 // ---------- 時間：太陽升起落下、月亮星星、四季，自己一直循環 ----------
