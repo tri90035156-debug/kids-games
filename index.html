@@ -229,7 +229,8 @@ function pickGate(i) {
   if (autoTarget === i || gates[i].near > .5) { enterGate(i); return; }
   SND.pick(i); gates[i].excite = 1; autoTarget = i; autoSince = now;
 }
-tags.forEach(t => { const h = ev => { ev.preventDefault(); pickGate(+t.dataset.i); }; t.addEventListener('click', h); t.addEventListener('touchend', h, { passive: false }); });
+// 圖章就是一般的連結：點了瀏覽器直接開那個遊戲（不靠程式、不等車子）。只順便響一聲。
+tags.forEach(t => t.addEventListener('click', () => { try { SND.go(); } catch (e) {} }));
 numberKeys(pickGate);
 
 // ---------- 果凍感：壓一下會彈回來（彈簧＋阻尼） ----------
