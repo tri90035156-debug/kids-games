@@ -18,7 +18,10 @@ HOUR="${1:-5}"; MINUTE="${2:-0}"
 
 echo "1) 檢查工具"
 for t in git node npm python3; do command -v "$t" >/dev/null && echo "   ✔ $t" || { echo "   ✘ 缺 $t，請先安裝（建議 brew install $t）"; exit 1; }; done
-if command -v claude >/dev/null; then echo "   ✔ claude ($(claude --version 2>/dev/null | head -1))"; else
+CLAUDE_BIN="$(command -v claude 2>/dev/null || true)"
+case "$CLAUDE_BIN" in alias*|"") CLAUDE_BIN="$(type -P claude 2>/dev/null || true)";; esac
+if [ -z "$CLAUDE_BIN" ]; then for c in "$HOME/.local/bin/claude" "$HOME/.claude/local/claude" /opt/homebrew/bin/claude /usr/local/bin/claude; do [ -x "$c" ] && { CLAUDE_BIN="$c"; break; }; done; fi
+if [ -n "$CLAUDE_BIN" ]; then echo "   ✔ claude ($("$CLAUDE_BIN" --version 2>/dev/null | head -1)) 位置 $CLAUDE_BIN"; else
   echo "   ✘ 缺 claude。請先裝 Claude Code："; echo "      curl -fsSL https://claude.ai/install.sh | bash"; echo "      然後執行一次 claude，照畫面登入。"; exit 1; fi
 
 echo "2) 裝試玩工具（playwright + chromium）"
@@ -36,9 +39,11 @@ echo "5) 檢查 claude 能無人值守跑"
 
 echo "6) 排程 launchd：每天 $(printf '%02d:%02d' "$HOUR" "$MINUTE")"
 mkdir -p "$HOME/Library/LaunchAgents" "$REPO/pipeline/logs"
-sed -e "s#__REPO__#$REPO#g" -e "s#__HOME__#$HOME#g" -e "s#__HOUR__#$HOUR#g" -e "s#__MINUTE__#$MINUTE#g" "$REPO/pipeline/com.kidsgames.nightly.plist" > "$PLIST"
+sed -e "s#__REPO__#$REPO#g" -e "s#__HOME__#$HOME#g" -e "s#__HOUR__#$HOUR#g" -e "s#__MINUTE__#$MINUTE#g" -e "s#__CLAUDE_BIN__#$CLAUDE_BIN#g" "$REPO/pipeline/com.kidsgames.nightly.plist" > "$PLIST"
 launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null
 launchctl bootstrap "gui/$(id -u)" "$PLIST" && echo "   ✔ 已排程 $PLIST" || { echo "   ✘ launchctl 失敗"; exit 1; }
+echo "7) 用排程的環境演練一次（不跑 claude，只檢查找不找得到）"
+( env -i HOME="$HOME" PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" CLAUDE_BIN="$CLAUDE_BIN" NIGHTLY_DRY=1 bash "$REPO/pipeline/run_nightly.sh" ) && tail -3 "$REPO/pipeline/logs/$(date +%F).log" | sed 's/^/   /' || { echo "   ✘ 演練失敗，看 pipeline/logs/$(date +%F).log"; tail -5 "$REPO/pipeline/logs/$(date +%F).log" | sed 's/^/   /'; }
 
 echo
 echo "完成。建議再做兩件事："

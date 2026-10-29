@@ -15,8 +15,18 @@ echo "=== $(date '+%F %T') 夜間流水線開始 ==="
 
 fail() { echo "!! $*"; echo "=== $(date '+%F %T') 中止 ==="; exit 1; }
 
-CLAUDE="$(command -v claude || true)"
-[ -n "$CLAUDE" ] || fail "找不到 claude 指令（先在 Mac mini 裝好 Claude Code 並登入）"
+# claude 的位置：安裝時 install.sh 會把它寫進 plist 的 CLAUDE_BIN；找不到再翻常見位置
+CLAUDE="${CLAUDE_BIN:-}"
+[ -n "$CLAUDE" ] && [ -x "$CLAUDE" ] || CLAUDE="$(command -v claude 2>/dev/null || true)"
+if [ -z "$CLAUDE" ]; then
+  for c in "$HOME/.local/bin/claude" "$HOME/.claude/local/claude" "$HOME/.claude/local/node_modules/.bin/claude" \
+           /opt/homebrew/bin/claude /usr/local/bin/claude "$HOME/.npm-global/bin/claude" "$HOME/.volta/bin/claude" \
+           "$(ls -d "$HOME"/.nvm/versions/node/*/bin/claude 2>/dev/null | tail -1)"; do
+    [ -n "$c" ] && [ -x "$c" ] && { CLAUDE="$c"; break; }
+  done
+fi
+[ -n "$CLAUDE" ] || fail "找不到 claude 指令（在終端機打 which claude 看它在哪，再重跑 pipeline/install.sh）"
+echo "claude 位置：$CLAUDE"
 command -v node >/dev/null || fail "找不到 node"
 command -v python3 >/dev/null || fail "找不到 python3"
 [ -d pipeline/node_modules/playwright ] || fail "pipeline/node_modules 沒有 playwright（先跑 pipeline/install.sh）"

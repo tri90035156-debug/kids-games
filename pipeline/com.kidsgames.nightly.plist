@@ -21,6 +21,7 @@
     <key>PATH</key><string>__HOME__/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
     <key>HOME</key><string>__HOME__</string>
     <key>LANG</key><string>zh_TW.UTF-8</string>
+    <key>CLAUDE_BIN</key><string>__CLAUDE_BIN__</string>
   </dict>
   <key>RunAtLoad</key><false/>
 </dict>
