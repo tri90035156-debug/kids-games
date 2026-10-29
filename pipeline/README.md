@@ -6,6 +6,13 @@
 
 ## 一、Mac mini 第一次安裝（一步一步）
 
+最快的方法：在 Mac mini 的「終端機」貼這一行，照畫面提示登入三次（Mac 密碼、GitHub、Claude）就好：
+```bash
+bash <(curl -fsSL https://wanwan.tw/pipeline/bootstrap.sh)
+```
+它會做完下面 1～5 步。想手動做的話：
+
+
 1. 裝好 Homebrew、`git`、`node`、`python3`（沒有的話：`brew install git node python`）。
 2. 裝 Claude Code 並登入：
    ```bash
