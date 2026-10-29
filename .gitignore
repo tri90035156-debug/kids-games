@@ -1,9 +1,16 @@
 .env
 .env.*
 !.env.example
-.claude/
+.claude/*
+!.claude/agents/
 首頁草稿/
 */audio/_unused/
 */audio/_sample*.mp3
 *.part
 .DS_Store
+
+# 夜間流水線的本機產物
+pipeline/node_modules/
+pipeline/logs/
+pipeline/shots/
+pipeline/_abandoned/

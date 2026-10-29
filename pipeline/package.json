@@ -1,0 +1,12 @@
+{
+  "name": "kids-games-nightly-pipeline",
+  "private": true,
+  "type": "module",
+  "description": "夜間自動建置／試玩／查核流水線的工具（playwright 試玩腳本）",
+  "scripts": {
+    "playtest": "node playtest.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.50.0"
+  }
+}

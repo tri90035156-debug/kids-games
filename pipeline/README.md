@@ -1,0 +1,92 @@
+# 夜間自動流水線（給家長看的說明）
+
+每天清晨 05:00，Mac mini 上的 Claude Code 自己跑一輪：
+**研究（Sonnet）→ 查核（Opus）→ 建置（Opus）→ 試玩（Sonnet＋Playwright）→ 最後評審（Fable）→ 上傳**。
+隔天晚上再照評審的清單修正、優化；夠好了就建議你搬上首頁。新遊戲先放在 `lab/`（實驗室），首頁與四個正式遊戲不會被動到。
+
+## 一、Mac mini 第一次安裝（一步一步）
+
+1. 裝好 Homebrew、`git`、`node`、`python3`（沒有的話：`brew install git node python`）。
+2. 裝 Claude Code 並登入：
+   ```bash
+   curl -fsSL https://claude.ai/install.sh | bash
+   ```
+   然後在終端機打 `claude`，照畫面用你的帳號登入一次（之後無人值守就靠這次登入）。
+3. 把專案抓下來，並手動推一次讓 GitHub 登入存進鑰匙圈：
+   ```bash
+   git clone https://github.com/tri90035156-debug/kids-games.git ~/kids-games
+   cd ~/kids-games && git push
+   ```
+4. 一鍵安裝（會裝 Playwright、注音工具，並排每天清晨 05:00）：
+   ```bash
+   bash ~/kids-games/pipeline/install.sh
+   ```
+   想改時間：`bash pipeline/install.sh 23 00`。停掉：`bash pipeline/install.sh --uninstall`。
+5. 不讓 Mac mini 睡著：系統設定 → 能源 → 關掉自動睡眠；或照 install.sh 最後印出的 `pmset` 指令讓它每天 04:55 自動喚醒。
+6. 現在就試跑一次看看（不用等到清晨）：
+   ```bash
+   launchctl kickstart gui/$(id -u)/com.kidsgames.nightly
+   ```
+   看進度：`tail -f ~/kids-games/pipeline/logs/$(date +%F).log`。
+
+## 二、每天早上看什麼
+
+- **一句話版**：手機開 https://wanwan.tw/lab/ （網域還沒生效前是 https://tri90035156-debug.github.io/kids-games/lab/ ），每張卡片有狀態與評審的一句話。
+- **完整報告**：`pipeline/reports/latest.md`（GitHub 上直接看得到），第一段就是「給家長的三句話」。
+- **想陪孩子玩**：實驗室頁點進去就能玩。
+
+## 三、覺得夠好，搬上首頁（四步，照 `hub-and-deploy` 筆記）
+
+1. `git mv lab/xxx-game xxx-game`（搬到根目錄），把 `xxx-game/index.html` 裡回首頁的連結從 `../../` 改成 `../`。
+2. `hub/common.js` 的 `GAMES` 加一行。
+3. 根目錄 `index.html` 的 `ICON` 與 `ACC` 各加一個；`common.js` 的 `BUILD` 加一個門口小模型。
+4. 從 `lab/games.json` 移除那筆，`git push`。
+
+## 四、流水線怎麼運作
+
+| 檔案 | 做什麼 |
+|---|---|
+| `pipeline/NIGHTLY.md` | 總指揮（Fable）的任務書：流程、鐵律、閘門 |
+| `pipeline/PRINCIPLES.md` | 設計語彙＋12 條檢查原則＋升級階梯＋閘門 |
+| `.claude/agents/*.md` | 五個角色：scout（Sonnet）、verifier（Opus）、builder（Opus）、tester（Sonnet）、judge（Fable） |
+| `pipeline/playtest.mjs` | Playwright 試玩：每關手機／平板截圖、抓錯誤與橫向捲動 |
+| `pipeline/run_nightly.sh` | launchd 呼叫的腳本：pull → claude → 掃金鑰 → push → log |
+| `pipeline/install.sh`、`com.kidsgames.nightly.plist` | 安裝與排程（預設每天 05:00） |
+| `pipeline/state.json` | 今晚是「建新遊戲」還是「打磨」；目前在做哪一個 |
+| `pipeline/ideas/`、`pipeline/reports/` | 每晚的點子檔與報告（會上 GitHub） |
+| `pipeline/shots/`、`pipeline/logs/` | 截圖與 log（只留在 Mac mini） |
+| `lab/` | 實驗室：新遊戲與 `games.json` 清單 |
+
+**兩晚一循環**：第一晚建新遊戲 → 通過閘門推到實驗室；之後每晚只修評審挑出的「兩項＋阻擋」；12 項全部 ≥ 4 分（或打磨滿三晚）就建議上首頁，然後開始下一個新遊戲。
+
+## 五、安全設計
+
+- Claude 只拿到白名單指令，`rm`、`git push`、`git reset`、`curl`、`sudo` 一律擋掉；push 由外面的腳本做，推之前掃金鑰、確認只動到 `lab/` 與 `pipeline/`。
+- 不錄配音（VoAI 要錢）、不碰 `.env`、不改正式遊戲與首頁。
+- 每晚最多 3 小時，時間到強制結束；工作區不乾淨就不跑。
+- 用量：一晚大約是 Fable 總指揮＋Opus 建置 1～2 小時的用量。如果方案額度吃緊，`NIGHTLY_MODEL=opus` 可以把總指揮換成 Opus（在 plist 的 EnvironmentVariables 加一行）。
+
+## 六、本機先試試試玩腳本
+
+```bash
+cd pipeline && npm install && npx playwright install chromium && cd ..
+node pipeline/playtest.mjs --all --levels 3
+```
+
+## 七、接自訂網域（買好網域後做一次）
+
+網站叫「玩玩」，網域 `wanwan.tw`。GitHub Pages 本來就支援自訂網域，不用換主機：
+
+1. 在網域商的 DNS 設定加這幾筆（照抄）：
+   | 類型 | 名稱 | 值 |
+   |---|---|---|
+   | A | `@` | `185.199.108.153` |
+   | A | `@` | `185.199.109.153` |
+   | A | `@` | `185.199.110.153` |
+   | A | `@` | `185.199.111.153` |
+   | CNAME | `www` | `tri90035156-debug.github.io` |
+2. 專案根目錄的 `CNAME` 檔（內容一行 `wanwan.tw`）已經準備好，DNS 填完再 push 上去。
+3. GitHub 網頁 → repo `kids-games` → Settings → Pages → Custom domain 填 `wanwan.tw` → Save；等 DNS 檢查打勾後勾 **Enforce HTTPS**（通常 10 分鐘到 1 小時）。
+4. 之後網址就是 https://wanwan.tw/ ，實驗室是 https://wanwan.tw/lab/ 。舊網址會自動轉過來。
+
+注意：接了自訂網域後，網站從「網域根目錄」出，所有遊戲用的都是相對路徑，不用改程式。

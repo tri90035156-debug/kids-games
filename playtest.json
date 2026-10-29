@@ -1,0 +1,1 @@
+{ "urls": [ { "label": "day", "q": "?t=0.3&s=0" }, { "label": "night", "q": "?t=0.75&s=2" } ], "poke": false }

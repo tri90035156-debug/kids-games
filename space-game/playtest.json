@@ -1,0 +1,1 @@
+{ "urls": [ { "label": "intro", "q": "?fast=1" }, { "label": "world", "q": "?world&fast=1" }, { "label": "earth", "q": "?act=earth.c2&fast=1" }, { "label": "moon", "q": "?act=moon.c4&fast=1" } ], "poke": false }
