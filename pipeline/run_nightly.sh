@@ -45,7 +45,7 @@ MODEL="${NIGHTLY_MODEL:-fable}"
 MAX_HOURS="${NIGHTLY_MAX_HOURS:-3}"
 PROMPT="$(cat pipeline/NIGHTLY.md)"
 
-echo "--- claude 開始（model=$MODEL，上限 ${MAX_HOURS} 小時）"
+echo "--- claude 開始（model=${MODEL}，上限 ${MAX_HOURS} 小時）"
 # caffeinate：跑的時候不讓 Mac 睡著。後面的 watchdog 時間到就殺掉，避免卡一整夜。
 caffeinate -i "$CLAUDE" -p "$PROMPT" \
   --model "$MODEL" \
@@ -67,7 +67,7 @@ CPID=$!
 WPID=$!
 wait "$CPID"; RC=$?
 kill "$WPID" 2>/dev/null
-echo "--- claude 結束（exit $RC）"
+echo "--- claude 結束（exit ${RC}）"
 
 # 收尾：沒 commit 的殘留一律不推（但保留在硬碟給人看）
 if [ -n "$(git status --porcelain)" ]; then

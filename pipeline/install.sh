@@ -17,7 +17,7 @@ fi
 HOUR="${1:-5}"; MINUTE="${2:-0}"
 
 echo "1) 檢查工具"
-for t in git node npm python3; do command -v "$t" >/dev/null && echo "   ✔ $t" || { echo "   ✘ 缺 $t，請先安裝（建議 brew install $t）"; exit 1; }; done
+for t in git node npm python3; do command -v "$t" >/dev/null && echo "   ✔ $t" || { echo "   ✘ 缺 ${t}，請先安裝（建議 brew install ${t}）"; exit 1; }; done
 CLAUDE_BIN="$(command -v claude 2>/dev/null || true)"
 case "$CLAUDE_BIN" in alias*|"") CLAUDE_BIN="$(type -P claude 2>/dev/null || true)";; esac
 if [ -z "$CLAUDE_BIN" ]; then for c in "$HOME/.local/bin/claude" "$HOME/.claude/local/claude" /opt/homebrew/bin/claude /usr/local/bin/claude; do [ -x "$c" ] && { CLAUDE_BIN="$c"; break; }; done; fi
