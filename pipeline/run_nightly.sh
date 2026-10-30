@@ -33,7 +33,7 @@ command -v python3 >/dev/null || fail "找不到 python3"
 
 # 工作區要乾淨，才不會把半成品或別人的改動混進去。
 # 例外：昨晚沒做完、留在 lab/ 或 pipeline/ 的「未追蹤」檔案，搬到 pipeline/_abandoned/ 收著（不上線），今晚照跑。
-LEFT="$(git status --porcelain -uall | grep -E '^\?\? (lab/|pipeline/)' | cut -c4- || true)"
+LEFT="$(git -c core.quotePath=false status --porcelain -uall | grep -E '^\?\? (lab/|pipeline/)' | cut -c4- || true)"
 if [ -n "$LEFT" ]; then
   KEEP="pipeline/_abandoned/${DATE}-殘留"; mkdir -p "$KEEP"
   echo "昨晚的半成品搬到 ${KEEP}："
