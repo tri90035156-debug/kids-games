@@ -79,7 +79,7 @@
       const prog = [];
       const paint = () => { steps.innerHTML = prog.map(d => '<span class="st">' + A.arrow(d) + '</span>').join('') || '<span class="ph">？</span>'; };
       paint();
-      if (n === 0) { await say('c2.how'); say('c2.erase'); } else say('c2.next');
+      if (n === 0) { await say('c2.robot'); await say('c2.how'); say('c2.erase'); } else say('c2.next');
       const arrows = [...stage.querySelectorAll('.arr')];
       for (;;) {
         const targets = arrows.map(b => ({ el: b, keys: [b.dataset.d] }))
@@ -110,7 +110,7 @@
     }
     stage.querySelector('.pad').remove();
     await say('c2.done');
-    parent('第一批電子計算機出現在 1940 年代。傳統程式是人把每一步都寫清楚，電腦照做；這一關就是在「寫程式」。可以在家玩「機器人遊戲」：孩子當機器人，家長說「向前兩步、左轉」。');
+    parent('第一批電子計算機出現在 1940 年代。傳統程式是人把每一步都寫清楚，電腦照做；這一關就是在「寫程式」。機器人＝會動的身體＋當腦袋的電腦；AI 是讓電腦學習的方法，不一定有身體（手機、聊天的 AI 都沒有身體）。可以在家玩「機器人遊戲」：孩子當機器人，家長說「向前兩步、左轉」。');
     await next();
   }
 
@@ -462,12 +462,12 @@
   async function finale() {
     show();
     stage.innerHTML = '<div class="center"><div class="stamp">AI<br>學者</div><div class="chtitle">' + Z('fin.title') + '</div>' +
-      '<div class="stickers">' + [A.hammer(), A.robot(), A.ANIMALS.catOrange(), A.knob(), A.chatPhone(), A.book()].map(s => ring(s, 'md')).join('') + '</div>' +
+      '<div class="stickers">' + [A.hammer(), A.computer('happy'), A.ANIMALS.catOrange(), A.knob(), A.chatPhone(), A.book()].map(s => ring(s, 'md')).join('') + '</div>' +
       '<div class="parent"><b>給家長：</b>可以接著聊：①家裡哪些東西用到 AI（地圖導航、相簿搜尋「貓」、語音助理）？②哪些事情適合請 AI 幫忙，哪些應該自己想？③玩「下一個字」接龍，體驗 AI 怎麼說話。</div></div>';
     sfx('win');
     await say('fin.hi');
     await say('fin.task');
   }
 
-  G.run({ saveKey: 'ai-game-v1', stamp: 'AI', heroArt: A.robot(), chapters: [ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9, ch10], finale });
+  G.run({ saveKey: 'ai-game-v1', stamp: 'AI', heroArt: A.computer('happy'), chapters: [ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9, ch10], finale });
 })();
