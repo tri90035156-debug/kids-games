@@ -47,6 +47,9 @@ tester 跑 `node pipeline/playtest.mjs --all --levels 3 --out pipeline/shots/<�
 ### B. 看 `state.json` 決定今晚
 
 **phase = "build"（建新遊戲）**
+0. 先看 `pipeline/requests.md`（家長點題）：有「狀態：待做」的就用最上面那一個當今晚的題目，**跳過 scout**；
+   把那一段整段抄進 `pipeline/ideas/<日期>.md`，第 2 步的 verifier 只查核這一個（不用選），builder 照那段的需求建。
+   judge 寫完報告後，把 requests.md 那一題改成「狀態：已做 <日期> → lab/<slug>-game/」，跟著 commit。
 1. scout → 寫 `pipeline/ideas/<日期>.md`。
 2. verifier 讀該檔，查核並選一個，附來源，寫在同檔末尾「## 查核與選擇」。
 3. builder 建 `lab/<slug>-game/`（slug 英文小寫，例如 `weather-game`）。**新遊戲一律 3D 黏土＋物理**（家長 2026-10-30 的要求：像首頁那樣立體、有重量），不再做平面 SVG。

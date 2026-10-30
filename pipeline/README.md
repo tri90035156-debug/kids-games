@@ -43,6 +43,11 @@ bash <(curl -fsSL https://wanwan.tw/pipeline/bootstrap.sh)
 - **一句話版**：https://wanwan.tw/lab/ 每張卡片有狀態與評審的一句話。
 - **完整報告**：`pipeline/reports/latest.md`（GitHub 上直接看得到），第一段就是「給家長的三句話」。
 
+## 二之一、指定今晚要做什麼（家長點題）
+
+孩子有想學的主題，就寫進 `pipeline/requests.md`（照裡面的格式，狀態寫「待做」）再 `git push`。
+下一個「建新遊戲」的晚上會先做這一題、不另外找點子；做完狀態會自動改成「已做」。
+
 ## 三、不想要某個遊戲出現在首頁
 
 把 `hub/entries.json` 裡那一行（例如 `"water-game"`）刪掉、`git push` 就好；遊戲檔案與入口檔都還在，想放回來再加回那一行。
