@@ -106,6 +106,13 @@ if git diff "$BEFORE" "$AFTER" | grep -E '^\+' | grep -qiE 'sk-[A-Za-z0-9]{10,}|
   fail "新增的內容裡疑似有金鑰，不推。請人工檢查。"
 fi
 
+# 推之前先把 GitHub 上別人（通常是家長那台）新推的 commit 接到前面，才不會被拒絕
+git fetch -q origin main || fail "git fetch 失敗（網路？）"
+if ! git rebase -q origin/main; then
+  git rebase --abort 2>/dev/null
+  fail "GitHub 上有新的 commit 跟今晚的改動衝突，沒推。在 Mac mini 跑：cd ~/kids-games && git pull --rebase && git push"
+fi
+AFTER="$(git rev-parse HEAD)"
 git push origin HEAD || fail "git push 失敗（Mac mini 的 GitHub 登入可能過期）"
 echo "已推上線：$BEFORE -> $AFTER"
 echo "--- 給家長的報告："
