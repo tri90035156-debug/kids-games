@@ -36,7 +36,7 @@ command -v python3 >/dev/null || fail "找不到 python3"
 LEFT="$(git status --porcelain -uall | grep -E '^\?\? (lab/|pipeline/)' | cut -c4- || true)"
 if [ -n "$LEFT" ]; then
   KEEP="pipeline/_abandoned/${DATE}-殘留"; mkdir -p "$KEEP"
-  echo "昨晚的半成品搬到 $KEEP："
+  echo "昨晚的半成品搬到 ${KEEP}："
   while IFS= read -r f; do
     [ -n "$f" ] || continue
     echo "  $f"
