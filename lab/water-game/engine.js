@@ -192,11 +192,28 @@ window.G = (() => {
       if (p && p.catch) p.catch(() => { if (audioEl === a) quiet(); });
     });
   }
-  let lastKey = null;
+  let lastKey = null, tipT = 0;
   function say(key) {
+    clearTimeout(tipT); bubble.classList.remove('tip');
     lastKey = key;
     sayBox.hidden = false;
     bubble.innerHTML = '<span class="spk">' + speakerIcon + '</span><span class="bt">' + Z(key) + '</span>';
+    return speak(key);
+  }
+  // 答錯提示：沒有配音時也要看得到。泡泡暫時換成提示句（琥珀色），過一會兒換回這關的說明。
+  function tip(key) {
+    const e = TX[key];
+    if (!e) return Promise.resolve();
+    const back = lastKey;
+    clearTimeout(tipT);
+    sayBox.hidden = false;
+    sayBox.classList.remove('wg-faded');
+    bubble.classList.add('tip');
+    bubble.innerHTML = '<span class="spk">' + speakerIcon + '</span><span class="bt">' + Z(key) + '</span>';
+    tipT = setTimeout(() => {
+      bubble.classList.remove('tip');
+      if (back && lastKey === back) bubble.innerHTML = '<span class="spk">' + speakerIcon + '</span><span class="bt">' + Z(back) + '</span>';
+    }, FAST ? 30 : Math.max(1800, e.t.length * 220));
     return speak(key);
   }
   bubble.addEventListener('click', () => { if (lastKey) speak(lastKey); });
@@ -500,7 +517,7 @@ window.G = (() => {
 
   return {
     $, stage, foot, sayBox, S, save, sleep, shuffle, clamp, shake, ring, parent, esc,
-    Z, sfx, strike, hum, speak, say, stopVoice, waitAction, next, keyName,
+    Z, sfx, strike, hum, speak, say, tip, stopVoice, waitAction, next, keyName,
     dragPick, home, dropInto, holdLoop, track, onKeys, quiz, setDots,
     run: cfg => { SAVE_KEY = cfg.saveKey; load(); paintSnd(); return run0(cfg); },
   };

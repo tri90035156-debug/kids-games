@@ -3,7 +3,7 @@
 (() => {
   'use strict';
   const A = window.A, P = window.P;
-  const { $, stage, foot, sayBox, sleep, shuffle, shake, Z, speak, say, waitAction, next, dragPick, home, holdLoop, track, onKeys, clamp } = G;
+  const { $, stage, foot, sayBox, sleep, shuffle, shake, Z, speak, say, tip, waitAction, next, dragPick, home, holdLoop, track, onKeys, clamp } = G;
   const sfx = (n, v) => G.sfx(n, v);
   const note = (i, v) => G.note && G.note(i, v);
   const FAST = /[?&]fast=1/.test(location.search);
@@ -42,7 +42,7 @@
   }
   // 錯三次：手出來示範一次
   async function demo(el, motion = 'tap') {
-    speak('g.demo');
+    tip('g.demo');
     const h = handAt(el, motion);
     await sleep(FAST ? 60 : 1100);
     h.remove();
@@ -141,7 +141,7 @@
         if (i === right) break;
         miss++;
         shake(btns[i]); sfx('no');
-        speak(miss >= 2 ? 'g.no2' : 'c2.wrong');
+        tip(miss >= 2 ? 'g.no2' : 'c2.wrong');
         if (miss >= 2) btns[right].classList.add('wg-hint');
         if (miss >= 3) { await demo(btns[right]); break; }
       }
@@ -234,7 +234,7 @@
       if (t !== g) {
         home(items[i]); shake(basins[t]); sfx('no');
         miss[i]++;
-        speak(miss[i] >= 2 ? 'g.no2' : 'c4.wrong');
+        tip(miss[i] >= 2 ? 'g.no2' : 'c4.wrong');
         if (miss[i] >= 2) basins[g].classList.add('wg-hint');
         if (miss[i] < 3) continue;
         await sleep(300);
@@ -372,11 +372,11 @@
             done = true; offT(); offK(); offB.forEach(f => f());
             T = goal; apply(); res(); return;
           }
-          if (Math.abs(T - goal) <= 12) { speak('c6.near'); return; }
+          if (Math.abs(T - goal) <= 12) { tip('c6.near'); return; }
           // 前兩次只提示（好奇滑滑看不算錯），第三次起才算一次 miss
-          if (++tries <= 2) { speak('c6.near'); squash(flag); return; }
+          if (++tries <= 2) { tip('c6.wrong'); squash(flag); return; }
           miss++;
-          shake(flag); sfx('no'); speak('c6.wrong');
+          shake(flag); sfx('no'); tip('c6.wrong');
           if (miss >= 2) flag.classList.add('wg-hint');
           if (miss >= 3) {
             done = true; offT(); offK(); offB.forEach(f => f());
@@ -527,7 +527,7 @@
         if (pick === right) break;
         miss++;
         shake(cards[pick]); sfx('no');
-        speak(miss >= 2 ? 'g.no2' : 'c8.wrong');
+        tip(miss >= 2 ? 'g.no2' : 'c8.wrong');
         if (miss >= 2) cards[right].classList.add('wg-hint');
         if (miss >= 3) { await demo(cards[right]); pick = right; break; }
       }
@@ -584,7 +584,7 @@
         if (sits[i][2] !== a) {
           shake(aEls[a]); sfx('no');
           miss[i]++;
-          speak(miss[i] >= 2 ? 'g.no2' : 'c9.wrong');
+          tip(miss[i] >= 2 ? 'g.no2' : 'c9.wrong');
           if (miss[i] >= 2) aEls[sits[i][2]].classList.add('wg-hint');
           if (miss[i] < 3) return;
           await demo(aEls[sits[i][2]]);

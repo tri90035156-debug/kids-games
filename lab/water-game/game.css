@@ -45,6 +45,7 @@
 #say{transition:opacity .6s ease}
 #say.wg-faded{opacity:.5}
 #say.wg-faded:hover{opacity:1}
+#bubble.tip{background:#FFF6E6;box-shadow:0 0 0 4px rgba(242,163,58,.35);transition:background .2s,box-shadow .2s}
 
 /* ---------- 印章、結尾小卡 ---------- */
 .wg-seal{position:relative;width:132px;height:132px;border-radius:50%;background:var(--paper);display:grid;place-items:center;box-shadow:0 0 0 7px var(--goldsoft),var(--wg-soft);animation:wg-stamp .42s var(--wg-back) both;flex:none}
