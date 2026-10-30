@@ -11,11 +11,12 @@
 <link rel="stylesheet" href="hub/common.css">
 <style>
 /* 風格 E：黏土玩具世界。暖陽光、米白＋鼠尾草綠＋木頭色、圓圓的大頭小人、軟軟的影子。
-   小車用方向鍵／手指拖著開，撞到東西會倒、會響；四個方向各有一個木頭拱門，開進去就進遊戲。
+   小車用方向鍵／手指拖著開，撞到東西會倒、會響；每個遊戲是一個放在彩色黏土底座上的 3D 小物件（種子、機器人、缽、土星、水滴），開到它旁邊就進去；入口清單在 hub/entries.json，一個遊戲一個檔。
    刻意拿掉：黑描邊、金色小點、路上的虛線、旗子——畫面只留需要的。 */
 :root{ --sage:#6F9A72; --sage2:#A9C4A3; --wood:#D9B27A; --cream:#FFF8EE; --zy:#5D7B58; --maroon:#4F6B4A; --gold:#B9A684; --goldsoft:#EEF0DF; --line:#E6E2D6; --bg:#F7F0E4; --paper2:#FFFBF3 }
 body{background:var(--bg)}
 h1{color:#3B3430;font-size:clamp(22px,5.4vw,46px);white-space:nowrap}
+h1 .en{font-family:ui-rounded,"Nunito","Avenir Next",system-ui,sans-serif;font-weight:800;font-size:.46em;letter-spacing:.1em;color:var(--maroon);margin-left:.5em;vertical-align:.14em;opacity:.75}
 @media (hover:none){ #hint .keys{display:none} }   /* 觸控裝置不用顯示鍵帽 */
 #c{cursor:default}
 #hint{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);pointer-events:none;display:flex;align-items:center;gap:18px;padding:10px 20px;border-radius:999px;background:var(--paper2);border:1px solid var(--line);color:var(--maroon);box-shadow:0 0 0 4px var(--goldsoft);transition:opacity .4s}
@@ -23,11 +24,6 @@ h1{color:#3B3430;font-size:clamp(22px,5.4vw,46px);white-space:nowrap}
 #hint .keys .kc:first-child{grid-column:2}
 #hint .kc{font-size:16px;min-width:1.6em;height:1.6em}
 #hint svg{width:52px;height:36px}
-.hdr-r{display:flex;align-items:flex-start;gap:10px}
-#labBtn{text-decoration:none;gap:6px;padding:8px 14px 8px 12px}
-#labBtn svg{width:20px;height:20px}
-#labBtn .zy{font-size:.55em}
-@media (max-width:600px){#labBtn{padding:8px 12px}#labBtn span{display:none}}
 .pill.icon{padding:8px 12px}
 .pill.icon svg{width:22px;height:22px}
 /* 入口徽章：圓形圖示＋數字；名字只在靠近或選到時出現 */
@@ -64,10 +60,7 @@ h1{color:#3B3430;font-size:clamp(22px,5.4vw,46px);white-space:nowrap}
 <div id="ui">
   <header>
     <div><h1 id="title"></h1></div>
-    <div class="hdr-r">
-      <a class="pill" id="labBtn" href="lab/" title="實驗室：每晚新做出來的遊戲先放這裡"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 6h10M21 6v12L10 36c-1.5 2.6.4 6 3.5 6h21c3.1 0 5-3.4 3.5-6L27 18V6"/><path d="M15 30h18" /><circle cx="22" cy="35" r="1.6" fill="currentColor" stroke="none"/><circle cx="28" cy="37" r="1.3" fill="currentColor" stroke="none"/></svg><span id="labName"></span></a>
-      <button class="pill icon" id="sndBtn" aria-label="聲音開關"></button>
-    </div>
+    <button class="pill icon" id="sndBtn" aria-label="聲音開關"></button>
   </header>
 </div>
 <div id="sky" aria-hidden="true"><svg viewBox="0 -22 160 82"><path d="M10 54 A70 70 0 0 1 150 54" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 5" opacity=".5"/><circle id="skySun" cx="80" cy="54" r="9" fill="#F7C948"/><circle id="skyMoon" cx="80" cy="54" r="7" fill="#FFF4D6"/></svg></div>
@@ -78,17 +71,27 @@ h1{color:#3B3430;font-size:clamp(22px,5.4vw,46px);white-space:nowrap}
   <svg viewBox="0 0 48 32" aria-hidden="true"><path d="M20 26c-5-3-9-7-9-12 0-2 2-3 3-1l3 5V6c0-2 3-2 3 0v9c0-2 3-2 3 0v2c0-2 3-2 3 0v2c0-2 3-2 3 0v6c0 4-3 6-6 6h-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M34 8h8m0 0-3-3m3 3-3 3M14 8H6m0 0 3-3M6 8l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
 </div>
 <script src="vendor/three.min.js"></script>
-<script src="hub/common.js"></script>
+<script src="hub/common.js?v=20261030b"></script>
 <script>
-(() => {
+(async () => {
 'use strict';
-const { $, clamp, lerp, GAMES, Z, ac, SFX, KIND, wireSound, BUILD, toScreen, numberKeys, goTo } = HUB;
+const { $, clamp, lerp, GAMES, Z, ac, wireSound, toScreen, numberKeys } = HUB;
 $('#title').innerHTML = HUB.title(); wireSound($('#sndBtn'));
-$('#labName').innerHTML = Z('實驗室', ['ㄕˊ', 'ㄧㄢˋ', 'ㄕˋ']);
+
+// ---------- 入口清單：hub/entries.json 列順序，每個遊戲一個 hub/entries/<slug>.js（壞一個不影響其他） ----------
+async function loadEntries() {
+  let list = [];
+  try { list = await (await fetch('hub/entries.json', { cache: 'no-store' })).json(); } catch (e) { console.error('讀不到 hub/entries.json', e); }
+  for (const slug of list) {
+    await new Promise(res => { const sc = document.createElement('script'); sc.src = `hub/entries/${slug}.js`; sc.onload = res; sc.onerror = () => { console.error('入口檔載入失敗：' + slug); res(); }; document.head.appendChild(sc); });
+  }
+}
+await loadEntries();
+if (!GAMES.length) console.error('沒有任何入口可以顯示');
 
 // ---------- 色票：照參考圖（米白、鼠尾草綠、木頭、暖白） ----------
-const ACC = [0x4CB05A, 0x3C9BE0, 0xF2A33A, 0x8B6FD6];   // 種子綠、AI 藍、缽琥珀、太空紫
-const ACC_CSS = ['#4CB05A', '#3C9BE0', '#F2A33A', '#8B6FD6'];
+const ACC_CSS = GAMES.map(g => g.acc);                    // 每個入口自己的重點色（hub/entries/*.js）
+const ACC = ACC_CSS.map(c => parseInt(c.slice(1), 16));
 const P = { bg:0xF7F0E4, coral:0xF05A3C, yellow:0xF7C948, ground:0xF7EEDD, road:0xEEE2CC, cream:0xFFF8EE, wood:0xD9B27A, woodDark:0xB98E5A, sage:0x6F9A72, sage2:0xA9C4A3, leaf:0x8DB487, skin:0xF6D7C3, hair:0x3A2A24, cheek:0xF2A6A0, sky:0xBFD8E8, blue:0x7FB0C4, pink:0xE9B4B0 };
 const clay = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: .92, metalness: 0 }, o));
 const T = { ground: clay(P.ground), road: clay(P.road), cream: clay(P.cream), wood: clay(P.wood), woodDark: clay(P.woodDark), sage: clay(P.sage), sage2: clay(P.sage2), leaf: clay(P.leaf), skin: clay(P.skin), hair: clay(P.hair), cheek: clay(P.cheek), blue: clay(P.blue), pink: clay(P.pink), ink: clay(0x3B3430), coral: clay(P.coral), yellow: clay(P.yellow) };
@@ -115,18 +118,19 @@ const ground = new THREE.Mesh(new THREE.CircleGeometry(WORLD, 80), MT.ground); g
 const edge = new THREE.Mesh(new THREE.CylinderGeometry(WORLD, WORLD, 1.2, 80, 1, true), T.wood); edge.position.y = -.6; scene.add(edge);   // 桌子的側邊：木頭
 const road = new THREE.Mesh(new THREE.RingGeometry(9.0, 11.6, 96), MT.road); road.rotation.x = -Math.PI / 2; road.position.y = .01; road.receiveShadow = true; scene.add(road);
 
-// ---------- 四個拱門：木頭柱子＋綠色拱、門前一塊米白墊子、旁邊那個遊戲的模型 ----------
+// ---------- 入口：沒有門。每個遊戲是一個放大的 3D 黏土小物件，站在那個遊戲顏色的圓底座上，車子開到旁邊就進去 ----------
 const GATE_R = 16;
+const CTX = { THREE, M: HUB.M, C: HUB.C, mat: HUB.mat };
 const gates = GAMES.map((g, i) => {
   const a = i / GAMES.length * Math.PI * 2 - Math.PI / 2;
   const x = Math.cos(a) * GATE_R, z = Math.sin(a) * GATE_R;
   const grp = new THREE.Group(); grp.position.set(x, 0, z); grp.lookAt(0, 0, 0); scene.add(grp);
-  const arch = new THREE.Mesh(new THREE.TorusGeometry(2.6, .3, 12, 48, Math.PI), ACCM[i]); arch.position.y = 2.4; grp.add(arch);
-  [-2.6, 2.6].forEach(dx => { const post = new THREE.Mesh(new THREE.CylinderGeometry(.3, .34, 2.5, 14), T.wood); post.position.set(dx, 1.25, 0); grp.add(post); const cap = new THREE.Mesh(new THREE.SphereGeometry(.34, 14, 10), T.wood); cap.position.set(dx, 2.5, 0); grp.add(cap); });
-  const mat = new THREE.Mesh(new THREE.CircleGeometry(2.4, 36), T.cream); mat.rotation.x = -Math.PI / 2; mat.position.y = .02; mat.receiveShadow = true; grp.add(mat);
-  const glow = new THREE.Mesh(new THREE.RingGeometry(2.3, 3.2, 48), new THREE.MeshBasicMaterial({ color: ACC[i], transparent: true, opacity: .0, depthWrite: false })); glow.rotation.x = -Math.PI / 2; glow.position.y = .03; grp.add(glow);
-  const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.6, .4, 28), T.cream); ped.position.set(4.4, .2, -.8); grp.add(ped);
-  const model = BUILD[i](); model.position.set(4.4, .4, -.8); model.scale.setScalar(1.3); grp.add(model);
+  const mat = new THREE.Mesh(new THREE.CircleGeometry(2.9, 40), T.cream); mat.rotation.x = -Math.PI / 2; mat.position.y = .02; mat.receiveShadow = true; grp.add(mat);
+  const glow = new THREE.Mesh(new THREE.RingGeometry(2.8, 3.8, 48), new THREE.MeshBasicMaterial({ color: ACC[i], transparent: true, opacity: .0, depthWrite: false })); glow.rotation.x = -Math.PI / 2; glow.position.y = .03; grp.add(glow);
+  const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.1, .5, 36), ACCM[i]); ped.position.y = .25; grp.add(ped);
+  let model; try { model = g.build(CTX); } catch (e) { console.error('入口模型建不出來：' + g.dir, e); model = new THREE.Group(); }
+  if (!model || !model.isObject3D) model = new THREE.Group();
+  model.position.set(0, .5, 0); model.scale.setScalar(2.1); grp.add(model);
   shadowed(grp);
   return { grp, model, glow, x, z, excite: 0, near: 0, told: false };
 });
@@ -223,13 +227,7 @@ canvas.addEventListener('pointerup', stickUp); canvas.addEventListener('pointerc
 let hintShown = true; function hintOff() { if (hintShown) { hintShown = false; $('#hint').classList.add('off'); } }
 
 let autoTarget = null;
-const ICON = {
-  seed:  `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 40V22"/><path class="f" d="M24 30c-9 1-14-4-14-12 9-1 14 4 14 12z" fill="#D9E6D2"/><path class="f" d="M24 24c9 1 14-4 14-12-9-1-14 4-14 12z" fill="#D9E6D2"/><ellipse cx="24" cy="41" rx="9" ry="3"/></svg>`,
-  robot: `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect class="f" x="11" y="14" width="26" height="22" rx="5" fill="#D9E6D2"/><path d="M24 14V7m-3 0h6"/><circle cx="19" cy="24" r="2.2" fill="currentColor" stroke="none"/><circle cx="29" cy="24" r="2.2" fill="currentColor" stroke="none"/><path d="M19 31h10"/></svg>`,
-  bowl:  `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path class="f" d="M8 20h32c0 11-7 18-16 18S8 31 8 20z" fill="#D9E6D2"/><path d="M8 20c8-3 24-3 32 0"/><path d="M34 14l8-8" stroke-width="3.5"/><path d="M5 26c-2-2-2-6 0-8M43 30c2 2 2 6 0 8"/></svg>`,
-  space: `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle class="f" cx="24" cy="24" r="9" fill="#D9E6D2"/><path d="M12 20c-7 2-9 5-8 7 2 4 13 4 25 0s17-9 13-11c-1-1-4-1-7 0"/></svg>`,
-};
-$('#tags').innerHTML = GAMES.map((g, i) => `<a class="tag" data-i="${i}" href="${HUB.href(g)}" style="--acc:${ACC_CSS[i]}"><span class="badge">${ICON[KIND[i]]}<span class="kc">${i + 1}</span></span><span class="lab">${Z(g.name, g.zy)}</span></a>`).join('');
+$('#tags').innerHTML = GAMES.map((g, i) => `<a class="tag" data-i="${i}" href="${HUB.href(g)}" style="--acc:${ACC_CSS[i]}"><span class="badge">${g.icon || ''}<span class="kc">${i + 1}</span></span><span class="lab">${Z(g.name, g.zy)}</span></a>`).join('');
 const tags = [...document.querySelectorAll('.tag')];
 let autoSince = 0, lastPick = 0;
 function pickGate(i) {
@@ -315,15 +313,15 @@ function step(dt, t) {
     g.glow.material.opacity = lerp(g.glow.material.opacity, (.18 + .3 * g.near + night * .25) * breathe + (autoTarget === i ? .25 : 0), 1 - Math.pow(.02, dt));
     g.glow.scale.setScalar(1 + .06 * breathe + g.near * .1);
     if (g.near > .6 && !g.told) { g.told = true; SND.near(i); } if (g.near < .2) g.told = false;
-    g.model.position.y = .4 + Math.sin(t * 2 + i) * .06 + g.near * .3 + Math.sin(g.excite * Math.PI) * .8;
+    g.model.position.y = .5 + Math.sin(t * 2 + i) * .06 + g.near * .3 + Math.sin(g.excite * Math.PI) * .8;
     g.model.rotation.y = t * .3 + g.excite * 6;
-    g.model.userData.anim(t, g.excite);
-    const s = toScreen(g.grp, camera, 5.4);
+    if (g.model.userData.anim) { try { g.model.userData.anim(t, g.excite); } catch (e) { g.model.userData.anim = null; } }
+    const s = toScreen(g.grp, camera, 5.0);   // 模型頂端再高一點：徽章的底邊貼在這裡
     // 門不在畫面裡時，徽章沿著「畫面中心→門」的方向貼到邊緣，像指北針
-    const cx = innerWidth / 2, cy = innerHeight / 2, mx = cx - 70, my = cy - 140;
+    const cx = innerWidth / 2, cy = innerHeight / 2, mx = cx - 70, mTop = cy - 112, mBot = cy - 150;   // 徽章掛在點的上方，所以上邊界只要留徽章的高度
     let dx = s.x - cx, dy = s.y - cy; if (s.z > 1) { dx = -dx; dy = -dy; }
-    const k = Math.max(Math.abs(dx) / mx, Math.abs(dy) / my, 1); const px = cx + dx / k, py = cy + dy / k;
-    const tg = tags[i]; tg.style.transform = `translate(${px}px,${py}px) translate(-50%,-50%)`;
+    const k = Math.max(Math.abs(dx) / mx, dy < 0 ? -dy / mTop : dy / mBot, 1); const px = cx + dx / k, py = cy + dy / k;
+    const tg = tags[i]; tg.style.transform = `translate(${px}px,${py}px) translate(-50%,-100%)`;
     tg.classList.toggle('on', g.near > .5 || autoTarget === i);
     tg.classList.toggle('edge', k > 1);
   });

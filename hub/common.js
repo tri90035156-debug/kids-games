@@ -6,13 +6,18 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const C = { bg:0xFBF7F1, paper:0xFFFDF8, ink:0x2A2020, red:0xDB2E27, maroon:0x6C2024, gold:0xBD9558, goldsoft:0xF3E8D6, green:0x3F6B2E, leaf:0x7FA866, sea:0xA9D8E6, line:0xEADFD3 };
 
-// ---------- 遊戲清單：新遊戲做好就加一筆 ----------
-const GAMES = [
-  { dir:'seed-game',  name:'種子小偵探',  zy:['ㄓㄨㄥˇ','ㄗˇ','ㄒㄧㄠˇ','ㄓㄣ','ㄊㄢˋ'], sub:'種子從哪裡來' },
-  { dir:'ai-game',    name:'AI 從哪裡來', zy:[null,null,null,'ㄘㄨㄥˊ','ㄋㄚˇ','ㄌㄧˇ','ㄌㄞˊ'], sub:'電腦怎麼學會' },
-  { dir:'bowl-game',  name:'頌缽工坊',    zy:['ㄙㄨㄥˋ','ㄅㄛ','ㄍㄨㄥ','ㄈㄤ'], sub:'會唱歌的銅缽' },
-  { dir:'space-game', name:'太陽系大探險', zy:['ㄊㄞˋ','ㄧㄤˊ','ㄒㄧˋ','ㄉㄚˋ','ㄊㄢˋ','ㄒㄧㄢˇ'], sub:'八顆行星轉著看' },
-];
+// ---------- 遊戲清單：由 hub/entries/<slug>.js 自己註冊（順序照 hub/entries.json） ----------
+// 每個入口檔長這樣：HUB.register({ dir, name, zy, sub, acc:'#RRGGBB', icon:'<svg…>', build({THREE,M,C,mat}){…return group} })
+// build 回傳的 group 可帶 userData.anim(t, excite)，首頁每一幀會呼叫。
+const GAMES = [];
+const BUILD = [];
+function register(e) {
+  if (!e || !e.dir || !e.name) { console.error('HUB.register：缺 dir 或 name', e); return; }
+  if (GAMES.some(g => g.dir === e.dir)) return;
+  e.zy = e.zy || []; e.acc = e.acc || '#B9A684';
+  e.build = typeof e.build === 'function' ? e.build : () => new THREE.Group();
+  GAMES.push(e); BUILD.push(() => e.build({ THREE, M, C, mat }));
+}
 const ROOT = location.pathname.includes('/首頁草稿/') || location.pathname.includes('/%E9%A6%96%E9%A0%81%E8%8D%89%E7%A8%BF/') ? '../' : '';
 const href = g => ROOT + g.dir + '/';
 
@@ -85,50 +90,6 @@ function pedestal(r = 1.25) {
   const ring = new THREE.Mesh(new THREE.TorusGeometry(r + .07, .045, 12, 64), M.red); ring.rotation.x = Math.PI / 2; ring.position.y = .02; g.add(ring);
   return g;
 }
-function buildSeed() {
-  const g = new THREE.Group();
-  const seed = new THREE.Mesh(new THREE.SphereGeometry(.42, 24, 18), M.maroon); seed.scale.set(1, .8, .75); seed.position.y = .32; g.add(seed);
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(.06, .09, 1.3, 10), M.green); stem.position.y = 1.1; stem.rotation.z = .12; g.add(stem);
-  const leafGeo = new THREE.SphereGeometry(.5, 20, 12); leafGeo.scale(1, .22, .55);
-  const l1 = new THREE.Mesh(leafGeo, M.leaf); l1.position.set(-.5, 1.65, 0); l1.rotation.z = .5; g.add(l1);
-  const l2 = new THREE.Mesh(leafGeo, M.leaf); l2.position.set(.5, 1.75, 0); l2.rotation.z = -.5; g.add(l2);
-  const bud = new THREE.Mesh(new THREE.SphereGeometry(.12, 12, 10), M.green); bud.position.set(.08, 1.78, 0); g.add(bud);
-  g.userData.anim = (t, e) => { stem.rotation.z = .12 + Math.sin(t * 1.6) * .06 * (1 + e * 4); l1.rotation.z = .5 + Math.sin(t * 2.1) * .08; l2.rotation.z = -.5 - Math.sin(t * 1.9) * .08; };
-  return g;
-}
-function buildRobot() {
-  const g = new THREE.Group();
-  const head = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 1.1), M.paper); head.position.y = .95; g.add(head);
-  const face = new THREE.Mesh(new THREE.BoxGeometry(1.0, .7, .06), M.ink); face.position.set(0, 1.0, .57); g.add(face);
-  const eyes = [-.25, .25].map(x => { const e = new THREE.Mesh(new THREE.SphereGeometry(.09, 12, 10), new THREE.MeshStandardMaterial({ color: C.red, emissive: C.red, emissiveIntensity: .6 })); e.position.set(x, 1.05, .62); g.add(e); return e; });
-  const mouth = new THREE.Mesh(new THREE.BoxGeometry(.4, .05, .04), M.goldsoft); mouth.position.set(0, .8, .62); g.add(mouth);
-  const ant = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .5, 8), M.gold); ant.position.y = 1.8; g.add(ant);
-  const tip = new THREE.Mesh(new THREE.SphereGeometry(.1, 12, 10), M.red); tip.position.y = 2.08; g.add(tip);
-  const body = new THREE.Mesh(new THREE.BoxGeometry(.9, .4, .7), M.goldsoft); body.position.y = .2; g.add(body);
-  g.userData.anim = (t, e) => { const blink = (Math.sin(t * 3) > .96 || e > .5) ? .15 : 1; eyes.forEach(ey => ey.scale.y = blink); tip.position.y = 2.08 + Math.sin(t * 4) * .03; head.rotation.y = Math.sin(t * .7) * .12; };
-  return g;
-}
-function buildBowl() {
-  const g = new THREE.Group();
-  const pts = []; for (let i = 0; i <= 14; i++) { const a = i / 14; pts.push(new THREE.Vector2(.25 + Math.sin(a * Math.PI * .5) * .85, a * .95)); }
-  const bowl = new THREE.Mesh(new THREE.LatheGeometry(pts, 48), new THREE.MeshStandardMaterial({ color: C.gold, roughness: .35, metalness: .55, side: THREE.DoubleSide })); g.add(bowl);
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(.3, .32, .06, 24), M.maroon); base.position.y = .03; g.add(base);
-  const stick = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, 1.2, 10), M.maroon); stick.position.set(1.0, .95, .2); stick.rotation.z = -.9; g.add(stick);
-  const felt = new THREE.Mesh(new THREE.SphereGeometry(.13, 12, 10), M.red); felt.position.set(.55, 1.32, .2); g.add(felt);
-  g.userData.anim = (t, e) => { const s = 1 + Math.sin(t * 40) * .035 * e; bowl.scale.set(s, 1, 2 - s); stick.rotation.z = -.9 + Math.sin(t * 1.3) * .08 + e * .5; felt.position.x = .55 + e * .3; felt.position.y = 1.32 + e * .1; };
-  return g;
-}
-function buildSaturn() {
-  const g = new THREE.Group();
-  const p = new THREE.Mesh(new THREE.SphereGeometry(.72, 32, 24), M.gold); p.position.y = 1.1; g.add(p);
-  const band = new THREE.Mesh(new THREE.TorusGeometry(.72, .05, 8, 48), M.goldsoft); band.position.y = 1.1; band.rotation.x = Math.PI / 2; band.scale.set(1, 1, .3); g.add(band);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(.95, 1.45, 64), new THREE.MeshStandardMaterial({ color: C.goldsoft, roughness: .6, side: THREE.DoubleSide })); ring.position.y = 1.1; ring.rotation.x = Math.PI / 2 + .45; g.add(ring);
-  const ring2 = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.05, 64), new THREE.MeshStandardMaterial({ color: C.red, side: THREE.DoubleSide })); ring2.position.copy(ring.position); ring2.rotation.copy(ring.rotation); ring2.position.y += .001; g.add(ring2);
-  const moon = new THREE.Mesh(new THREE.SphereGeometry(.14, 14, 12), M.sea); g.add(moon);
-  g.userData.anim = (t, e) => { p.rotation.y = t * .4; ring.rotation.z = t * .15; ring2.rotation.z = -t * .15; const a = t * (1.2 + e * 6); moon.position.set(Math.cos(a) * 1.7, 1.1 + Math.sin(a) * .5, Math.sin(a) * 1.7); };
-  return g;
-}
-const BUILD = [buildSeed, buildRobot, buildBowl, buildSaturn];
 
 // 標準場景：米白底、淡霧、暖光
 function scene3d(canvas) {
@@ -190,6 +151,6 @@ function numberKeys(enter) {
 }
 function goTo(i, delay = 350) { SFX.go(); setTimeout(() => { location.href = href(GAMES[i]); }, delay); }
 
-return { $, clamp, lerp, C, M, GAMES, href, Z, ac, SFX, KIND, wireSound, pedestal, BUILD, scene3d, particles, toScreen, numberKeys, goTo,
-  title: () => Z('小朋友的遊戲', ['ㄒㄧㄠˇ','ㄆㄥˊ','ㄧㄡˇ','˙ㄉㄜ','ㄧㄡˊ','ㄒㄧˋ']) };
+return { $, clamp, lerp, C, M, mat, GAMES, register, href, Z, ac, SFX, KIND, wireSound, pedestal, BUILD, scene3d, particles, toScreen, numberKeys, goTo,
+  title: () => Z('玩玩', ['ㄨㄢˊ', 'ㄨㄢˊ']) + '<span class="en">wanwan</span>' };
 })();

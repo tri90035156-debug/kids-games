@@ -12,8 +12,8 @@
 ## 1. 鐵律
 
 1. 不碰任何 `.env`、不印任何金鑰、不錄配音（VoAI 要錢）。新遊戲一律「不配音、字母鍵驅動」。
-2. 不改四個正式遊戲（`seed-game`、`ai-game`、`bowl-game`、`space-game`）、不改根目錄 `index.html`、`hub/`、`vendor/`。
-   只在 `lab/` 與 `pipeline/` 寫東西。回歸測試發現正式遊戲壞掉 → 只記錄，不修。
+2. 不改四個正式遊戲（`seed-game`、`ai-game`、`bowl-game`、`space-game`）、不改根目錄 `index.html`、`hub/common.js`、`hub/common.css`、`vendor/`。
+   只在 `lab/`、`pipeline/`、首頁入口檔 `hub/entries/<slug>.js` 與清單 `hub/entries.json` 寫東西。回歸測試發現正式遊戲或首頁壞掉 → 只記錄，不修。
 3. 只借玩法機制，不拿別人的圖、音、角色、文字。全部自己畫 SVG、自己合成聲音。
 4. git：只 `git add` 今晚動到的 `lab/…`、`pipeline/…` 路徑，不用 `git add -A`。
    commit 訊息繁體中文、開頭「夜間：」。**不 push**（外面的腳本掃過金鑰才會 push）。
@@ -54,7 +54,10 @@ tester 跑 `node pipeline/playtest.mjs --all --levels 3 --out pipeline/shots/<�
 5. tester 回報壞掉 → 把發現交給 builder 修一次 → tester 再跑一次。
 6. judge 評審 → 寫 `pipeline/reports/<日期>.md`，更新 `lab/games.json` 的 `status`、`summary`、`updated`。
 7. 閘門（judge 決定）：
-   - 可推 lab → commit 遊戲＋報告＋state；`state.phase = "polish"`、`current = slug`、`polishNights = 0`、`attempt = 0`。
+   - **可上首頁**（沒有阻擋、第 8 條 ≥ 4、第 9 條 = 5）→ 叫 builder 做首頁入口（照 builder 任務書「首頁入口檔」：寫 `hub/entries/<slug>.js`、把 slug 加到 `hub/entries.json` 最後）。
+     然後 tester 跑 `node pipeline/playtest.mjs --dir . --levels 1 --out pipeline/shots/<日期>/home`：首頁要零錯誤、截圖裡看得到新的徽章。
+     首頁檢查過 → commit 遊戲＋入口檔＋報告＋state；`state.phase = "polish"`、`current = slug`、`polishNights = 0`、`attempt = 0`。
+     首頁檢查沒過 → 把 slug 從 `hub/entries.json` 拿掉（入口檔留著），遊戲只留在 lab，報告寫明原因，其餘照「可上首頁」處理。
    - 不可 → 只 commit 報告＋state，遊戲留著明晚修：`attempt + 1`，phase 留在 build、`current = slug`。
      `attempt` 已達 2 仍不過 → `mv lab/<slug>-game pipeline/_abandoned/<日期>-<slug>-game`，`current = null`，明晚選下一個。
    - 若 state 進來時 `current` 已有值（上次沒過）→ 跳過 scout／verifier，直接讓 builder 讀 latest.md 修。
@@ -65,7 +68,8 @@ tester 跑 `node pipeline/playtest.mjs --all --levels 3 --out pipeline/shots/<�
 3. builder 只改那兩項＋阻擋＋事實修正，不要大改、不要換玩法。
 4. tester → judge（judge 要給「改前／改後」截圖對照，改前的圖在上一晚的 shots 資料夾）。
 5. commit。`polishNights + 1`。
-   judge 說「可以建議上首頁」或 `polishNights ≥ 3` → 把 slug 加進 `done`、`phase = "build"`、`current = null`；否則留在 polish。
+   judge 說「打磨完成」（12 項全部 ≥ 4）或 `polishNights ≥ 3` → 把 slug 加進 `done`、`phase = "build"`、`current = null`；否則留在 polish。
+   打磨夜若動到了 `hub/entries/<slug>.js`（例如換模型），tester 一樣要跑一次首頁檢查。
 
 最後把 `pipeline/state.json` 寫回（`lastRun = <日期>`）。
 
@@ -77,5 +81,5 @@ tester 跑 `node pipeline/playtest.mjs --all --levels 3 --out pipeline/shots/<�
 
 ## 5. 結束前
 
-- `git status` 確認只有 `lab/`、`pipeline/` 下的檔案被 commit，沒有任何 `.env`。
+- `git status` 確認只有 `lab/`、`pipeline/`、`hub/entries/`、`hub/entries.json` 被 commit，沒有任何 `.env`。
 - 最後輸出三行：今晚 phase、遊戲 slug、閘門結果。

@@ -94,12 +94,13 @@ fi
 AFTER="$(git rev-parse HEAD)"
 if [ "$BEFORE" = "$AFTER" ]; then echo "今晚沒有新的 commit，不推。"; echo "=== $(date '+%F %T') 結束 ==="; exit 0; fi
 
-# 推之前：只允許 lab/ 與 pipeline/ 的變動；掃金鑰；.env 絕不能在裡面
+# 推之前：只允許 lab/、pipeline/、首頁入口檔（hub/entries/ 與 hub/entries.json）的變動；掃金鑰；.env 絕不能在裡面
 CHANGED="$(git diff --name-only "$BEFORE" "$AFTER")"
 echo "$CHANGED"
-if echo "$CHANGED" | grep -vE '^(lab/|pipeline/)' | grep -q .; then
-  echo "$CHANGED" | grep -vE '^(lab/|pipeline/)'
-  fail "有 lab/、pipeline/ 以外的檔案被改到，不推。請人工檢查後自己 push 或 reset。"
+ALLOW='^(lab/|pipeline/|hub/entries/|hub/entries\.json$)'
+if echo "$CHANGED" | grep -vE "$ALLOW" | grep -q .; then
+  echo "$CHANGED" | grep -vE "$ALLOW"
+  fail "有 lab/、pipeline/、hub/entries 以外的檔案被改到，不推。請人工檢查後自己 push 或 reset。"
 fi
 if echo "$CHANGED" | grep -vE '\.env\.example$' | grep -qE '(^|/)\.env($|\.)' ; then fail "有 .env 被 commit，不推！請人工處理。"; fi
 if git diff "$BEFORE" "$AFTER" | grep -E '^\+' | grep -qiE 'sk-[A-Za-z0-9]{10,}|api[_-]?key["'"'"' ]*[:=]["'"'"' ]*[A-Za-z0-9_-]{16,}|x-api-key:'; then

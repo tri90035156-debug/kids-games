@@ -2,7 +2,8 @@
 
 每天清晨 05:00，Mac mini 上的 Claude Code 自己跑一輪：
 **研究（Sonnet）→ 查核（Opus）→ 建置（Opus）→ 試玩（Sonnet＋Playwright）→ 最後評審（Fable）→ 上傳**。
-隔天晚上再照評審的清單修正、優化；夠好了就建議你搬上首頁。新遊戲先放在 `lab/`（實驗室），首頁與四個正式遊戲不會被動到。
+通過評審的新遊戲**當晚就出現在首頁**（https://wanwan.tw/ 多一個 3D 小物件入口），隔天晚上再照評審的清單修正、優化。
+遊戲檔案放在 `lab/`，首頁只多一個入口檔；首頁主程式與四個正式遊戲不會被動到。
 
 ## 一、Mac mini 第一次安裝（一步一步）
 
@@ -38,16 +39,14 @@ bash <(curl -fsSL https://wanwan.tw/pipeline/bootstrap.sh)
 
 ## 二、每天早上看什麼
 
-- **一句話版**：手機開 https://wanwan.tw/lab/ （網域還沒生效前是 https://tri90035156-debug.github.io/kids-games/lab/ ），每張卡片有狀態與評審的一句話。
+- **直接玩**：開 https://wanwan.tw/ ，首頁多了一個入口就是昨晚的新遊戲（數字鍵 5、6、7… 也能進）。
+- **一句話版**：https://wanwan.tw/lab/ 每張卡片有狀態與評審的一句話。
 - **完整報告**：`pipeline/reports/latest.md`（GitHub 上直接看得到），第一段就是「給家長的三句話」。
-- **想陪孩子玩**：實驗室頁點進去就能玩。
 
-## 三、覺得夠好，搬上首頁（四步，照 `hub-and-deploy` 筆記）
+## 三、不想要某個遊戲出現在首頁
 
-1. `git mv lab/xxx-game xxx-game`（搬到根目錄），把 `xxx-game/index.html` 裡回首頁的連結從 `../../` 改成 `../`。
-2. `hub/common.js` 的 `GAMES` 加一行。
-3. 根目錄 `index.html` 的 `ICON` 與 `ACC` 各加一個；`common.js` 的 `BUILD` 加一個門口小模型。
-4. 從 `lab/games.json` 移除那筆，`git push`。
+把 `hub/entries.json` 裡那一行（例如 `"water-game"`）刪掉、`git push` 就好；遊戲檔案與入口檔都還在，想放回來再加回那一行。
+首頁入口的順序＝這個檔案的順序＝數字鍵的順序。
 
 ## 四、流水線怎麼運作
 
@@ -62,14 +61,15 @@ bash <(curl -fsSL https://wanwan.tw/pipeline/bootstrap.sh)
 | `pipeline/state.json` | 今晚是「建新遊戲」還是「打磨」；目前在做哪一個 |
 | `pipeline/ideas/`、`pipeline/reports/` | 每晚的點子檔與報告（會上 GitHub） |
 | `pipeline/shots/`、`pipeline/logs/` | 截圖與 log（只留在 Mac mini） |
-| `lab/` | 實驗室：新遊戲與 `games.json` 清單 |
+| `lab/` | 新遊戲的檔案與 `games.json` 清單（實驗室頁） |
+| `hub/entries/`、`hub/entries.json` | 首頁入口：一個遊戲一個檔（名字、顏色、徽章、3D 小物件），清單決定順序 |
 
-**兩晚一循環**：第一晚建新遊戲 → 通過閘門推到實驗室；之後每晚只修評審挑出的「兩項＋阻擋」；12 項全部 ≥ 4 分（或打磨滿三晚）就建議上首頁，然後開始下一個新遊戲。
+**兩晚一循環**：第一晚建新遊戲 → 通過閘門當晚就上首頁；之後每晚只修評審挑出的「兩項＋阻擋」；12 項全部 ≥ 4 分（或打磨滿三晚）就算打磨完成，開始下一個新遊戲。
 
 ## 五、安全設計
 
-- Claude 只拿到白名單指令，`rm`、`git push`、`git reset`、`curl`、`sudo` 一律擋掉；push 由外面的腳本做，推之前掃金鑰、確認只動到 `lab/` 與 `pipeline/`。
-- 不錄配音（VoAI 要錢）、不碰 `.env`、不改正式遊戲與首頁。
+- Claude 只拿到白名單指令，`rm`、`git push`、`git reset`、`curl`、`sudo` 一律擋掉；push 由外面的腳本做，推之前掃金鑰、確認只動到 `lab/`、`pipeline/`、`hub/entries/`。
+- 不錄配音（VoAI 要錢）、不碰 `.env`、不改正式遊戲與首頁主程式（首頁只能多一個入口檔）。
 - 每晚最多 3 小時，時間到強制結束；工作區不乾淨就不跑。
 - 用量：一晚大約是 Fable 總指揮＋Opus 建置 1～2 小時的用量。如果方案額度吃緊，`NIGHTLY_MODEL=opus` 可以把總指揮換成 Opus（在 plist 的 EnvironmentVariables 加一行）。
 
