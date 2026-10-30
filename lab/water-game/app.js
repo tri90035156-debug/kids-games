@@ -8,7 +8,7 @@
   const note = (i, v) => G.note && G.note(i, v);
   const FAST = /[?&]fast=1/.test(location.search);
   const kc = k => '<kbd class="kc">' + k + '</kbd>';
-  const show = () => { sayBox.hidden = false; foot.innerHTML = ''; };
+  const show = () => { sayBox.hidden = false; sayBox.classList.remove('wg-faded'); foot.innerHTML = ''; };
   const all = s => [...stage.querySelectorAll(s)];
 
   // ---------- 提示：同色呼吸光暈；5 秒沒動作變亮；15 秒出現手勢示範 ----------
@@ -123,13 +123,16 @@
     show();
     const kinds = shuffle(['ice', 'water', 'steam']);
     const CFG = { ice: { solid: 1, energy: .1 }, water: { solid: 0, energy: .5 }, steam: { solid: 0, gas: 1, energy: .6 } };
-    stage.innerHTML = '<div class="wg-picks">' + kinds.map((k, i) => '<button class="wg-pick wg-touch" data-k="' + k + '">' + kc('ABC'[i]) +
+    stage.innerHTML = '<div class="wg-ask" id="ask"></div><div class="wg-picks">' + kinds.map((k, i) => '<button class="wg-pick wg-touch" data-k="' + k + '">' + kc('ABC'[i]) +
       '<span class="wg-lens"></span><span class="wg-name">' + Z('w.' + k) + '</span></button>').join('') + '</div>';
     const btns = all('.wg-pick');
     const sims = btns.map(b => P.create(b.querySelector('.wg-lens'), { n: 18, ...CFG[b.dataset.k] }));
     const QS = [['c2.q1', 'ice', 'c2.ice'], ['c2.q2', 'water', 'c2.water'], ['c2.q3', 'steam', 'c2.steam']];
+    const ASK = { ice: A.iceCube, water: A.drop, steam: A.evapIcon };
     for (const [q, k, msg] of QS) {
       say(q);
+      $('#ask').innerHTML = ASK[k]();        // 題目也畫成圖：不看字也知道現在要找哪一種
+      squash($('#ask'));
       const right = btns.findIndex(b => b.dataset.k === k);
       const stop = guide(btns.filter(b => !b.classList.contains('wg-done')));
       let miss = 0;
@@ -214,7 +217,7 @@
       ['rain', A.rain(), 1], ['soup', A.soup(false), 1], ['milk', A.milk(), 1]];
     const order = shuffle(ITEMS);
     stage.innerHTML = '<div class="wg-basins">' + [0, 1].map(b => '<div class="zone wg-basin" data-b="' + b + '">' + kc(b ? 'L' : 'J') +
-      '<div class="wg-bart">' + A.basin(b ? A.C.blue2 : A.C.ice) + '<div class="wg-pile"></div></div>' +
+      '<div class="wg-bart">' + A.basin(b ? A.C.blue2 : A.C.ice) + '<span class="wg-bi">' + (b ? A.drop() : A.iceCube()) + '</span><div class="wg-pile"></div></div>' +
       '<span class="wg-bl">' + Z(b ? 'c4.liquid' : 'c4.solid') + '</span><span class="wg-bs">' + Z(b ? 'c4.liquidS' : 'c4.solidS') + '</span></div>').join('') + '</div>' +
       '<div class="wg-items">' + order.map((it, i) => '<div class="drag wg-chip wg-touch" data-g="' + it[2] + '">' + kc('ABCDEF'[i]) +
         '<span class="wg-ci">' + it[1] + '</span><span class="wg-cn">' + Z('it.' + it[0]) + '</span></div>').join('') + '</div>';
@@ -246,8 +249,10 @@
       el.classList.add('gone'); home(el);
       items[i] = null; left--;
       sfx('land'); note(4 + n++);
+      if (n === 1) sayBox.classList.add('wg-faded');     // 會玩了：說明退到旁邊
     }
     sfx('ok');
+    sayBox.classList.remove('wg-faded');
     basins.forEach(b => b.classList.add('named'));
     await say('c4.done');
     await ritual();
@@ -358,7 +363,7 @@
     for (const [goal, gk, ok, flag] of goals) {
       say(gk);
       const stop = guide(flag);
-      let miss = 0;
+      let miss = 0, tries = 0;
       await new Promise(res => {
         let kt = 0, done = false;
         const check = async () => {
@@ -368,6 +373,8 @@
             T = goal; apply(); res(); return;
           }
           if (Math.abs(T - goal) <= 12) { speak('c6.near'); return; }
+          // 前兩次只提示（好奇滑滑看不算錯），第三次起才算一次 miss
+          if (++tries <= 2) { speak('c6.near'); squash(flag); return; }
           miss++;
           shake(flag); sfx('no'); speak('c6.wrong');
           if (miss >= 2) flag.classList.add('wg-hint');

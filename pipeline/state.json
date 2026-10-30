@@ -1,8 +1,8 @@
 {
-  "phase": "polish",
-  "current": "water-game",
+  "phase": "build",
+  "current": null,
   "attempt": 0,
   "polishNights": 0,
-  "done": [],
-  "lastRun": "2026-10-30"
+  "done": ["water-game"],
+  "lastRun": "2026-10-31"
 }

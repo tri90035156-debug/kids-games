@@ -1,4 +1,5 @@
 // 共用引擎（ai-game、bowl-game 用同一份，改的時候兩邊一起改）：
+// 這是 lab/water-game 自己的副本（2026-10-31 打磨：拖曳 lerp＋傾斜、內部音效改走 sound.js 的 G.sfx），不要回寫到正式遊戲。
 // 注音排版、VoAI 預錄配音、音效、點擊／鍵盤／拖拉／按住、選擇題、關卡流程。
 window.G = (() => {
   'use strict';
@@ -138,7 +139,9 @@ window.G = (() => {
       },
     };
   }
-  function sfx(name) {
+  // 遊戲自己有 sound.js（覆寫 G.sfx）時，引擎內部的「點一下」也走它，同一個動作只會有一種聲音。
+  const sfx = (name, v) => (window.G && G.sfx && G.sfx !== sfx ? G.sfx(name, v) : sfx0(name));
+  function sfx0(name) {
     if (!S.sound) return;
     try {
       ac();
@@ -246,9 +249,10 @@ window.G = (() => {
   // 放下之後東西停在放開的位置，呼叫端再決定 home(el)（彈回）或 dropInto(el, target)。
   function home(el) {
     el.classList.remove('dragging');
+    el.classList.add('homing');                 // 彈回的這 0.25 秒不要被 hover 晃動蓋掉
     el.style.transition = 'transform .25s ease';
     el.style.transform = '';
-    setTimeout(() => { el.style.transition = ''; }, 260);
+    setTimeout(() => { el.style.transition = ''; el.classList.remove('homing'); }, 260);
   }
   function dropInto(el, target) {
     el.classList.remove('dragging', 'picked');
@@ -259,9 +263,10 @@ window.G = (() => {
   function dragPick(items, targets, { itemKeys = [], targetKeys = [] } = {}) {
     return new Promise(res => {
       const offs = [];
-      let picked = -1;
+      let picked = -1, closed = false;
       const on = (el, ev, f, o) => { el.addEventListener(ev, f, o); offs.push(() => el.removeEventListener(ev, f, o)); };
       const finish = (i, t) => {
+        closed = true;                                   // 拖到一半被鍵盤完成：停掉 lerp 迴圈
         offs.forEach(f => f());
         items.forEach(el => el && el.classList.remove('picked'));
         targets.forEach(el => el && el.classList.remove('over', 'ready'));
@@ -283,21 +288,33 @@ window.G = (() => {
         on(el, 'pointerdown', ev => {
           if (ev.button > 0) return;
           ev.preventDefault();
-          st = { x: ev.clientX, y: ev.clientY, moved: false, id: ev.pointerId };
+          st = { x: ev.clientX, y: ev.clientY, moved: false, id: ev.pointerId, tx: 0, ty: 0, cx: 0, cy: 0, raf: 0 };
           try { el.setPointerCapture(ev.pointerId); } catch (e) { /* ignore */ }
         });
         on(el, 'pointermove', ev => {
           if (!st || ev.pointerId !== st.id) return;
           const dx = ev.clientX - st.x, dy = ev.clientY - st.y;
           if (!st.moved && Math.hypot(dx, dy) < 8) return;
-          if (!st.moved) { st.moved = true; el.classList.add('dragging'); el.style.transition = ''; }
-          el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+          st.tx = dx; st.ty = dy;
+          if (!st.moved) {
+            st.moved = true; el.classList.add('dragging'); el.style.transition = '';
+            // 跟手但慢一點點（lerp），往旁邊甩的時候帶一點傾斜，像有重量
+            const s0 = st;
+            const frame = () => {
+              if (st !== s0 || closed) return;
+              s0.cx += (s0.tx - s0.cx) * .3; s0.cy += (s0.ty - s0.cy) * .3;
+              el.style.transform = 'translate(' + s0.cx.toFixed(1) + 'px,' + s0.cy.toFixed(1) + 'px) rotate(' + clamp((s0.tx - s0.cx) * .15, -6, 6).toFixed(2) + 'deg)';
+              s0.raf = requestAnimationFrame(frame);
+            };
+            st.raf = requestAnimationFrame(frame);
+          }
           const t = hit(ev.clientX, ev.clientY);
           targets.forEach((tg, k) => tg && tg.classList.toggle('over', k === t));
         });
         const up = ev => {
           if (!st || ev.pointerId !== st.id) return;
           const was = st; st = null;
+          cancelAnimationFrame(was.raf);
           if (!was.moved) { pick(picked === i ? -1 : i); return; }
           const t = ev.type === 'pointercancel' ? -1 : hit(ev.clientX, ev.clientY);
           el.classList.remove('dragging');
