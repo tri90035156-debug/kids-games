@@ -23,6 +23,11 @@ h1{color:#3B3430;font-size:clamp(22px,5.4vw,46px);white-space:nowrap}
 #hint .keys .kc:first-child{grid-column:2}
 #hint .kc{font-size:16px;min-width:1.6em;height:1.6em}
 #hint svg{width:52px;height:36px}
+.hdr-r{display:flex;align-items:flex-start;gap:10px}
+#labBtn{text-decoration:none;gap:6px;padding:8px 14px 8px 12px}
+#labBtn svg{width:20px;height:20px}
+#labBtn .zy{font-size:.55em}
+@media (max-width:600px){#labBtn{padding:8px 12px}#labBtn span{display:none}}
 .pill.icon{padding:8px 12px}
 .pill.icon svg{width:22px;height:22px}
 /* 入口徽章：圓形圖示＋數字；名字只在靠近或選到時出現 */
@@ -59,7 +64,10 @@ h1{color:#3B3430;font-size:clamp(22px,5.4vw,46px);white-space:nowrap}
 <div id="ui">
   <header>
     <div><h1 id="title"></h1></div>
-    <button class="pill icon" id="sndBtn" aria-label="聲音開關"></button>
+    <div class="hdr-r">
+      <a class="pill" id="labBtn" href="lab/" title="實驗室：每晚新做出來的遊戲先放這裡"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 6h10M21 6v12L10 36c-1.5 2.6.4 6 3.5 6h21c3.1 0 5-3.4 3.5-6L27 18V6"/><path d="M15 30h18" /><circle cx="22" cy="35" r="1.6" fill="currentColor" stroke="none"/><circle cx="28" cy="37" r="1.3" fill="currentColor" stroke="none"/></svg><span id="labName"></span></a>
+      <button class="pill icon" id="sndBtn" aria-label="聲音開關"></button>
+    </div>
   </header>
 </div>
 <div id="sky" aria-hidden="true"><svg viewBox="0 -22 160 82"><path d="M10 54 A70 70 0 0 1 150 54" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 5" opacity=".5"/><circle id="skySun" cx="80" cy="54" r="9" fill="#F7C948"/><circle id="skyMoon" cx="80" cy="54" r="7" fill="#FFF4D6"/></svg></div>
@@ -76,6 +84,7 @@ h1{color:#3B3430;font-size:clamp(22px,5.4vw,46px);white-space:nowrap}
 'use strict';
 const { $, clamp, lerp, GAMES, Z, ac, SFX, KIND, wireSound, BUILD, toScreen, numberKeys, goTo } = HUB;
 $('#title').innerHTML = HUB.title(); wireSound($('#sndBtn'));
+$('#labName').innerHTML = Z('實驗室', ['ㄕˊ', 'ㄧㄢˋ', 'ㄕˋ']);
 
 // ---------- 色票：照參考圖（米白、鼠尾草綠、木頭、暖白） ----------
 const ACC = [0x4CB05A, 0x3C9BE0, 0xF2A33A, 0x8B6FD6];   // 種子綠、AI 藍、缽琥珀、太空紫
