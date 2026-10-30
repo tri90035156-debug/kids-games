@@ -101,7 +101,7 @@ if echo "$CHANGED" | grep -vE '^(lab/|pipeline/)' | grep -q .; then
   echo "$CHANGED" | grep -vE '^(lab/|pipeline/)'
   fail "有 lab/、pipeline/ 以外的檔案被改到，不推。請人工檢查後自己 push 或 reset。"
 fi
-if echo "$CHANGED" | grep -qE '(^|/)\.env($|\.)' ; then fail "有 .env 被 commit，不推！請人工處理。"; fi
+if echo "$CHANGED" | grep -vE '\.env\.example$' | grep -qE '(^|/)\.env($|\.)' ; then fail "有 .env 被 commit，不推！請人工處理。"; fi
 if git diff "$BEFORE" "$AFTER" | grep -E '^\+' | grep -qiE 'sk-[A-Za-z0-9]{10,}|api[_-]?key["'"'"' ]*[:=]["'"'"' ]*[A-Za-z0-9_-]{16,}|x-api-key:'; then
   fail "新增的內容裡疑似有金鑰，不推。請人工檢查。"
 fi

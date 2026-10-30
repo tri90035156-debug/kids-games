@@ -16,7 +16,7 @@ maxTurns: 150
 
 ## 建新遊戲（phase = build）
 
-1. 建 `lab/<slug>-game/`。從 `ai-game/` **只複製**這些檔：`engine.js`、`style.css`、`index.html`、`tools/build.py`、`tools/content.py`、`.gitignore`、`.env.example`。不複製 `audio/`、`.env`、`content.js`、`app.js`、`game.css`、`art.js`、`make_voice.py`。
+1. 建 `lab/<slug>-game/`。從 `ai-game/` **只複製**這些檔：`engine.js`、`style.css`、`index.html`、`tools/build.py`、`tools/content.py`、`.gitignore`。不複製 `audio/`、`.env`、`.env.example`、`content.js`、`app.js`、`game.css`、`art.js`、`make_voice.py`。
 2. `index.html`：改 title、description、saveKey 相關文字；保留 `#hubBtn` 連回 `../../`（lab 多一層）。
 3. `tools/content.py`：所有文字放 `UI`（不放 `SAY`，不配音）。句子短、注音自動產生，破音字用 `字[ㄓㄨˋ]` 手動指定（查核員的清單照改）。跑 `python3 tools/build.py` 產生 `content.js`，看印出的逐句注音，錯的回去手動指定。
 4. `art.js`：自己畫 SVG（圓潤幾何、無描邊、霧面配色），每個物件一個函式。不用 emoji、不用外部圖。
