@@ -31,7 +31,20 @@ command -v node >/dev/null || fail "找不到 node"
 command -v python3 >/dev/null || fail "找不到 python3"
 [ -d pipeline/node_modules/playwright ] || fail "pipeline/node_modules 沒有 playwright（先跑 pipeline/install.sh）"
 
-# 工作區要乾淨，才不會把半成品或別人的改動混進去
+# 工作區要乾淨，才不會把半成品或別人的改動混進去。
+# 例外：昨晚沒做完、留在 lab/ 或 pipeline/ 的「未追蹤」檔案，搬到 pipeline/_abandoned/ 收著（不上線），今晚照跑。
+LEFT="$(git status --porcelain -uall | grep -E '^\?\? (lab/|pipeline/)' | cut -c4- || true)"
+if [ -n "$LEFT" ]; then
+  KEEP="pipeline/_abandoned/${DATE}-殘留"; mkdir -p "$KEEP"
+  echo "昨晚的半成品搬到 $KEEP："
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    echo "  $f"
+    mkdir -p "$KEEP/$(dirname "$f")"
+    mv "$f" "$KEEP/$(dirname "$f")/"
+  done <<<"$LEFT"
+  find lab pipeline/ideas -mindepth 1 -type d -empty -delete 2>/dev/null || true
+fi
 if [ -n "$(git status --porcelain)" ]; then
   git status --porcelain | head -20
   fail "工作區不乾淨，今晚不跑（請先 commit 或還原）"
@@ -44,6 +57,10 @@ if [ "${NIGHTLY_DRY:-0}" = "1" ]; then echo "環境都在，DRY 模式結束"; e
 MODEL="${NIGHTLY_MODEL:-fable}"
 MAX_HOURS="${NIGHTLY_MAX_HOURS:-3}"
 PROMPT="$(cat pipeline/NIGHTLY.md)"
+
+# 無人模式下，claude 預設只等背景子代理 10 分鐘就砍掉（第一晚 builder 就是這樣被中斷的）。
+# 設成 0 = 一直等；真正的上限交給下面的 watchdog。
+export CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0
 
 echo "--- claude 開始（model=${MODEL}，上限 ${MAX_HOURS} 小時）"
 # caffeinate：跑的時候不讓 Mac 睡著。後面的 watchdog 時間到就殺掉，避免卡一整夜。
