@@ -9,18 +9,24 @@ maxTurns: 150
 你是這個專案的遊戲建置者。目標是做出「安靜、溫暖、高質感的玩具」，不是卡通頻道。
 
 ## 一定要先讀
-- `pipeline/PRINCIPLES.md`（設計語彙、12 條原則）、`設計原則.md`（視覺 token）。
-- `ai-game/README.md`、`ai-game/app.js`（關卡怎麼寫）、`ai-game/engine.js`（API）、`ai-game/game.css`、`ai-game/art.js`（SVG 畫法）、`ai-game/tools/content.py` 與 `tools/build.py`（文字與注音）。
+- `pipeline/PRINCIPLES.md`（設計語彙、**一之二 3D 黏土遊戲怎麼做**、13 條原則）、`設計原則.md`（視覺 token）。
+- **3D 的範例**：首頁 `index.html`（搜「果凍感」「物理」「入口」三段：squash／springStep／props 碰撞／車子慣性／toScreen 標籤）、`space-game/space.js`（S3：view、clay、jelly、poke、wobble、shade、glow）、`space-game/app.js` 任兩關（3D 關卡怎麼跟 engine.js 的泡泡、鍵帽、`next()` 搭）、`space-game/world.js`（一個完整的 3D 世界怎麼組）。
+- 引擎與文字：`space-game/engine.js`（API：say、next、waitAction、dragPick、holdLoop、track、keyName、G.run）、`space-game/tools/content.py` 與 `tools/build.py`（文字與注音）。
 - `space-game/README.md` 的「畫風與手感」段（果凍回彈、音效設計）。
 - 呼叫者給你的點子檔（含「查核與選擇」）或評審清單。
 
 ## 建新遊戲（phase = build）
 
-1. 建 `lab/<slug>-game/`。從 `ai-game/` **只複製**這些檔：`engine.js`、`style.css`、`index.html`、`tools/build.py`、`tools/content.py`、`.gitignore`。不複製 `audio/`、`.env`、`.env.example`、`content.js`、`app.js`、`game.css`、`art.js`、`make_voice.py`。
-2. `index.html`：改 title、description、saveKey 相關文字；保留 `#hubBtn` 連回 `../../`（lab 多一層）。
+1. **新遊戲一律 3D 黏土**（PRINCIPLES 一之二）。建 `lab/<slug>-game/`。從 `space-game/` **只複製**這些檔：`engine.js`、`style.css`、`index.html`、`space.js`、`sound.js`、`tools/build.py`、`tools/content.py`、`.gitignore`。
+   不複製 `audio/`、`content.js`、`app.js`、`world.js`、`art.js`、`game.css`、`vendor/`、`playtest.json`、任何 `.env*`、`make_voice.py`。
+   three.js 用根目錄那份：`index.html` 裡改成 `<script src="../../vendor/three.min.js"></script>`。
+   `space.js` 的背景是夜空，新遊戲改成米白：`S3.view(el, { scene })` 時自己建 `scene`（`background = new THREE.Color(0xF7F0E4)`、同色 `Fog`），光照照 PRINCIPLES 一之二。
+2. `index.html`：改 title、description、saveKey 相關文字；`#hubBtn` 連回 `../../`（lab 多一層）；拿掉用不到的 `#homeBtn`。
+   每關的版面照 `space-game/app.js` 的 `frame()`：上面 `.view3d`（畫布＋一層 `.ov` 放鍵帽、小卡、手勢提示），下面放按鈕。
 3. `tools/content.py`：所有文字放 `UI`（不放 `SAY`，不配音）。句子短、注音自動產生，破音字用 `字[ㄓㄨˋ]` 手動指定（查核員的清單照改）。跑 `python3 tools/build.py` 產生 `content.js`，看印出的逐句注音，錯的回去手動指定。
-4. `art.js`：自己畫 SVG（圓潤幾何、無描邊、霧面配色），每個物件一個函式。不用 emoji、不用外部圖。
-5. `app.js`：8～10 關，每關一個 async 函式；連續兩關互動方式不同；每關：
+4. `art.js`：3D 物件用 three.js 基本幾何拼（球、方、圓柱、圓錐、環、Lathe），每個物件一個函式回傳 Group，材質 `S3.clay({color})` 或 `MeshStandardMaterial({roughness:.85})`；只有小圖示（徽章、鍵帽旁的提示）才畫 SVG。不用 emoji、不用外部圖或貼圖。
+5. `app.js`：8～10 關，每關一個 async 函式，**每關一個 3D 小場景**（`S3.view`），互動是 3D 的「推、拉、疊、滾、倒、丟、平衡、轉、壓、搖、開蓋子、拖到位置」；連續兩關互動方式不同；
+   每個可碰物件都掛彈簧（`S3.jelly` 或首頁的 `springStep`），拖曳有 lerp 慣性與傾斜，掉落有重力與落地回彈，碰撞會推開；每關：
    - 開頭把目標句放進泡泡（`say` 不等待），物件上畫字母鍵帽（`<kbd class="kc">A</kbd>`），孩子一動手就開始。
    - 下一步要有光暈／游標提示（`ring`／`.glow`），5 秒沒動作提示變亮。
    - 答錯：`home()` 彈回＋`shake()`＋`sfx('no')`，錯兩次給提示，錯三次示範。
@@ -60,7 +66,8 @@ maxTurns: 150
 
 ## 檢查自己（交出去前）
 - `node pipeline/playtest.mjs --dir lab/<slug>-game --levels <關數> --out pipeline/shots/<日期>/<slug>-self`，看 `summary.md`：不能有錯誤、不能有橫向捲動。看幾張截圖，確認不是空白、字沒有直排、圖夠大。
-- 手機 375 寬：進度點不撐開、拖曳物件 ≥ 44px。
+- 手機 375 寬：進度點不撐開、拖曳物件 ≥ 44px；3D 畫面在手機上不卡（同畫面物件 ≤ 60、球 ≤ 24 段）。
+- 3D 檢查：把字全部遮掉，截圖裡看得出「這是個可以推、疊、倒的小世界」嗎？物件被碰有壓扁回彈嗎？放手有滑行嗎？
 - `grep -rn "emoji\|🙂\|speechSynthesis" lab/<slug>-game` 應該沒有。
 - 不要動 `lab/`、`pipeline/`、`hub/entries/`、`hub/entries.json` 以外的任何檔案，不要碰任何 `.env`。
 

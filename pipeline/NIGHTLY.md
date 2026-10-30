@@ -5,7 +5,7 @@
 
 ## 0. 先讀
 
-- `pipeline/PRINCIPLES.md`（設計語彙與 12 條原則）、`設計原則.md`（視覺）
+- `pipeline/PRINCIPLES.md`（設計語彙、**一之二 3D 黏土遊戲怎麼做**、13 條原則）、`設計原則.md`（視覺）
 - `pipeline/state.json`（今晚該做什麼）、`pipeline/reports/latest.md`（昨晚的結論，若有）
 - 今天日期用 `date +%F`，下面的「<日期>」都指它。
 
@@ -33,7 +33,7 @@
 | `verifier` | Opus | 查核事實、適齡、原創、技術可行，選一個；打磨夜查核現有內容的正確性 |
 | `builder` | Opus | 建置或修改 `lab/<slug>-game/` |
 | `tester` | Sonnet | 跑 `pipeline/playtest.mjs`，看截圖，回報壞掉、空白、橫向捲動、怪的地方 |
-| `judge` | Fable（新眼睛） | 照 12 條原則打分、列阻擋、挑明晚要改的兩項、寫報告 |
+| `judge` | Fable（新眼睛） | 照 13 條原則打分、列阻擋、挑明晚要改的兩項、寫報告 |
 
 子代理看不到你的對話：每次呼叫都把路徑、日期、上下文、要它輸出什麼寫清楚。
 
@@ -49,7 +49,7 @@ tester 跑 `node pipeline/playtest.mjs --all --levels 3 --out pipeline/shots/<�
 **phase = "build"（建新遊戲）**
 1. scout → 寫 `pipeline/ideas/<日期>.md`。
 2. verifier 讀該檔，查核並選一個，附來源，寫在同檔末尾「## 查核與選擇」。
-3. builder 建 `lab/<slug>-game/`（slug 英文小寫，例如 `weather-game`）。
+3. builder 建 `lab/<slug>-game/`（slug 英文小寫，例如 `weather-game`）。**新遊戲一律 3D 黏土＋物理**（家長 2026-10-30 的要求：像首頁那樣立體、有重量），不再做平面 SVG。
 4. tester 跑 `--dir lab/<slug>-game --levels <關數> --out pipeline/shots/<日期>/<slug>`。
 5. tester 回報壞掉 → 把發現交給 builder 修一次 → tester 再跑一次。
 6. judge 評審 → 寫 `pipeline/reports/<日期>.md`，更新 `lab/games.json` 的 `status`、`summary`、`updated`。
@@ -76,7 +76,7 @@ tester 跑 `node pipeline/playtest.mjs --all --levels 3 --out pipeline/shots/<�
 ## 4. 報告（judge 寫，你最後檢查有沒有）
 
 `pipeline/reports/<日期>.md`，第一段標題「給家長的三句話」：今晚做了什麼、哪裡最好、哪裡還不好或需要家長決定。
-之後依序：回歸結果、12 條評分表、阻擋、明晚兩項、截圖路徑、改動的檔案。
+之後依序：回歸結果、13 條評分表、阻擋、明晚兩項、截圖路徑、改動的檔案。
 複製一份成 `pipeline/reports/latest.md`。
 
 ## 5. 結束前

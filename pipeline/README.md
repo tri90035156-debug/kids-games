@@ -53,7 +53,7 @@ bash <(curl -fsSL https://wanwan.tw/pipeline/bootstrap.sh)
 | 檔案 | 做什麼 |
 |---|---|
 | `pipeline/NIGHTLY.md` | 總指揮（Fable）的任務書：流程、鐵律、閘門 |
-| `pipeline/PRINCIPLES.md` | 設計語彙＋12 條檢查原則＋升級階梯＋閘門 |
+| `pipeline/PRINCIPLES.md` | 設計語彙＋3D 黏土遊戲做法＋13 條檢查原則＋升級階梯＋閘門 |
 | `.claude/agents/*.md` | 五個角色：scout（Sonnet）、verifier（Opus）、builder（Opus）、tester（Sonnet）、judge（Fable） |
 | `pipeline/playtest.mjs` | Playwright 試玩：每關手機／平板截圖、抓錯誤與橫向捲動 |
 | `pipeline/run_nightly.sh` | launchd 呼叫的腳本：pull → claude → 掃金鑰 → push → log |
@@ -64,7 +64,9 @@ bash <(curl -fsSL https://wanwan.tw/pipeline/bootstrap.sh)
 | `lab/` | 新遊戲的檔案與 `games.json` 清單（實驗室頁） |
 | `hub/entries/`、`hub/entries.json` | 首頁入口：一個遊戲一個檔（名字、顏色、徽章、3D 小物件），清單決定順序 |
 
-**兩晚一循環**：第一晚建新遊戲 → 通過閘門當晚就上首頁；之後每晚只修評審挑出的「兩項＋阻擋」；12 項全部 ≥ 4 分（或打磨滿三晚）就算打磨完成，開始下一個新遊戲。
+**新遊戲長什麼樣**：2026-10-30 起一律像首頁那樣的 3D 黏土小世界（three.js）：東西有重量、會被推、會倒、會彈，孩子的手在推、疊、滾、倒，而不是點平面的圖。之前做的四個正式遊戲與《小水滴變變變》是平面的，維持原樣。
+
+**兩晚一循環**：第一晚建新遊戲 → 通過閘門當晚就上首頁；之後每晚只修評審挑出的「兩項＋阻擋」；13 項全部 ≥ 4 分（或打磨滿三晚）就算打磨完成，開始下一個新遊戲。
 
 ## 五、安全設計
 
