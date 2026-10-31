@@ -280,5 +280,56 @@ window.ART = (() => {
     return m;
   }
 
-  return { C, M, D, body, ghost, roll, gear, arms, eyes, computer, turntable, block, easel, shelf, halo, floorRing };
+  // ---------- 小挑戰的道具（都是木頭、紙和要搬的暖橘方塊，不多加顏色） ----------
+  // 走道：一條木板＋一格一格的紙踏板（每格寬 1，之後整組依版面縮放）；n＝最多幾格
+  // 每格底下一圈珊瑚紅＝發條轉了幾圈、會走到哪裡（只在前兩關亮）
+  function track(n, top) {
+    const g = new T.Group(), tiles = [], lit = [];
+    g.add(mesh(new T.BoxGeometry(n + 1.1, top, 1.2), M.wood, (n) / 2, top / 2, 0));
+    const tg = new T.BoxGeometry(.82, .03, .82), rg = new T.RingGeometry(.3, .4, 32);
+    for (let k = 0; k <= n; k++) {
+      const t = mesh(tg, M.paper, k, top + .012, 0); t.castShadow = false; g.add(t); tiles.push(t);
+      const r = new T.Mesh(rg, new T.MeshBasicMaterial({ color: C.coral, transparent: true, opacity: 0, depthWrite: false }));
+      r.rotation.x = -Math.PI / 2; r.position.set(k, top + .03, 0); g.add(r); lit.push(r);
+    }
+    // 走過頭會撞到的軟牆
+    const wall = new T.Group();
+    wall.add(mesh(new T.BoxGeometry(.2, .55, 1.25), M.woodDark, 0, top + .27, 0));
+    wall.add(mesh(new T.CylinderGeometry(.11, .11, 1.25, 12).rotateX(Math.PI / 2), M.wood, 0, top + .56, 0));
+    S3.jelly(wall); g.add(wall);
+    // 終點的旗子：木桿＋紙旗
+    const flag = new T.Group(), fj = new T.Group(); flag.add(fj);
+    fj.add(mesh(new T.CylinderGeometry(.035, .04, 1.5, 8), M.wood, 0, .75, 0));
+    const fs = new T.Shape(); fs.moveTo(0, 0); fs.lineTo(.62, -.2); fs.lineTo(0, -.42); fs.closePath();
+    const cloth = mesh(new T.ExtrudeGeometry(fs, { depth: .03, bevelEnabled: false }), M.paper, .03, 1.48, -.015);
+    fj.add(cloth); fj.add(mesh(new T.SphereGeometry(.06, 10, 8), M.woodDark, 0, 1.52, 0));
+    flag.userData.j = fj; flag.userData.cloth = cloth; S3.jelly(fj, 120, 5);
+    g.add(flag);
+    // 擋路的木樁（電腦那關要跳過去）
+    const stumps = [];
+    for (let k = 0; k < 3; k++) {
+      const s = new T.Group(), sj = new T.Group(); s.add(sj);
+      sj.add(mesh(new T.CylinderGeometry(.27, .31, .46, 18), M.woodDark, 0, .23, 0));
+      sj.add(mesh(new T.CylinderGeometry(.24, .24, .02, 18), M.wood, 0, .465, 0));
+      s.userData.j = sj; S3.jelly(sj); s.visible = false; g.add(s); stumps.push(s);
+    }
+    Object.assign(g.userData, { tiles, lit, wall, flag, stumps, top });
+    return g;
+  }
+  // 疊方塊的目標：一張紙墊
+  function pad() {
+    const g = new T.Group();
+    g.add(mesh(new T.CylinderGeometry(.5, .5, .03, 32), M.paper, 0, .015, 0));
+    const r = new T.Mesh(new T.RingGeometry(.42, .5, 40), new T.MeshBasicMaterial({ color: C.coral, transparent: true, opacity: .5, depthWrite: false }));
+    r.rotation.x = -Math.PI / 2; r.position.y = .035; g.add(r); g.userData.ring = r;
+    return g;
+  }
+  // 大小不同的方塊（同一個暖橘：和「燙金屬」方塊是同一種東西）
+  function cube(size) {
+    const m = mesh(new T.BoxGeometry(size, size, size), M.block);
+    const o = wrap(m); S3.jelly(m, 170, 7); o.userData.size = size; o.userData.mesh = m;
+    return o;
+  }
+
+  return { C, M, D, body, ghost, roll, gear, arms, eyes, computer, turntable, block, easel, shelf, halo, floorRing, track, pad, cube };
 })();

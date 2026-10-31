@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>做一台機器人</title>
-<meta name="description" content="給 6 歲小朋友的 3D 黏土玩具：按 R、O、B、O、T，或用手指把五個零件裝到機器人身上，聽機器人是怎麼一步一步被人做出來的。有配音、畫面幾乎沒有字。">
+<meta name="description" content="給 6 歲小朋友的 3D 黏土玩具：按 R、O、B、O、T，或用手指把五個零件裝到機器人身上；每裝一個零件就用它玩一個小挑戰（上發條走路、疊方塊、在黑暗裡找東西、排程式），聽機器人是怎麼一步一步被人做出來的。有配音、畫面幾乎沒有字。">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="game.css">
 </head>
@@ -13,6 +13,16 @@
   <div id="v3" class="rb-view"></div>
   <div id="ov" class="rb-ov" aria-hidden="true">
     <div id="strip" class="rb-strip"><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  <!-- 電腦那關的程式列：排好的步驟（點一下拿掉）＋兩種箭頭＋播放 -->
+  <div class="rb-prog" id="prog" hidden>
+    <div class="rb-slots" id="slots"></div>
+    <div class="rb-pal">
+      <button class="rb-cmd" id="cmdW" aria-label="走一步"></button>
+      <button class="rb-cmd" id="cmdJ" aria-label="跳過去"></button>
+      <button class="rb-cmd rb-go" id="cmdGo" aria-label="照程式走"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg><kbd class="kc rb-kc rb-pk">⏎</kbd></button>
+    </div>
   </div>
 
   <a class="rb-ico" id="hubBtn" href="../../" aria-label="回到所有遊戲"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14l2-5h11l3 5v4H3z"/><path d="M7 9V6h7l2 3"/><circle cx="7" cy="18" r="1.6" fill="currentColor"/><circle cx="17" cy="18" r="1.6" fill="currentColor"/></svg></a>
