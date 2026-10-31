@@ -1,153 +1,178 @@
-# 評審報告 2026-10-31：《小水滴變變變》（lab/water-game）
+# 評審報告 2026-11-01：《做一台機器人》（lab/robot-game）
 
-phase = polish（打磨第 1 晚，進來時 polishNights = 0）。今晚跑在**家長的 MacBook** 上，不是 Mac mini，所有子代理都用 **Opus**。
-評審沒有參與建置，照 `pipeline/PRINCIPLES.md` 13 條打分；water-game 是 3D 規定之前做的平面遊戲，家長同意維持平面，第 13 條照實打分，「打磨完成」只看前 12 條。
+phase = build（第 1 晚）。這是家長點題的**新風格樣板**：零中文、一個 3D 黏土場景、要配音、不注音、只有主畫面＋結尾重播。
+評審沒有參與建置，照 `pipeline/PRINCIPLES.md` 13 條打分；依 `pipeline/requests.md` 的例外與 `pipeline/ideas/2026-11-01.md` F 段：不因「沒注音、字少、只有一個主畫面」扣分，第 5 條改問「關掉聲音只看光懂不懂」、第 6 條改看「五步的手勢與裝上去的反應是不是各不相同」、第 10 條看結尾重播與自由玩。
 
 ## 給家長的三句話
 
-1. **今晚做了什麼**：這晚改在您的 MacBook 上、全部用 Opus 跑。打磨的是《小水滴變變變》，修了昨晚報告點名的兩項，也照查核清單改了 12 處文字和注音。昨晚的兩項：第 2、4 關加了圖示，不看字也知道要找什麼、要放哪裡；拖曳改成會慢半拍跟手，還會往甩的方向歪一點。12 處裡包括「衣服」「誰」「露出」的讀音，還有第 10 關那句雲，現在寫成「變冷變成小水珠，聚成雲」。另外，第 6 關前兩次沒滑到不算錯；第 7 關擦過的鍵帽改成縮小加打勾，不再變淡。改前改後各 22 個畫面零錯誤；首頁和四個正式遊戲回歸 44 個畫面全部正常。
-2. **哪裡最好**：內容現在經得起追問。每張「給家長」小卡都有數字和來源，破音字我逐字掃過，沒有發現錯的（只有「哪一個」的「個」想請查核員再確認）。音效也統一了：「點一下」只剩一種木頭聲，成功是往上走的三個音。前 12 條全部 ≥ 4 分，所以**打磨完成：是**，流水線可以開始做下一個新遊戲。
-3. **哪裡還不好／需要家長決定**：孩子答錯時，「它會流動嗎？再想想」這類提示句其實沒有出現在畫面上，也沒有聲音，孩子只看到東西搖一下。這是原本就有的問題，不影響玩完，但很可惜。另外，拖曳還缺「放手滑一下」和「盆子被碰到會動」。照規則接下來要做新遊戲；**要不要先花一晚把答錯提示修好，請您決定**。它會出現在每個用同一份引擎的遊戲裡，新遊戲起手時也應該一起帶上。
+1. **今晚做了什麼**：新風格樣板第一晚建好了。一個 3D 黏土小世界：轉台上一台奶油色機器人、前面一條木架子放五個珊瑚紅零件、左邊一個小畫架。按 R、O、B、O、T，或點、或用手指把發光的零件拖到機器人身上，喀一聲卡進去，架子正面的四線格自己一筆一筆寫出那個字母（英文聲音唸），接著中文旁白講那一步的歷史；五個裝好，機器人散開再一個一個裝回去，把故事重講一遍，最後揮手唸「Robot.」，之後可以點任何零件重聽。畫面上一個中文字都沒有。配音中文 15 句 419 字（VoAI 雅琪）、英文 5 句 14 字元（ElevenLabs），今晚由外面的腳本自動錄（您已同意點數）。試玩 10 個畫面零錯誤、零橫向捲動；互動測試 a～f 全過；回歸 44 個畫面 43 ok（兩個偶發都在 bowl-game，見「回歸測試」）。
+2. **哪裡最像您要的**：乾淨。畫面只剩機器人、架子、畫架，三種顏色各有意思（身體奶油、您裝的零件珊瑚紅、馬達和燈天藍），沒有卡片、泡泡、進度點、按鈕列。每一步裝上去都有「那句話的畫面」：齒輪轉三圈身體才變實體、方塊掉下來手臂舉起再放下、眼睛亮起來之後一直跟著手指看、最後全身一起動。轉過去看，背後有一支會跟著齒輪轉的發條鑰匙。內容 5 分：b 那句照查核改成「幫人搬很燙的金屬」，「給家長」和查核員定稿一字不差。
+3. **哪裡還不好／需要您決定**：（a）`end.8`「……英文叫做 robot。」維持您的原稿，但後面緊接英文母語的「Robot.」，會唸兩次 robot，而且中文聲音唸英文常常怪——要不要改成「英文叫做——」直接接英文聲音，請您決定（改 5 個字母）。（b）錄好後請聽一次：「齒輪**轉**一轉」要唸 ㄓㄨㄢˋ；「腦袋」「力氣」「本事」要輕聲。（c）風格要不要定案：如果定案，明晚我建議先改兩項——「五步的手勢各不相同」（現在五步手都做同一件事，只有反應不同；改法會在「一個規則」上多加一拍，需要您點頭）和「開場畫面上半空、手機零件偏小」。小瑕疵：手機 ⓘ 面板上方有一塊淡色方塊、落點光圈會透過身體看到、夾子夾方塊不太準。
 
 ## 回歸測試
 
-`pipeline/shots/2026-10-31/regress/summary.md`：首頁（日／夜）、seed-game、ai-game、bowl-game、space-game、lab/water-game，手機＋平板 **44 / 44 ok**，沒有 console error、沒有橫向捲動。
+`pipeline/shots/2026-11-01/regress/summary.md`：首頁（日／夜）、seed-game、ai-game、bowl-game、space-game、lab/water-game，手機＋平板 **43 / 44 ok**。
 
-- 首頁入口：`regress/hub/tablet-day.png`、`regress/hub/mobile-night.png` 都看得到水滴入口（編號 5），`hub/entries.json` 已含 `water-game`，`hub/entries/water-game.js` 存在。今晚沒有動首頁。
-- space-game 的 world 畫面載入 2,063／2,470 ms，和昨晚一樣是全站最慢（沒超過 3 秒門檻），維持記錄就好。
-- 正式四個遊戲沒有任何檔案被改（`git status` 只有 `lab/water-game/` 六個檔和 `pipeline/ideas/2026-10-31-polish-check.md`）。
+- **bowl-game 手機 start**：一個音檔「載入失敗」（`audio/3e3309183576.mp3`）。檔案其實存在，應是測試伺服器偶發中斷。
+- **bowl-game 手機 ch1**：一次橫向捲動。昨晚同一個畫面 44/44 沒有，疑偶發。
+- 以上兩個是正式遊戲，照規則**只記錄不修**，請家長看一眼真機；明晚回歸若再出現就不是偶發。
+- 首頁：5 個入口徽章都在（seed、ai、bowl、space、water）。**robot-game 的入口還沒做**：`hub/entries.json` 只有 5 筆、`hub/entries/` 沒有 `robot-game.js`。閘門判 home 之後要補（見「閘門」）。
+- 正式四個遊戲與首頁沒有任何檔案被改（`git status`：只有 `lab/games.json` 修改、`lab/robot-game/` 與 `pipeline/ideas/2026-11-01.md` 新增）。
 
-## 自己玩一遍：每關的手在做什麼
+## 自己玩一遍：每一步的手在做什麼
 
-| 關 | 動作 | 鍵盤 | 和前一關不同？ | 今晚的變化 |
-|---|---|---|---|---|
-| 1 | 按住加熱，冰塊塌成一灘水 | 按住 H | — | 無 |
-| 2 | 看題目圖示，點三個放大鏡 | A B C | 是 | 新增題目圖示（`app.js` `ch2` 的 `#ask`，每題換圖＋squash） |
-| 3 | 按住「變冷」，再把冰塊拖進杯子 | 按住 C、F | 是 | 按鈕字「冷卻」→「變冷」；拖曳有 lerp＋傾斜 |
-| 4 | 拖放分類到兩個盆子 | A～F、J L | 是 | 盆子加冰塊／水滴圖示；第一次拖對後說明框淡成 0.5 |
-| 5 | 手指繞圈轉旋鈕 | K | 是 | 無 |
-| 6 | 左右拖溫度條，停在 0 與 100 | A D ← → | 是 | 前兩次沒對準只 squash 小旗、不算錯；玉山說明字不再直排 |
-| 7 | 畫線擦霧 | A S D F | 是 | 擦過的鍵帽縮小＋打勾 |
-| 8 | 依序點四張冰棒圖 | A～D | 是 | 無 |
-| 9 | 從左拖線到右 | A～E、J K L | 是 | 「衣服」「涼涼的鏡子」文字 |
-| 10 | 節奏敲亮起的點，三圈 | S U R | 是 | 「變冷變成小水珠，聚成雲」 |
+讀 `app.js` 的 `install`（386～404）、`ACT`（313～361）、指標事件（555～641）、鍵盤（654～673）。
 
-九種動作，相鄰兩關不重複，鍵盤每關都有對應，達標。
+| 步 | 零件 | 手怎麼動（三條路） | 落點 | 裝好的反應 | 和前一步不同？ |
+|---|---|---|---|---|---|
+| r | 一捲設計圖 | 按 R／點發光的零件／拖到轉台上的光圈 | 轉台（再跳上畫架） | 紙攤開（outBack）、轉台上浮出 .26 透明的機器人輪廓（`ACT[0]`） | — |
+| o | 齒輪 | 同上（按 O／點／拖到胸口光圈） | 胸口圓窗 | 齒輪轉 3 圈、背後發條鑰匙跟著轉、身體從輪廓淡入成實體（`ACT[1]`） | 手：否；反應：是 |
+| b | 一對手臂（天藍馬達） | 同上（按 B／點／拖到肩膀兩個光圈） | 兩肩 | 方塊掉下來（重力＋落地壓扁 `dropBlock`）、彎腰把方塊舉起再放下（`ACT[2]`） | 手：否；反應：是 |
+| o | 兩顆眼睛 | 同上 | 兩個眼窩 | 眼睛亮起、眨一下，之後一直跟著手指／滑鼠看，放開 1.4 秒後自己東張西望（726～763） | 手：否；反應：是 |
+| t | 小電腦 | 同上（按 T） | 頭頂插槽 | 燈亮、齒輪轉、揮手、眨兩下＝全身一起動（`ACT[4]`） | 手：否；反應：是 |
+| 隨時 | 轉台 | 在空白處左右拖＝轉（放手滑行），← → 鍵 | — | 看到背後的發條鑰匙；裝零件時自己轉回正面 | 是（轉） |
+| 結尾後 | 任何零件 | 點一下／按字母 | — | 重唸字母＋那一步的句子＋那一步的動作 | 是（點） |
+
+整個遊戲的手勢：**拖到位置、點、按鍵、轉（拖空白處）**，加上眼睛跟著手指這個被動互動。五步的**反應**五種各不相同，做得很好；但五步的**手勢**完全一樣（拿零件→放到光圈），連續兩步不重複這一條在五步裡沒有達成。這是第 6 條只給 3 分的原因。
+
+## 對照總指揮的優化建議 A～F
+
+| 條 | 做到？ | 證據 |
+|---|---|---|
+| A-1 架子＝四線格＝進度 | 是 | `#strip` 用 `toScreen` 貼在架子正面（`app.js` 833～843），字母是自畫 SVG path＋`stroke-dasharray` 筆順（22～27、268～279） |
+| A-2 主畫面零中文 | 是 | `index.html` 只有線條圖示；`content.py` `UI = {}`；沒有用 `say()` |
+| A-3 r＝設計圖→畫架→輪廓 | 是 | `ACT[0]`；`art.js` `ghost()` 重用幾何、`depthWrite:false` |
+| A-4 五個零件的反應、眼睛跟手指 | 是 | 上表；齒輪是一顆 `ExtrudeGeometry`（`art.js` 74～87） |
+| A-5 三種顏色 | 是 | `art.js` `C`：cream／coral `#F05A3C`／sky；沒有彩紙、印章、繼續按鈕 |
+| B-6 三條路、只有當前零件發光、錯＝晃＋低木魚 | 是 | `tap`／`keydown`／`dropPart`；`nudge()`（425）；`glowOn` |
+| B-7 轉台拖＝轉、慣性、← →、自己轉回正面、發條鑰匙 | 是 | 736～746；`mobile-d-rotated.png` 看得到鑰匙 |
+| B-8 第一次觸碰＝開始 | 是 | `firstTouch()`（523～531）；直接拖設計圖也行 |
+| C-9 一次一句、卡進去就換話題、畫面不鎖 | 大致 | `install` 用 `epoch` 中斷舊流程；但 `fadeVoice(200)` 之後 `speak()` 立刻 `stopVoice()`，**200ms 淡出實際上沒發生**（`engine.js` 207 行），是直接切 |
+| C-10／11／12 沒音檔等字數、結尾切 8 句、英文 5 句 | 是 | `engine.js` 214～219；`content.py` `end.1`～`end.8`、`en.*` 共 14 字元 |
+| C-13 配音稿小修 | 改用查核員版本 | `step.b`「幫人搬很燙的金屬」 |
+| C-14 不帶到 AI | 是 | — |
+| C-15 合成音、齒輪不出聲 | 是 | `SFX`（169～179）；`spinGear` 沒有聲音 |
+| D-16 結尾後留下來、⟲ | 是 | `goFree()`、`replay()`、`#againBtn` |
+| D-17 ⓘ 給家長、`overflow-wrap:anywhere` | 是 | `index.html` 26～38；`game.css` 48～56；`tablet-c-info.png` 沒超出邊 |
+| E-18～22 單場景、localStorage、測試網址、手機版面、效能上限、事實給查核員 | 是 | `robot-v1`；`playtest.json`；`applyLayout(portrait)`；57 個 mesh（我用 `__robot.meshes()` 量的）；README「給家長」 |
+
+查核員第 4 節的技術提醒也都有做：Cmd+R 不算 R（655）、O 只對下一個沒裝的 o（663）、點與拖用 8px 分（575）、共用一個 `<audio>` 在第一次觸碰解鎖（`engine.js` 164～179）、`?step=N` 不重播動畫（`placeInstant`）。
+
+## 正確性
+
+- `tools/content.py` 的 `SAY` 逐句對過查核表：`intro.1/2`、`step.r`、`step.o1`、`step.o2`、`end.1`～`end.6` 照家長原稿；`step.b`、`step.t`、`end.7` 照查核員「一定要改／建議改」的版本；`end.8` 維持原稿（總指揮決定，留給家長）。`narration.json` 20 句（15 中＋5 英），我重算字數：中文 419、英文 14，和建置者回報一致。
+- README「給家長」與 `index.html` ⓘ 面板 = 查核員第 5 節定稿，逐行比對全部相同（含 b 行用「有力氣的手臂」避開液壓／馬達打架）。
+- 會被問倒的簡化：查核員兩個問倒點（Unimate 不是馬達手臂、電腦不是最後才有）都已經在配音稿和「給家長」處理掉。`end.4`「你裝上馬達，它的手臂有了力氣」講的是孩子這一台，不是 Unimate，可以。
+- 注音：畫面不顯示，`content.js` 裡的注音只是 build.py 的副產品，錄音用的是純文字（`narration.json` 只有 `text`）。所以破音字只能靠耳朵：「轉」「袋」「氣」「事」四處要家長錄好後聽（README 已寫）。
+- 適齡：散開是輕輕彈回架子（`disassemble` 用 `flyTo` 弧線＋`poke`），不是爆炸；眼睛是嵌在圓頭裡的兩顆圓鏡頭，不是望遠鏡；沒有提 R.U.R. 劇情。
 
 ## 評分（1～5；3＝普通）
 
 | # | 原則 | 分 | 證據 |
 |---|---|---|---|
-| 1 | 互動戲 | 4（昨 3） | `game.css` `.wg-touch:hover` 改成 `wg-sway` 晃一下（-2°→1.5°→0），有光暈的物件晃動時光暈照樣呼吸（`.wg-touch.wg-glow:hover` 兩個動畫並存）；拖曳有慣性（見第 4 條）。升了一階到「拖曳慣性」。不到 5 的原因：「環境會回應」還沒做。卡片拖到盆子上方，盆子只變色（`style.css` `.zone.over`），不會動；瓶子、鍋子、海、山這些場景物件碰了也沒反應。 |
-| 2 | 美感 | 4 | 新圖示做法和印章一致，都是紙底圓＋金邊＋軟影（`tablet-ch4.png`、`mobile-ch2.png` 改後），配色沒有變多。扣分：平板第 2、4、7 關上下各空 150～270px（`water-after/.../tablet-ch2.png`）；題目圖示平板只有 96px，比放大鏡小很多；`c10.u` 變長，手機泡泡變成四行（`scratchpad/shots/mobile-ch10-u.png`），而且第 10 關下半畫面仍是空的（`game.css` 手機 `.wg-cycle{margin-bottom:auto}`）；手機頂部進度點貼著「首頁」按鈕（改前就這樣，`water-before/.../mobile-ch2.png`）。 |
-| 3 | 聲音 | 5（昨 4） | 昨晚唯一的扣分已經修掉：`engine.js` 第 143 行，引擎內部的 `sfx` 有 `G.sfx` 時就改走 `sound.js`，所以 `waitAction`、`dragPick.pick` 的「點一下」都是同一聲 `wood(900)`，不會再出現純正弦 520／660Hz。聲音升級階梯五階全部做到：材質對（木琴／木魚／水滴／三角波和弦）、音高隨進度升高（`drip` 隨進度、第 4 關 `note(4 + n++)`、第 10 關 `note(3 + r*2 + s)`）、和弦收尾（`win`、`chord`）、連點會自動變小聲（`duck`）。全部是 WebAudio 合成，五聲音階，可以當範例。 |
-| 4 | 手感 | 4（昨 3） | `engine.js` `dragPick`：拖曳改成 rAF 迴圈，lerp 0.3，傾斜 `clamp((tx - cx) * .15, -6, 6)`，正好落在 PRINCIPLES 寫的 0.25～0.35 與 ≤ 6° 範圍；被鍵盤完成時用 `closed` 停掉迴圈；彈回的 0.25 秒加 `.homing`，不會被 hover 動畫蓋掉。`scratchpad/shots/tablet-ch4-dragging.png` 可以看到卡片歪著跟在手後面。不到 5：放手沒有滑行；拖到盆子上方，盆子沒有先 squash；彈回用的是 `ease`，沒有回彈；第 9 關的連線仍然完全跟手。 |
-| 5 | 直覺 | 4（昨 3） | 把字遮掉也能玩了：第 2 關每題換題目圖示（`water-after/.../mobile-ch2.png`），第 4 關兩個盆子掛冰塊／水滴圖示（`tablet-ch4.png`），第 4 關第一次拖對以後說明框淡成 0.5（`scratchpad/shots/mobile-ch4-after1.png`）。5 秒光暈變亮、15 秒小手示範，每關都有。不到 5：答錯後的提示句（`c2.wrong`、`c4.wrong`、`c6.near`、`c6.wrong`、`c8.wrong`、`c9.wrong`、`g.no2`、`g.demo`）都走 `speak()`。這個遊戲沒有音檔（`content.js` 沒有任何 `"v"`），`speak()` 只會等一段時間，不會改泡泡裡的字，所以這些提示孩子**看不到也聽不到**。第 6 關新加的「前兩次只提示」實際上只有小旗壓一下。「第一次互動後說明淡出」也只做了第 4 關。 |
-| 6 | 關卡多樣 | 5 | 十關九種動作，相鄰不重複（上表）。同一套粒子放大鏡撐起五關，主題不換，換的是手的動作，是這類遊戲的範例做法。 |
-| 7 | 溫柔的失敗 | 5（昨 4） | 昨晚的扣分修掉了：`app.js` 第 6 關 `check()` 加了 `tries`，前兩次放手離目標超過 12 度只 `squash(flag)`，不出錯聲、不算錯，好奇滑來滑去不會被當成失敗。十關都照同一個梯子：答錯＝搖一下＋300Hz 低木魚；錯兩次 `wg-hint` 光暈；錯三次 `demo()` 小手示範。沒有紅叉、倒數、扣分。（答錯的提示句看不見，這筆算在第 5 條。） |
-| 8 | 內容正確 | 5（昨 4） | 查核清單 4 條必改、8 條建議全部照做，`content.js` 已重新產生（我逐條對過）：`c10.u` 補上「變冷變成小水珠」；`服` 4 處改成 `ㄈㄨˊ`；`誰` 改成 `ㄕㄟˊ`；`c3.float`、`p3` 的 `露` 改成 `ㄌㄡˋ`；`p3` 的 `這個` 改成 `˙ㄍㄜ`；`p6` 改成「水不到 100°C 就會滾……所以山上煮東西反而比較慢」；`c6.flag` 改成「玉山頂大約 87 度就滾」；`c9.r3` 改成「涼涼的鏡子」；`c5.done` 拆成兩句；`c3.cold` 改成「變冷」；出處改成「國小三下自然『水的三態』單元」；`p5` 加了大泡泡裡是水蒸氣。README「給家長」第 3、4、5、6、9 條同步改了。我把全部破音字掃了一遍（了、著、得、重、乾、空、轉、散、都、和、為、長、中、種、露、誰、服、還、約……），沒有錯的。每張小卡都有數字和來源，可以當範例。待確認一點（不算錯）：第 2 關「哪一個」的「個」標 `ㄍㄜˋ`，請查核員下次對一下簡編本，看要不要改成輕聲。 |
-| 9 | 效能穩定 | 5 | `water-after/summary.md` 22/22 ok，載入最慢 409ms；回歸 44/44 ok；沒有橫向捲動、沒有 console error；`node --check` 四支 JS 都通過；`?ch=N` 可以直接跳關。外部資源只有 Google Fonts；打勾圖示是寫在 CSS 裡的自畫 SVG data URI。小瑕疵沿用：第 7 關 canvas 只量一次尺寸，旋轉螢幕時霧會對不準。 |
-| 10 | 完成感 | 4 | 每關結尾都有印章＋上行四音＋和弦，再接一張「給家長」小卡；進度點看得見；最後有六張貼紙的結尾場景。第 7 關的打勾讓「擦完一條」有了小完成感。扣分沿用：十關都是同一顆水滴印章，沒有和那一關內容有關的收尾，例如冰塊歸位、雲下雨。 |
-| 11 | 原創 | 5 | `art.js` 全部自畫 SVG，`sound.js` 全部合成；今晚新增的打勾也是自畫的 path，沒有外部圖片或音檔。 |
-| 12 | 家長看懂 | 5 | `README.md` 有十關表和十條「給家長」，每條都有來源，今晚也和 `content.py` 同步；`engine.js` 開頭註明這是 lab 的副本、不要回寫到正式遊戲；本報告開頭三句話。 |
-| 13 | 立體與物理 | 2 | 平面 SVG，照規則最多 2 分（家長同意 water-game 維持平面，不用這條擋它）。平面裡做得到的物理大多有了：拖曳慣性＋傾斜、落點 squash、第 3 關冰塊用彈簧 `spring(k=90,d=8)` 沉下去再浮起來。沒有 3D、沒有重力、沒有碰撞，也沒有物件互相推。 |
+| 1 | 互動戲 | 4 | 架子上每個零件 hover 會壓一下＋小木聲＋游標變手（`hoverCheck` 643～652）、按下 `poke`、碰機器人或轉台也會壓一下（`tap` 607）；零件拖近落點時機器人先 `poke(bot,.1)` 迎一下（795）；當前零件上下浮動、光圈呼吸、眼睛跟手指、閒置 15 秒零件自己往機器人跳一下示範（774～782）。不到 5：畫架、架子、方塊、輪廓都是死的（`robotHit` 不含 `block`，拍方塊沒反應）；沒有「環境被碰會晃」「物件互相影響」。 |
+| 2 | 美感 | 4 | 三色＋木頭＋米白，零文字，圓角黏土材質與陰影一致（`tablet-step5.png` 可以當範例）。扣分：**開場畫面上半全空**——`mobile-start.png` 上面 40%、`tablet-start.png` 上面 45% 只有米白，第一眼看不出要做什麼（建置者自己也列了）；手機架上零件 53～72px（我在 375×812 用 `__robot.partPx()` 量：53、65、223（手臂張開時）、92、42 ——起點時 58～72），手臂兩根細棒在手機上偏細；平板「B」鍵帽壓到轉台邊（`tablet-start.png`）。 |
+| 3 | 聲音 | 4 | 全部 WebAudio 合成、材質對：喀＝木琴 784＋低音 196、每一筆＝往上的五聲音階、裝好＝上行三音且音高隨步數升（`SFX.done(i)` 用 `PEN[i+2…]`）、完成＝和弦＋pad、錯＝300Hz 低木魚；齒輪不出聲。扣分：每一步的聲音鏈「喀→1～2 筆木琴→英文字母→上行三音→中文」在 2 秒內擠了 5～6 個聲音，r 那步還多一聲 `land`；`fadeVoice` 被 `speak()` 的 `stopVoice()` 立刻蓋掉，換句子是硬切不是淡出；沒有連點自動變小聲。 |
+| 4 | 手感 | 4 | 拖曳 lerp `1-pow(.7,dt*60)`≈0.3（788）、傾斜上限 0.105 rad＝6°（790）、拖起來放大 1.12、放在別處先滑行 `v*=pow(.05,dt)` 再畫弧飛回架子（798～806）、最後一段吸入 0.22 秒＋落地 `poke`；`touch-action:none`、`user-select:none`（`game.css` 5）；手機每格 68px、命中區 ≥ 44px（`shelfHit` 540）。不到 5：拖曳是在面向相機的平面上移動（`dragPlane`），零件像浮在空中不像在桌上；夾子沒有真的夾到方塊（`tablet-a-key4-o.png` 方塊浮在兩隻夾子中間）。 |
+| 5 | 直覺 | 4 | 關掉聲音只看光：架子上當前零件底下有光圈＋上下浮動，落點有同色呼吸光圈，拖近時光圈變大變亮（822～825）；設計圖放上去浮出輪廓，眼窩有珊瑚紅的輪廓環（`mobile-step3.png`），孩子一看就知道零件要放哪。5 秒變亮、15 秒示範都有。扣分：**聲音關掉時每一步仍然空等 8～10 秒**——`engine.js` 219 行 `!S.sound` 也走 `quiet()`，照字數等，`glowOn` 要等完才亮，孩子只看到什麼都不亮（可以拿下一個，但沒有光告訴他可以）；開場光圈打在一張空桌子上，不知道那裡會長出機器人。 |
+| 6 | 關卡多樣 | 3 | 五步裝好的**反應**五種各不相同（上表），這部分是 5 分的做法。但五步的**手勢**完全一樣：拿零件→放到光圈，連續兩步沒有不同；整個遊戲的動作只有拖到位置、點、按鍵、轉台這 4 種，眼睛跟手指是被動的。照 F 段「手勢與動畫是不是各有不同」只能給 3。 |
+| 7 | 溫柔的失敗 | 4 | 碰還沒輪到的零件＝原地晃＋低木魚（`nudge`）；放錯地方＝滑一下飛回架子，不出錯聲不算錯；沒有紅叉、倒數、扣分；畫面永遠不鎖。不到 5：錯幾次都一樣，沒有「錯兩次光暈加強、錯三次示範」（`boost` 只看閒置時間，而且一按下 `lastAct` 就歸零，錯按反而把 5 秒的加亮關掉）。 |
+| 8 | 內容正確 | 5 | 見「正確性」：配音稿照查核員改、「給家長」一字不差、兩個問倒點都處理了、每一行有年份與來源。可以當範例。 |
+| 9 | 效能穩定 | 5 | 官方 10/10 ok（最慢載入 45ms）、互動 a～f 全過、零 console error、零橫向捲動；橫向手機 812×375 也放得下（`mobile-f-landscape.png`）；`?fast=1`、`?step=N`、`?end=1` 都能直達；57 個 mesh ≤ 60、一張 2048 陰影、`pixelRatio ≤ 2`（`space.js` 12）、`post:false`；WebGL 開不了有一句話＋回首頁；沒有外部字型或資源（`style.css` 沒有 `@import`）。待補：真機 60fps 和 iPhone 聲音都沒有量過（建置者已註明）；不帶 `fast` 時 mp3 404 是今晚還沒錄音的預期現象。 |
+| 10 | 完成感 | 5 | 每一步：喀→字母寫出來→英文→上行三音→那一步的動作；四線格就是進度；結尾：散開（零件一個一個彈回架子、字母變淡、身體退回輪廓）→ 照五步飛回去、每步配一句 → 和弦 → 整台轉一圈給你看（`end.7`）→ 五個字母一起閃 → 揮手＋「Robot.」；之後點零件重聽、⟲ 重做、ⓘ 給家長。結尾像「剛完成一個故事」，正是點題要的。 |
+| 11 | 原創 | 5 | `art.js` 全部 three.js 基本幾何＋canvas 畫的設計圖、光圈；字母筆順自畫 path；聲音全合成；沒有外部圖、音、字型動畫；眼睛造型避開了 WALL-E／R2-D2。 |
+| 12 | 家長看懂 | 5 | README 有五步表（零件、反應、歷史）、操作、測試網址與量測方法、配音字數與要聽的字、「給家長」；本報告開頭三句話。 |
+| 13 | 立體與物理 | 4 | 3D 黏土跟首頁一家：`S3.clay` 有 bump、`HemisphereLight`＋暖色 `DirectionalLight` 2048 軟影、ACES；每個可碰物件都有彈簧 `jelly(k160,c7)`＋`wobble`（`space.js` 298～306）：零件、機器人、方塊被碰、落地、卡進去都壓扁回彈；拖曳慣性＋傾斜；方塊是真的 `vy -= 9.8*1.6*dt` 掉下來落地壓扁（368～377）；轉台放手有慣性滑行。不到 5：沒有碰撞——零件不會互相推開、不會倒，方塊是用偏移量「黏」在兩手中間（`carry`），不是被夾住；飛行弧線是參數式不是模擬。照升級階梯停在「重力與落地」。 |
 
-**前 12 條總分 55 / 60**（昨 49）；含第 13 條 57 / 65。
-最低三項：**13 立體與物理（2）**；前 12 條裡最該補的是 **5 直覺（4）**、**4 手感（4）**。同為 4 分的還有 1 互動戲、2 美感、10 完成感。
-
-**打磨完成：是**（前 12 條全部 ≥ 4；water-game 是改版前的平面遊戲，只看 12 條）。
+**總分 56 / 65**（前 12 條 52 / 60）。
+最低：**6 關卡多樣（3）**；其次 1、2、3、4、5、7、13 各 4 分。
+**打磨完成：否**（第 6 條 3 分；今晚是 build 夜，本來也不判）。
 
 ## 阻擋
 
 **無。**
 
-- 錯誤／空白：無（改後 22/22、回歸 44/44）。
-- 橫向捲動：無。手機第 6 關的玉山說明字往左長到 x≈18px，還在畫面內（`scratchpad/shots/mobile-ch6-yu.png`）。
-- 內容錯：無。查核清單全部照做，`content.js` 已重建。
-- 外部素材：無（只有字型）。
-- 碰了 lab/pipeline 以外的檔案：無。
-- `.env`：只有空範本 `lab/water-game/.env.example`，沒有 `.env`。
-
-## 改前改後對照
-
-改前：`/Users/yenwen/Documents/兒童互動遊戲/pipeline/shots/2026-10-31/water-before/lab_water-game/`
-改後：`/Users/yenwen/Documents/兒童互動遊戲/pipeline/shots/2026-10-31/water-after/lab_water-game/`
-互動中：`/private/tmp/claude-501/-Users-yenwen-Documents-------/00d2ba75-d4e3-42c2-9acc-b32316e21788/scratchpad/shots/`（暫存資料夾，重開機會消失）
-
-1. **第 4 關盆子（直覺）**：`water-before/lab_water-game/tablet-ch4.png` 兩個盆子只差一點藍，要讀「硬硬的／會流動」才知道放哪。`water-after/lab_water-game/tablet-ch4.png` 左盆掛冰塊、右盆掛水滴。互動中：`scratchpad/shots/tablet-ch4-dragging.png` 卡片拖曳時歪著跟手；`scratchpad/shots/mobile-ch4-after1.png` 第一次放對後說明框變淡。
-2. **第 2 關題目（直覺）**：`water-before/lab_water-game/mobile-ch2.png` 只有一行字「哪一個是水蒸氣？」。`water-after/lab_water-game/mobile-ch2.png` 放大鏡上方多了一個題目圖示（冰塊）；平板 `water-after/lab_water-game/tablet-ch2.png` 是水蒸氣圖示，但只有 96px，偏小。
-3. **第 7 關鍵帽（溫柔／完成感）**：`water-before/lab_water-game/tablet-ch7.png` 擦過的 A 變成淡淡的，像壞掉。`scratchpad/shots/tablet-ch7-used.png` 擦過的 A、S 縮小，右上角加了綠色打勾。
-4. **第 3 關按鈕字（內容）**：`water-before/lab_water-game/tablet-ch3.png`「冷卻」→ `scratchpad/shots/tablet-ch3-btn.png`「變冷」。
-5. **第 10 關雲（內容）**：`scratchpad/shots/mobile-ch10-u.png` 寫成「水蒸氣往上飛，變冷變成小水珠，聚成雲。」事實對了，但手機上泡泡變四行、下半畫面空著（明晚以後的美感題）。
-6. **第 6 關玉山（排版）**：`scratchpad/shots/tablet-ch6-yu.png`、`mobile-ch6-yu.png` 說明字在 87 小旗左邊排成一行，不再直排。
+- 錯誤／空白：無（官方 10/10、互動 a～f、我自己再開一次 `?step=5&fast=1` 也零錯誤）。
+- 橫向捲動：無（含橫向手機）。
+- 內容錯：無。
+- 外部素材：無（three.js 是根目錄 `vendor/` 的本地檔）。
+- 碰了 lab/pipeline 以外的檔案：無（`git status` 只有 `lab/games.json`、`lab/robot-game/`、`pipeline/ideas/2026-11-01.md`）。
+- `.env`：`lab/robot-game/` 沒有 `.env`；`.gitignore` 已排除；`tools/voai.config.json` 只有聲音名稱與語速，全資料夾 grep 不到任何金鑰。
 
 ## 明晚要改的兩項
 
-照規則，打磨完成以後流水線會開始做新遊戲，所以這兩項是 water-game 的**待辦**：家長決定再打磨一晚，或之後回頭修時照做。第一項是 `engine.js` 的修法，新遊戲從 space-game 起手時，答錯提示也要照這個原則做（提示要看得到）。
+### 一、第 6 條「關卡多樣」：五步各加一拍不同的手勢（不做也會自己完成）
 
-### 一、第 5 條「直覺」（連帶第 7 條）：答錯提示要看得到
+**問題**：五步的手都在做同一件事。家長定案「每一步把零件放到機器人身上」不動，但裝上去之後可以多一拍「讓它動起來」的手勢，五步各不相同，像真的在組裝：齒輪要轉、方塊要碰、眼睛要被揮手叫醒、電腦要按進去。**這會在總指揮 B-6「一個規則」上多加一拍，請先給家長看一眼；家長若要維持純一個規則，就只做齒輪（轉）和電腦（按住）兩拍。**
 
-**問題**：這個遊戲沒有配音檔，`speak(key)` 只會 `setTimeout` 等一下，泡泡裡的字不會換。所以 `c4.wrong`「它會流動嗎？再想想。」這類為孩子寫的提示，孩子從來看不到。
+**改什麼**（只改 `lab/robot-game/app.js`）
+1. 狀態區（181～191）加 `let beat = null;`（`{ i, k: 0, t0 }`，k＝完成度 0～1）。
+2. `install(i)`（386～404）：`const act = runAct(i)` 改成 `const act = (async () => { if (i > 0) await beatWait(i); await runAct(i); })();`。r 這一步不加拍。中文句子照舊在字母寫完後就播，不等這一拍。
+3. 寫 `beatWait(i)`：設 `beat = { i, k: 0, t0: performance.now() }`，每幀把 `halos[0]` 放在 `haloTargets(i)[0]`（眼睛那步用兩個），呼吸改快一點（`Math.sin(t*5)`）；`await` 直到 `beat.k >= 1` 或超過 `G.FAST ? .2 : 3` 秒，然後 `beat = null`。超時就當完成（沒有人會卡住）。
+4. 四拍的手勢，寫在 `pointerdown/pointermove/endPtr`（555～598）與 `keydown`（654～673）裡，都用 `v.pick` 判斷按在哪個零件上：
+   - **o 齒輪＝轉**：按在 `P[1].obj` 上左右拖，`P[1].obj.userData.spin.rotation.z -= dx*.02`，`wkey` 一起轉，`beat.k += |dx|/120`（累積約 120px 就完成）。鍵盤：← → 按住 0.5 秒，或再按一次 O。
+   - **b 手臂＝點**：方塊掉下來後（`dropBlock` 先跑），點方塊（`v.pick` 加 `block`）→ `beat.k = 1`，手臂才舉起來。鍵盤：再按 B。
+   - **o 眼睛＝揮手**：眼睛裝上後先不亮；手指或滑鼠在畫面上移動累計 ≥ 150px（`pointermove` 不需要按著）→ `beat.k = 1`，眼睛亮起來並開始跟著看。鍵盤：任何方向鍵。
+   - **t 電腦＝按住**：按在 `P[4].obj` 或頭上不放，`beat.k += dt/.4`，同時 `P[4].obj.position.y = mounts[4].y - .06*beat.k`、`A.M.light.emissiveIntensity = beat.k*.6`；放早了 `k` 歸零、零件 `poke` 彈回來。鍵盤：按住 T 0.4 秒（`keysHeld.t`）。
+5. 這一拍進行中，`ptr.mode` 設成 `'beat'`，不要變成 `'rotate'`（575～579 的分支加一條）。`replay()`（自由玩）不需要這一拍，`runAct(i, true)` 照舊。
+
+**怎麼驗證**：`?step=1&fast=1` 按 O → 齒輪卡進胸口、齒輪上光圈快速呼吸，在齒輪上左右拖 → 齒輪跟著手指轉、背後鑰匙也轉，拖夠了身體才變實體；什麼都不做 → 0.2 秒（不帶 fast 是 3 秒）後自己轉起來。`?step=2` 按 B → 方塊掉下，點方塊 → 手臂舉起；`?step=3` 按 O → 手指在畫面上滑一下 → 眼睛亮、開始跟著看；`?step=4` 按 T → 按住頭 0.4 秒 → 電腦沉下去、燈漸亮、全身動；0.2 秒就放 → 彈回來。既有的互動測試 a～f（只按鍵）要照樣全過（靠自動完成），10 個畫面零錯誤零橫向捲動；手機與平板各截「齒輪轉到一半」「按住電腦」兩張放進報告。
+
+**再上一階**（互動戲階梯「物件互相影響」）：用手轉齒輪時，輪廓的兩隻手臂跟著微微擺動、方塊在轉台上被震得跳一下。
+
+### 二、第 2 條「美感」（連帶第 5 條直覺、手機零件偏小）：開場先框住工作台，設計圖放上去再拉遠；關掉聲音不空等
+
+**問題**：`mobile-start.png`／`tablet-start.png` 上半全空；手機架上零件只有 53～72px。原因是 `fit()` 一開始就把還不存在的機器人頭頂、兩側都算進 `FIT_PTS`（`applyLayout` 134～136）。另外關掉聲音時每一步仍照字數空等 8～10 秒才亮下一個。
 
 **改什麼**
-1. `lab/water-game/engine.js`，在 `function say(key)`（約第 196 行）後面加一個 `tip(key)`：先記住 `const back = lastKey`；`clearTimeout(tipT)`；`sayBox.classList.remove('wg-faded')`；`bubble.classList.add('tip')`；把 `bubble.innerHTML` 換成 `key` 的內容（和 `say` 同一個寫法，但**不要**改 `lastKey`）；再 `tipT = setTimeout(() => { bubble.classList.remove('tip'); if (lastKey === back && back) bubble.innerHTML = '<span class="spk">' + speakerIcon + '</span><span class="bt">' + Z(back) + '</span>'; }, FAST ? 30 : Math.max(1800, TX[key].t.length * 220))`；最後 `return speak(key)`。`say()` 的第一行加 `clearTimeout(tipT); bubble.classList.remove('tip');`。`let tipT = 0;` 宣告在 `let lastKey` 旁邊。底下的 `return { ... }` 加上 `tip`。
-2. `lab/water-game/app.js` 第 6 行的解構加上 `tip`，然後把這幾處的 `speak(` 換成 `tip(`：第 45 行 `g.demo`、第 144 行（第 2 關）、第 237 行（第 4 關）、第 375 行（第 6 關差 12 度以內，`c6.near`）、第 379 行（`c6.wrong`）、第 530 行（第 8 關）、第 587 行（第 9 關）。
-3. 第 377 行（第 6 關前兩次離目標還很遠）改成 `tip('c6.wrong')`，不要用 `c6.near`。「快到了」只有差 12 度以內才是真的；`squash(flag)` 留著，不要加 `sfx('no')`。
-4. `lab/water-game/game.css` 加 `#bubble.tip{background:#FFF6E6;box-shadow:0 0 0 4px rgba(242,163,58,.35)}`，用同一個琥珀色當「提示」的顏色，不要紅色。
+1. `lab/robot-game/app.js` `applyLayout()`（115～139）：`FIT_PTS` 拆成兩組——`FIT_TABLE`（架子前下角、架子上零件的頂、轉台兩側、畫架）和 `FIT_BOT`（機器人兩側、頭頂）。`fit()`（690～722）的 `range()` 在 `!placed[0]`（還沒放設計圖）時只看 `FIT_TABLE`，否則兩組都看；`topLim` 不變。
+2. 相機不要跳：把 `fit()` 算出來的距離與目標存成 `wantD`、`wantTarget`；加狀態 `camD`、`camTarget`，在每幀迴圈（727 行 `if (v.w !== lastW …) fit();` 後面）做 `camD = lerp(camD, wantD, 1 - Math.pow(.03, dt))`（約 0.9 秒到位），`camTarget` 同樣 lerp，再 `place(camD)`。視窗大小改變時直接 `camD = wantD`（不要慢慢飄）。`install(0)`、`placeInstant(0)` 和 `disassemble()` 結尾各呼叫一次 `fit()`，讓相機在輪廓浮出時緩緩拉遠、重播散開時緩緩拉近。
+3. `lab/robot-game/engine.js` `speak()`（205～230）：`quiet` 改成接受毫秒 `const quiet = ms => { …; timer = setTimeout(fin, ms ?? (FAST ? 30 : Math.max(1200, e.t.length * 220))); }`，在 219 行前面加 `if (!S.sound) { quiet(FAST ? 30 : 500); return; }`。「等這句該有的長度」只留給「音檔還沒錄」的情況。
+4. 順手：`game.css` 27 行 `.rb-kc` 平板字級 22px 改 `clamp(16px, 2.4vw, 22px)`，B 鍵帽就不會壓到轉台邊。
 
-**怎麼驗證**：`index.html?ch=4`，把「牛奶」拖進左盆，泡泡要換成「它會流動嗎？再想想。」，大約 2 秒後回到「硬硬的放 J……」；再錯一次，換成「沒關係，看看亮亮的地方。」，右盆亮起來。`?ch=6`，把拇指拖到 50 放手，泡泡要顯示「還沒到喔，看看亮亮的小旗子。」；拖到 8 放手，顯示「快到了，停在小旗子那裡。」。手機 375 和平板 768 各截一張提示出現時的畫面放進報告，確認泡泡變高時下面的關卡不會被擠到出現捲軸，也沒有 console error。
+**怎麼驗證**：375×812 起點截圖，轉台＋架子＋畫架要占畫面高度 75% 以上，console 打 `__robot.partPx()` 五個都 ≥ 70；按 R 之後相機在約 1 秒內平滑拉遠（連拍 5 張 200ms 間隔，沒有跳切），輪廓完整在畫面裡、頭頂不被切；`?step=1`～`5` 的截圖和今晚比機器人大小不變；`?end=1` 散開時相機拉近、裝回去時拉遠。右上角把聲音關掉再按 R → 1 秒內齒輪就亮起來。手機與平板各一張改前（今晚的 `robot/lab_robot-game/*-start.png`）改後對照放進報告；10 個畫面零錯誤零橫向捲動。
 
-**再上一階**（直覺升級階梯最後一階「第一次互動後提示自動淡出」）：把第 4 關的 `wg-faded` 做成共用的 `fadeAfterFirst()`，用在第 2、6、8、9 關。
-
-### 二、第 4 條「手感」（連帶第 1 條）：補上放手滑行、目標迎接、回彈
-
-**改什麼**（只改 `lab/water-game/engine.js`、`game.css`）
-1. **拖到目標上方，目標先迎一下**：`dragPick` 的 `pointermove` 在 `const t = hit(...)` 之後，加上 `if (t !== st.over) { st.over = t; if (t >= 0) nudge(targets[t]); }`（`st` 初始化時加 `over: -1`）。`nudge(el)` 寫在 engine 裡：`el.classList.remove('wg-nudge'); void el.offsetWidth; el.classList.add('wg-nudge'); setTimeout(() => el.classList.remove('wg-nudge'), 260)`。`game.css` 加 `.wg-nudge{animation:wg-nudge .24s var(--wg-back)}` 和 `@keyframes wg-nudge{0%{transform:scale(1)}40%{transform:scale(1.04,.95)}100%{transform:scale(1)}}`。用小幅度的就好，不要用 `wg-squash` 的 0.85，盆子會跳太大。
-2. **彈回要有一點回彈**：`home(el)` 的 `transition` 從 `'transform .25s ease'` 改成 `'transform .32s cubic-bezier(.34,1.56,.64,1)'`，`setTimeout` 改 330ms。
-3. **放手滑行**：`up` 裡面 `t < 0`（沒放到任何目標）的分支，不要馬上 `home(el)`。先用最後一幀的速度 `vx = (was.tx - was.cx) * .3 * 60`、`vy` 同理，跑一個 rAF：`x += vx*dt; vx *= Math.pow(.05, dt)`（y 一樣），畫面照樣帶傾斜；跑 160ms 或速度小於 30px/s 就停，再 `home(el)`。放到目標上的分支（`finish`）照舊，不要滑。
-4. 觸控裝置上 hover 會一直黏著：把 `.wg-touch:hover` 那三條規則包進 `@media (hover:hover){ ... }`。
-
-**怎麼驗證**：`?ch=4` 平板，拖一張卡片慢慢經過兩個盆子上方，每經過一個，盆子要輕輕壓一下（只壓一次，不會連續抖）；把卡片甩到空白處放手，要先滑一小段再彈回原位，彈回時略過頭一點再停；放進盆子仍然正常。`?ch=3` 拖冰塊進杯子，確認還會觸發。手機 375 拖曳時頁面不能被拉動。改前改後各截一張「拖到盆子上方」的畫面放進報告。
-
-**再上一階**（互動戲階梯「物件互相影響」）：卡片放進盆子時，盆子裡已經有的小圖（`.wg-pile .wg-mini`）依序晚 40ms 各抖一下，像被擠到。
+**再上一階**（美感階梯「進退場動畫」）：載入時五個零件依序落到架子上（每個差 60ms，落地 `poke`＋一聲木琴，音高遞升），最後光圈才亮；比一開始就擺好更像「玩具剛擺出來」。
 
 ### 順手可修（不算這兩項）
-- 美感：平板第 2 關 `.wg-ask` 從 96px 改成 `min(140px,16vh)`；手機第 10 關把 `game.css` 手機區 `.wg-cycle{margin-bottom:auto}` 拿掉，或把場景改大，補滿下半畫面空著的地方。
-- 手機頂部進度點貼著「首頁」按鈕（`style.css` 頂列，改前就有）。改這個會動到共用的 `style.css`，要先確認只改 lab 的副本。
-- 第 2 關「哪一個」的「個」讀音，請查核員確認。
+- `engine.js` 207 行：`speak()` 一進來就 `stopVoice()`，所以 `fadeVoice(200)` 從來沒淡完。讓 `fadeVoice` 回傳 Promise，`install`／`runEnding`／`replay` 改成 `await fadeVoice(200)` 再播。
+- `art.js` 272 行光圈 `depthTest:false` → 落點光圈會透過身體看到（建置者自己列的）；肩膀、眼睛、頭頂的光圈改 `depthTest:true`，位置沿法線外推 .05。
+- 手機 ⓘ 面板上方一塊比底色亮的方塊（`mobile-c-info.png` y≈75～180）：我探測那個點是 canvas，不是任何 DOM 元素；高度剛好等於面板內容超出 `max-height` 的量（scrollHeight 665 − 560 = 105），是 `overflow:auto` 捲動層的合成瑕疵。`game.css` `.rb-info` 加 `contain:paint`，或把捲動移到內層 `div`；真機看一次。
+- 夾子夾方塊不準：`ACT[2]`（337～348）舉起前把 `ph` 從 .36 加到 .5、`carry` 的偏移用兩隻 `claw` 開口中心算，不要用 `handsMid`。
+- 聲音鏈偏吵：r 那步的 `SFX.land`（318）拿掉（已有 `snap`），`SFX.done` 延到中文句子開始前 150ms。
 
 ## 截圖
 
-- 改前：`/Users/yenwen/Documents/兒童互動遊戲/pipeline/shots/2026-10-31/water-before/lab_water-game/`（mobile／tablet 各 11 張；昨晚的截圖不在這台 MacBook 上）
-- 改後：`/Users/yenwen/Documents/兒童互動遊戲/pipeline/shots/2026-10-31/water-after/lab_water-game/`（22 張），摘要 `water-after/summary.md`
-- 互動中：`/private/tmp/claude-501/-Users-yenwen-Documents-------/00d2ba75-d4e3-42c2-9acc-b32316e21788/scratchpad/shots/`（ch2-q1、ch3-btn、ch3-float、ch4-dragging、ch4-after1、ch6-yu、ch6-end、ch7-used、ch10-u，手機與平板各一份；暫存資料夾，重要的請搬進 `pipeline/shots/2026-10-31/`）
-- 回歸：`/Users/yenwen/Documents/兒童互動遊戲/pipeline/shots/2026-10-31/regress/`，摘要 `regress/summary.md`
+- 官方：`/Users/yenwenhuang/kids-games/pipeline/shots/2026-11-01/robot/lab_robot-game/`（mobile／tablet × start、step1、step3、step5、end，共 10 張），摘要 `robot/summary.md`
+- 互動：`/Users/yenwenhuang/kids-games/pipeline/shots/2026-11-01/robot-interact/`（a 按鍵逐步 ×5、b 錯鍵、c 結尾／ⓘ 面板、d 拖曳／轉動／齒輪先、e 不帶 fast 等 8 秒、f 橫向手機；mobile-／tablet- 前綴，共 30 張＋腳本 `ri.mjs`）
+- 回歸：`/Users/yenwenhuang/kids-games/pipeline/shots/2026-11-01/regress/`，摘要 `regress/summary.md`
 
-評審親自打開看過的：改前 `tablet-ch4`、`mobile-ch2`、`tablet-ch7`、`tablet-ch3`；改後 `tablet-ch4`、`mobile-ch4`、`mobile-ch2`、`tablet-ch2`、`tablet-ch9`、`mobile-ch6`；互動中 `tablet-ch4-dragging`、`mobile-ch4-after1`、`tablet-ch7-used`、`mobile-ch6-yu`、`tablet-ch6-yu`、`mobile-ch6-end`、`mobile-ch10-u`、`tablet-ch3-btn`；回歸 `hub/tablet-day`、`hub/mobile-night`。
+評審親自打開看過的（20 張）：官方 `mobile-start`、`tablet-start`、`mobile-step3`、`tablet-step3`、`mobile-step5`、`tablet-step5`、`mobile-end`、`tablet-end`；互動 `mobile-d-dragging`、`mobile-d-rotated`、`mobile-d-gear-first`、`mobile-c-info`、`tablet-c-info`、`mobile-f-landscape`、`tablet-b-wrongT`、`tablet-a-key1-r`、`tablet-a-key4-o`、`mobile-e-nofast-8s`、`tablet-c-end`、`mobile-a-key2-o`。
 
 ## 改動的檔案
 
-建置者今晚改的（`git diff --stat -- lab/water-game`：6 個檔，+85／-43）：
-- `lab/water-game/engine.js`：拖曳 lerp＋傾斜、`closed` 停迴圈、`.homing`、內部 `sfx` 改走 `G.sfx`
-- `lab/water-game/app.js`：第 2 關題目圖示、第 4 關盆子圖示與說明框淡出、第 6 關前兩次不算錯
-- `lab/water-game/game.css`：`wg-sway` hover、`.wg-ask`、`.wg-bi`、`#say.wg-faded`、玉山說明改成橫排（選擇器改用 `>b`、`>span`）、第 7 關鍵帽打勾
-- `lab/water-game/tools/content.py`、`lab/water-game/content.js`（重新產生）：查核清單 12 條
-- `lab/water-game/README.md`：「給家長」第 3、4、5、6、9 條同步
+建置者今晚新增（全部在 `lab/robot-game/`，未 commit）：
+- `index.html`、`game.css`、`app.js`（887 行，單場景流程）、`art.js`（3D 模型）、`README.md`、`playtest.json`、`.gitignore`
+- 從 space-game 複製：`engine.js`（配音改成共用一個 `<audio>`＋第一次觸碰解鎖＋淡出）、`space.js`、`sound.js`、`style.css`
+- `tools/content.py`、`tools/build.py`、`tools/voai.config.json`、產生的 `content.js`、`tools/narration.json`
 
 評審今晚改的：
-- `pipeline/reports/2026-10-31.md`、`pipeline/reports/latest.md`（本報告）
-- `lab/games.json`：water-game 的 `status`、`summary`、`nights`、`updated`
+- `pipeline/reports/2026-11-01.md`、`pipeline/reports/latest.md`（本報告）
+- `lab/games.json`：robot-game 的 `status`、`summary`、`nights`、`updated`
 
-另有查核員新增的 `pipeline/ideas/2026-10-31-polish-check.md`。沒有碰正式四個遊戲、首頁、`.env`、`pipeline/state.json`；沒有 commit、沒有 push。
+另有總指揮／查核員新增的 `pipeline/ideas/2026-11-01.md`。沒有碰正式四個遊戲、首頁、`.env`；沒有 commit、沒有 push。待總指揮處理：`pipeline/requests.md` 第一題狀態改成「已做 2026-11-01 → lab/robot-game/」。
 
 ## 閘門：home
 
-**可上首頁（維持在首頁上）。** 沒有阻擋；第 8 條內容正確 5（≥ 4），第 9 條效能穩定 5（= 5）。water-game 是 2026-10-30 規定前做的平面遊戲，不用第 13 條卡它。首頁入口 `hub/entries/water-game.js` 已經存在，回歸截圖也看得到，今晚不需要再加。
+**可上首頁。** 沒有阻擋；第 8 條內容正確 5（≥ 4）、第 9 條效能穩定 5（= 5）、第 13 條立體與物理 4（≥ 3）。
+要補的：`hub/entries/robot-game.js`（3D 黏土小物件＋徽章，焦點色珊瑚紅 `#F05A3C`）＋ `hub/entries.json` 加一行，加完首頁重跑回歸零錯誤才算上線。這兩個檔在 lab/pipeline 之外，評審沒有動。
 
-**打磨完成：是**（前 12 條全部 ≥ 4，最低是 1、2、4、5、10 各 4 分）。
+**打磨完成：否**（第 6 條 3 分）。
 
-## 追加（同日，家長要求「現在修」）：答錯提示看得到了
+### 總指揮補記（評審之後）
 
-明晚第一項已先做完：`engine.js` 加 `tip(key)`，泡泡暫時換成提示句（琥珀底、外圈淡金），約 2 秒後換回這關說明；`app.js` 8 處答錯提示（`g.demo`、`g.no2`、`c2/c4/c8/c9.wrong`、`c6.near`、`c6.wrong`）改用 `tip()`；第 6 關前兩次離目標還遠時改說 `c6.wrong`，「快到了」只在差 12 度以內出現。
-驗證：第 4 關用鍵盤放錯，手機與平板泡泡都出現「它會流動嗎？再想想。」並在 2 秒後換回，零錯誤、零橫向捲動（`pipeline/shots/2026-10-31/water-tip/mobile-ch4-tip.png`、`tablet-ch4-tip.png`）；全遊戲重跑 22/22 ok。
-明晚剩下的待辦只有第二項「手感」（放手滑行、盆子迎接、回彈）。
+- 首頁入口已補：`hub/entries/robot-game.js`（珊瑚紅底座、小機器人：米白圓頭方身、胸口齒輪窗、天藍肩膀馬達、頭頂小電腦；靠近會揮手眨眼）＋ `hub/entries.json` 第 6 筆。
+- 首頁檢查：`pipeline/shots/2026-11-01/home/summary.md` 4／4 ok、零 console error、零橫向捲動；四張截圖都看得到第 6 個徽章（珊瑚紅、機器人圖示、數字 6）。**robot-game 正式上首頁。**
+- 試玩員順手提到（原本就有、不是今晚造成）：首頁 1 號徽章貼著畫面頂端、手機版標題右側被 1 號徽章蓋到一點。只記錄。
+- `pipeline/requests.md` 第一題改成「已做 2026-11-01 → lab/robot-game/」；`pipeline/state.json`：phase = polish、current = robot-game、polishNights = 0、attempt = 0。
+- 錄音：今晚由外面的腳本自動錄（中文 15 句 419 字、英文 5 句 14 字元），不是 AI 錄的；Mac mini 沒有金鑰的話，早上 08:30 的錄音班補錄。

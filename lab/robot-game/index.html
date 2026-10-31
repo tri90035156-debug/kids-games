@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>做一台機器人</title>
+<meta name="description" content="給 6 歲小朋友的 3D 黏土玩具：按 R、O、B、O、T，或用手指把五個零件裝到機器人身上，聽機器人是怎麼一步一步被人做出來的。有配音、畫面幾乎沒有字。">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="game.css">
+</head>
+<body class="rb-body">
+<div id="rb">
+  <div id="v3" class="rb-view"></div>
+  <div id="ov" class="rb-ov" aria-hidden="true">
+    <div id="strip" class="rb-strip"><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  <a class="rb-ico" id="hubBtn" href="../../" aria-label="回到所有遊戲"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14l2-5h11l3 5v4H3z"/><path d="M7 9V6h7l2 3"/><circle cx="7" cy="18" r="1.6" fill="currentColor"/><circle cx="17" cy="18" r="1.6" fill="currentColor"/></svg></a>
+  <button class="rb-ico" id="sndBtn" aria-label="聲音開關"></button>
+
+  <div class="rb-corner" id="corner" hidden>
+    <button class="rb-ico" id="againBtn" aria-label="拆掉重做"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 4.5v4h4"/></svg></button>
+    <button class="rb-ico" id="infoBtn" aria-label="給家長" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".9" fill="currentColor" stroke="none"/></svg></button>
+  </div>
+
+  <section class="rb-info" id="info" hidden>
+    <button class="rb-close" id="infoClose" aria-label="關上"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <h2>給家長</h2>
+    <p>robot 的五個字母，對到機器人一步一步被做出來的順序。年份是方便記的近似值。</p>
+    <ul>
+      <li><b>r 設計圖</b>：很早以前人就想要會自己動的幫手，像古希臘神話裡會動的青銅巨人塔洛斯。〔<a href="https://en.wikipedia.org/wiki/Talos" target="_blank" rel="noopener">Wikipedia: Talos</a>〕</li>
+      <li><b>o 齒輪身體</b>：1768～1774 年，瑞士鐘錶匠 Pierre Jaquet-Droz 父子和 Jean-Frédéric Leschot 做出「寫字人偶」，靠發條、齒輪和凸輪，用鵝毛筆寫出最多 40 個字母。它今天還在瑞士納沙泰爾的博物館裡，而且還會動。〔<a href="https://en.wikipedia.org/wiki/Jaquet-Droz_automata" target="_blank" rel="noopener">Wikipedia</a>、<a href="https://www.lindahall.org/about/news/scientist-of-the-day/pierre-jaquet-droz/" target="_blank" rel="noopener">Linda Hall Library</a>〕</li>
+      <li><b>b 有力氣的手臂</b>：1961 年，Unimate 在美國紐澤西的通用汽車工廠上工，把剛壓鑄好的燙金屬件搬下來，一般公認是第一台工業機器人。（它的手臂其實是液壓推動的；今天的工廠手臂多半在關節裡裝電動馬達。）〔<a href="https://www.thehenryford.org/collections-and-research/digital-collections/artifact/183434" target="_blank" rel="noopener">The Henry Ford</a>、<a href="https://en.wikipedia.org/wiki/Unimate" target="_blank" rel="noopener">Wikipedia</a>〕</li>
+      <li><b>o 攝影機眼睛</b>：1966～1972 年，美國史丹佛研究院（SRI）的 Shakey 用電視攝影機和測距儀看路，是第一台會自己想步驟、再自己移動的機器人。它的「腦」是一台用無線電連線的大電腦。〔<a href="https://www.sri.com/story/75-years-of-innovation-shakey-the-robot/" target="_blank" rel="noopener">SRI</a>、<a href="https://en.wikipedia.org/wiki/Shakey_the_robot" target="_blank" rel="noopener">Wikipedia</a>〕</li>
+      <li><b>t 小電腦腦袋</b>：1971 年有了微處理器，電腦小到可以裝進機器人身體裡。今天的機器人靠程式知道要做什麼。〔<a href="https://en.wikipedia.org/wiki/Intel_4004" target="_blank" rel="noopener">Wikipedia: Intel 4004</a>〕</li>
+      <li><b>robot 這個字</b>：出自捷克作家 Karel Čapek 1920 年的劇本《R.U.R.》，是哥哥 Josef 建議的，來自捷克語 robota（苦工、勞役）。劇裡的 robot 是人造的人，不是金屬做的。〔<a href="https://www.britannica.com/print/article/512953" target="_blank" rel="noopener">Britannica</a>、<a href="https://www.lindahall.org/about/news/scientist-of-the-day/karel-capek-2/" target="_blank" rel="noopener">Linda Hall Library</a>〕</li>
+    </ul>
+  </section>
+
+  <div class="rb-nogl" id="nogl" hidden>這台裝置打不開 3D 畫面。<a href="../../">回到所有遊戲</a></div>
+</div>
+<script src="../../vendor/three.min.js"></script>
+<script src="content.js"></script>
+<script src="space.js"></script>
+<script src="engine.js"></script>
+<script src="sound.js"></script>
+<script src="art.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

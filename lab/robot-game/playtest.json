@@ -1,0 +1,1 @@
+{"urls":[{"label":"start","q":"?fast=1"},{"label":"step1","q":"?step=1&fast=1"},{"label":"step3","q":"?step=3&fast=1"},{"label":"step5","q":"?step=5&fast=1"},{"label":"end","q":"?end=1&fast=1"}],"poke":true}
