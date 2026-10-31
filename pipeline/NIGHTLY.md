@@ -11,7 +11,7 @@
 
 ## 1. 鐵律
 
-1. 不碰任何 `.env`、不印任何金鑰、不錄配音（VoAI 要錢）。新遊戲一律「不配音、字母鍵驅動」。
+1. 不碰任何 `.env`、不印任何金鑰、不錄配音（VoAI 要錢）。新遊戲一律「不配音、字母鍵驅動」；家長點題寫明要配音的，只寫好配音稿與播放程式、不錄音。
 2. 不改四個正式遊戲（`seed-game`、`ai-game`、`bowl-game`、`space-game`）、不改根目錄 `index.html`、`hub/common.js`、`hub/common.css`、`vendor/`。
    只在 `lab/`、`pipeline/`、首頁入口檔 `hub/entries/<slug>.js` 與清單 `hub/entries.json` 寫東西。回歸測試發現正式遊戲或首頁壞掉 → 只記錄，不修。
 3. 只借玩法機制，不拿別人的圖、音、角色、文字。全部自己畫 SVG、自己合成聲音。
@@ -50,6 +50,11 @@ tester 跑 `node pipeline/playtest.mjs --all --levels 3 --out pipeline/shots/<�
 0. 先看 `pipeline/requests.md`（家長點題）：有「狀態：待做」的就用最上面那一個當今晚的題目，**跳過 scout**；
    把那一段整段抄進 `pipeline/ideas/<日期>.md`，第 2 步的 verifier 只查核這一個（不用選），builder 照那段的需求建。
    judge 寫完報告後，把 requests.md 那一題改成「狀態：已做 <日期> → lab/<slug>-game/」，跟著 commit。
+   **那一題寫「先審計畫：是」時**：在交給 verifier 之前，你（總指揮 Fable）先自己用新眼睛自由想一遍這個計畫：
+   哪裡可以更簡單、更乾淨、更好玩、孩子更容易懂，哪裡有事實或技術風險，哪個元素沒有意義可以拿掉。
+   寫成 `pipeline/ideas/<日期>.md` 末尾的「## 總指揮的優化建議」（條列，每條寫改什麼、為什麼）。
+   家長已定案的大方向（那一題「已定案的設計」）不推翻；細節可以改。builder 一律照「已定案的設計＋優化建議」建，
+   judge 評審時也對照這份建議。點題裡另外寫的例外（例如要配音、不注音）優先於下面的一般規則。
 1. scout → 寫 `pipeline/ideas/<日期>.md`。
 2. verifier 讀該檔，查核並選一個，附來源，寫在同檔末尾「## 查核與選擇」。
 3. builder 建 `lab/<slug>-game/`（slug 英文小寫，例如 `weather-game`）。**新遊戲一律 3D 黏土＋物理**（家長 2026-10-30 的要求：像首頁那樣立體、有重量），不再做平面 SVG。
