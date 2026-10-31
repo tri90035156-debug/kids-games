@@ -86,6 +86,20 @@ wait "$CPID"; RC=$?
 kill "$WPID" 2>/dev/null
 echo "--- claude 結束（exit ${RC}）"
 
+# 錄音：這台若有金鑰檔（~/.kids-games/keys.env）就把 lab/ 裡還沒錄的旁白錄起來，只 commit 音檔。
+# 沒有金鑰檔就跳過，由家長 MacBook 早上的錄音班（pipeline/voice_morning.sh）補錄。由腳本執行，claude 碰不到金鑰。
+if [ -f "$HOME/.kids-games/keys.env" ]; then
+  echo "--- 錄音"
+  python3 -I pipeline/record_voice.py || echo "!! 錄音失敗（遊戲照常上線，早上的錄音班會再補）"
+  NEWA="$(git -c core.quotePath=false status --porcelain -uall | grep -E '^\?\? lab/[^/]+/audio/[0-9a-f]+\.mp3$' | cut -c4- || true)"
+  if [ -n "$NEWA" ]; then
+    while IFS= read -r f; do git add -- "$f"; done <<<"$NEWA"
+    git commit -q -m "夜間：錄音（VoAI 中文、ElevenLabs 英文）" && echo "已 commit 新錄的音檔"
+  fi
+else
+  echo "--- 這台沒有金鑰檔，不錄音（家長 MacBook 早上的錄音班會補錄）"
+fi
+
 # 收尾：沒 commit 的殘留一律不推（但保留在硬碟給人看）
 if [ -n "$(git status --porcelain)" ]; then
   echo "注意：有未 commit 的檔案（保留在硬碟，不會上線）："; git status --porcelain | head -30
@@ -103,7 +117,7 @@ if echo "$CHANGED" | grep -vE "$ALLOW" | grep -q .; then
   fail "有 lab/、pipeline/、hub/entries 以外的檔案被改到，不推。請人工檢查後自己 push 或 reset。"
 fi
 if echo "$CHANGED" | grep -vE '\.env\.example$' | grep -qE '(^|/)\.env($|\.)' ; then fail "有 .env 被 commit，不推！請人工處理。"; fi
-if git diff "$BEFORE" "$AFTER" | grep -E '^\+' | grep -qiE 'sk-[A-Za-z0-9]{10,}|api[_-]?key["'"'"' ]*[:=]["'"'"' ]*[A-Za-z0-9_-]{16,}|x-api-key:'; then
+if git diff "$BEFORE" "$AFTER" | grep -E '^\+' | grep -qiE 'sk[-_][A-Za-z0-9]{10,}|api[_-]?key["'"'"' ]*[:=]["'"'"' ]*[A-Za-z0-9_-]{16,}|x-api-key:'; then
   fail "新增的內容裡疑似有金鑰，不推。請人工檢查。"
 fi
 

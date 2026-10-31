@@ -11,7 +11,10 @@
 
 ## 1. 鐵律
 
-1. 不碰任何 `.env`、不印任何金鑰、不錄配音（VoAI 要錢）。新遊戲一律「不配音、字母鍵驅動」；家長點題寫明要配音的，只寫好配音稿與播放程式、不錄音。
+1. 不碰任何 `.env`、`~/.kids-games/`，不印任何金鑰，**你自己不呼叫任何錄音服務**。新遊戲一律「不配音、字母鍵驅動」；
+   家長點題寫明要配音的，builder 把旁白寫進 `tools/content.py` 的 `SAY`、跑 build.py 產生 `tools/narration.json`、做好播放程式，
+   **錄音由外面的腳本自動做**（`pipeline/record_voice.py`：中文 VoAI 雅琪、英文 ElevenLabs；每次有點數上限），你不用也不能自己錄。
+   英文句子（例如字母、英文單字）的 key 用 `en.` 開頭，腳本才會用英文聲音錄。報告裡寫出要錄幾句、幾個字。
 2. 不改四個正式遊戲（`seed-game`、`ai-game`、`bowl-game`、`space-game`）、不改根目錄 `index.html`、`hub/common.js`、`hub/common.css`、`vendor/`。
    只在 `lab/`、`pipeline/`、首頁入口檔 `hub/entries/<slug>.js` 與清單 `hub/entries.json` 寫東西。回歸測試發現正式遊戲或首頁壞掉 → 只記錄，不修。
 3. 只借玩法機制，不拿別人的圖、音、角色、文字。全部自己畫 SVG、自己合成聲音。

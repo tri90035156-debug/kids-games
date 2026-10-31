@@ -48,6 +48,17 @@ bash <(curl -fsSL https://wanwan.tw/pipeline/bootstrap.sh)
 孩子有想學的主題，就寫進 `pipeline/requests.md`（照裡面的格式，狀態寫「待做」）再 `git push`。
 下一個「建新遊戲」的晚上會先做這一題、不另外找點子；做完狀態會自動改成「已做」。
 
+## 二之二、錄音（自動）
+
+家長點題寫明要配音的遊戲，builder 只寫旁白稿（`tools/content.py` 的 `SAY`，英文句的 key 用 `en.` 開頭）。
+錄音由腳本 `pipeline/record_voice.py` 自動做：中文 VoAI 雅琪、英文 ElevenLabs（Matilda），每次上限 VoAI 1000 字、ElevenLabs 300 字元，已錄過的不重錄。
+Mac mini 沒有金鑰，所以由**家長 MacBook 的錄音班**每天 08:30 補錄（那時在睡覺就醒來後補跑），錄完只 commit 音檔、推上線。
+在 MacBook 裝一次就好：
+```bash
+bash ~/Documents/兒童互動遊戲/pipeline/install_voice.sh
+```
+看紀錄：`tail -30 ~/.kids-games/logs/$(date +%F).log`。移除：`bash pipeline/install_voice.sh --uninstall`。
+
 ## 三、不想要某個遊戲出現在首頁
 
 把 `hub/entries.json` 裡那一行（例如 `"water-game"`）刪掉、`git push` 就好；遊戲檔案與入口檔都還在，想放回來再加回那一行。

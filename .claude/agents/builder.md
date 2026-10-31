@@ -23,7 +23,7 @@ maxTurns: 150
    `space.js` 的背景是夜空，新遊戲改成米白：`S3.view(el, { scene })` 時自己建 `scene`（`background = new THREE.Color(0xF7F0E4)`、同色 `Fog`），光照照 PRINCIPLES 一之二。
 2. `index.html`：改 title、description、saveKey 相關文字；`#hubBtn` 連回 `../../`（lab 多一層）；拿掉用不到的 `#homeBtn`。
    每關的版面照 `space-game/app.js` 的 `frame()`：上面 `.view3d`（畫布＋一層 `.ov` 放鍵帽、小卡、手勢提示），下面放按鈕。
-3. `tools/content.py`：所有文字放 `UI`（不放 `SAY`，不配音）。**例外：總指揮交給你的家長點題寫明「要配音、不注音」時，照點題做**：旁白句放 `SAY`、做好 `narration.json` 與播放（沒音檔就等該句長度再往下，不錄音、不碰 .env），畫面文字不加注音。句子短、注音自動產生，破音字用 `字[ㄓㄨˋ]` 手動指定（查核員的清單照改）。跑 `python3 tools/build.py` 產生 `content.js`，看印出的逐句注音，錯的回去手動指定。
+3. `tools/content.py`：所有文字放 `UI`（不放 `SAY`，不配音）。**例外：總指揮交給你的家長點題寫明「要配音、不注音」時，照點題做**：旁白句放 `SAY`（英文句的 key 用 `en.` 開頭）、跑 build.py 產生 `narration.json`、做好播放（沒音檔就等該句長度再往下）。你不錄音、不碰金鑰，外面的腳本會自動錄。畫面文字不加注音。句子短、注音自動產生，破音字用 `字[ㄓㄨˋ]` 手動指定（查核員的清單照改）。跑 `python3 tools/build.py` 產生 `content.js`，看印出的逐句注音，錯的回去手動指定。
 4. `art.js`：3D 物件用 three.js 基本幾何拼（球、方、圓柱、圓錐、環、Lathe），每個物件一個函式回傳 Group，材質 `S3.clay({color})` 或 `MeshStandardMaterial({roughness:.85})`；只有小圖示（徽章、鍵帽旁的提示）才畫 SVG。不用 emoji、不用外部圖或貼圖。
 5. `app.js`：8～10 關，每關一個 async 函式，**每關一個 3D 小場景**（`S3.view`），互動是 3D 的「推、拉、疊、滾、倒、丟、平衡、轉、壓、搖、開蓋子、拖到位置」；連續兩關互動方式不同；
    每個可碰物件都掛彈簧（`S3.jelly` 或首頁的 `springStep`），拖曳有 lerp 慣性與傾斜，掉落有重力與落地回彈，碰撞會推開；每關：
