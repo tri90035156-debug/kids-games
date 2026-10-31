@@ -19,9 +19,9 @@ mkdir -p "$HOMEDIR" "$HOME/Library/LaunchAgents"; chmod 700 "$HOMEDIR"
 KEYS="${KIDS_KEYS_FILE:-$HOMEDIR/keys.env}"
 SRC="$(cd "$(dirname "$0")/.." && pwd)/seed-game/.env"
 if [ ! -s "$KEYS" ]; then
-  [ -r "$SRC" ] || { echo "找不到 $SRC，沒辦法建立金鑰檔"; exit 1; }
+  [ -r "$SRC" ] || { echo "找不到 ${SRC}，沒辦法建立金鑰檔"; exit 1; }
   ( umask 077; grep -E '^(VOAI_API_KEY|ELEVENLABS_API_KEY)=' "$SRC" > "$KEYS" )
-  echo "已建立金鑰檔 $KEYS（只有你的帳號讀得到），裡面有：$(cut -d= -f1 "$KEYS" | tr '\n' ' ')"
+  echo "已建立金鑰檔 ${KEYS}（只有你的帳號讀得到），裡面有：$(cut -d= -f1 "$KEYS" | tr '\n' ' ')"
 fi
 chmod 600 "$KEYS"
 # 腳本複製一份到 ~/.kids-games（launchd 讀不到「文件」資料夾裡的檔案）
