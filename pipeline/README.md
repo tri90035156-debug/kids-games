@@ -59,6 +59,12 @@ bash ~/Documents/兒童互動遊戲/pipeline/install_voice.sh
 ```
 看紀錄：`tail -30 ~/.kids-games/logs/$(date +%F).log`。移除：`bash pipeline/install_voice.sh --uninstall`。
 
+## 二之三、暫停／恢復流水線
+
+- **暫停**：`pipeline/PAUSED` 這個檔存在（推上 GitHub），Mac mini 05:00 拉下來看到就不呼叫 claude、不花 token；MacBook 早上的錄音班也不錄。
+- **恢復**：刪掉 `pipeline/PAUSED`，推上 GitHub。下一個 05:00 就照常跑。
+- 2026-11-01 家長暫停（token 先留給其他專案）。
+
 ## 三、不想要某個遊戲出現在首頁
 
 把 `hub/entries.json` 裡那一行（例如 `"water-game"`）刪掉、`git push` 就好；遊戲檔案與入口檔都還在，想放回來再加回那一行。

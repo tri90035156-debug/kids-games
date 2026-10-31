@@ -24,6 +24,7 @@ cd "$REPO" || fail "進不去 $REPO"
 git checkout -q main 2>/dev/null
 [ -z "$(git status --porcelain)" ] || { git status --porcelain | head; fail "錄音用的 repo 不乾淨"; }
 git pull -q --ff-only || fail "git pull 失敗"
+[ -f pipeline/PAUSED ] && { echo "流水線暫停中（pipeline/PAUSED），不錄。"; echo "=== $(date '+%F %T') 結束 ==="; exit 0; }
 
 if [ "${VOICE_DRY:-0}" = "1" ]; then python3 -I pipeline/record_voice.py --dry-run; exit 0; fi
 KIDS_KEYS_FILE="$KEYS" python3 -I pipeline/record_voice.py || fail "錄音失敗"

@@ -52,6 +52,9 @@ fi
 git pull --ff-only || fail "git pull 失敗（網路或分支分岔）"
 BEFORE="$(git rev-parse HEAD)"
 
+# 暫停開關：pipeline/PAUSED 存在就不跑（家長要把 token 留給別的專案）。刪掉這個檔、推上 GitHub 就恢復。
+if [ -f pipeline/PAUSED ]; then echo "流水線暫停中（pipeline/PAUSED），今晚不跑。"; echo "=== $(date '+%F %T') 結束 ==="; exit 0; fi
+
 if [ "${NIGHTLY_DRY:-0}" = "1" ]; then echo "環境都在，DRY 模式結束"; exit 0; fi
 
 MODEL="${NIGHTLY_MODEL:-fable}"
