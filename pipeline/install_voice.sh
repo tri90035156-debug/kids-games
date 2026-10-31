@@ -12,9 +12,18 @@ if [ "${1:-}" = "--uninstall" ]; then
   rm -f "$PLIST"; echo "已移除錄音班"; exit 0
 fi
 H="${1:-8}"; M="${2:-30}"
-# 金鑰就用 repo 裡 seed-game/.env 那一份（不複製）；要換位置：KIDS_KEYS_FILE=… bash pipeline/install_voice.sh
-KEYS="${KIDS_KEYS_FILE:-$(cd "$(dirname "$0")/.." && pwd)/seed-game/.env}"
-mkdir -p "$HOMEDIR" "$HOME/Library/LaunchAgents"
+# 金鑰：macOS 不讓排程讀「文件」資料夾，所以由家長親手執行這支時，
+# 把 seed-game/.env 裡的兩把金鑰（VOAI_API_KEY、ELEVENLABS_API_KEY）存一份到 ~/.kids-games/keys.env（只有自己讀得到）。
+# 不會印出金鑰內容。已經有這個檔就不動它。
+mkdir -p "$HOMEDIR" "$HOME/Library/LaunchAgents"; chmod 700 "$HOMEDIR"
+KEYS="${KIDS_KEYS_FILE:-$HOMEDIR/keys.env}"
+SRC="$(cd "$(dirname "$0")/.." && pwd)/seed-game/.env"
+if [ ! -s "$KEYS" ]; then
+  [ -r "$SRC" ] || { echo "找不到 $SRC，沒辦法建立金鑰檔"; exit 1; }
+  ( umask 077; grep -E '^(VOAI_API_KEY|ELEVENLABS_API_KEY)=' "$SRC" > "$KEYS" )
+  echo "已建立金鑰檔 $KEYS（只有你的帳號讀得到），裡面有：$(cut -d= -f1 "$KEYS" | tr '\n' ' ')"
+fi
+chmod 600 "$KEYS"
 # 腳本複製一份到 ~/.kids-games（launchd 讀不到「文件」資料夾裡的檔案）
 cp "$(cd "$(dirname "$0")" && pwd)/voice_morning.sh" "$HOMEDIR/voice_morning.sh"
 cat >"$PLIST" <<EOF
