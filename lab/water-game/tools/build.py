@@ -24,7 +24,11 @@ try:
 except ImportError:
     sys.exit('請先安裝：pip install pypinyin')
 
+import content  # noqa: E402
 from content import SAY, UI  # noqa: E402
+
+# ZHUYIN = False：有配音的遊戲畫面不標注音（家長 2026-10-31、11-01 決定）
+ZHUYIN = getattr(content, 'ZHUYIN', True)
 
 # 遊戲裡固定讀音的字：「得」只當助詞（變得、跑得），「片」照片／圖片
 FIXED = {'得': '˙ㄉㄜ', '片': 'ㄆㄧㄢˋ', '錫': 'ㄒㄧˊ'}
@@ -96,13 +100,20 @@ def vid(text):
 def main():
     tx, narr, poly = {}, [], {}
     for key, text in list(SAY.items()) + list(UI.items()):
+        # SAY 可以寫成 (顯示, 唸的)：畫面有字母鍵帽，聲音改說按哪個東西
+        text, spoken = text if isinstance(text, tuple) else (text, None)
         z, plain = annotate(text)
+        if spoken is not None:
+            spoken = annotate(spoken)[1]
         voiced = key in SAY
+        if not ZHUYIN:
+            z = [it[0] if isinstance(it, list) else it for it in z]
         tx[key] = {'t': plain, 'z': z}
         if voiced:
-            tx[key]['v'] = vid(plain)
-            narr.append({'key': key, 'id': tx[key]['v'], 'text': plain})
-        for it in z:
+            said = spoken or plain
+            tx[key]['v'] = vid(said)
+            narr.append({'key': key, 'id': tx[key]['v'], 'text': said})
+        for it in annotate(text)[0]:
             if isinstance(it, list):
                 poly.setdefault(it[0], set()).add(it[1])
 

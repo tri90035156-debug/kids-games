@@ -249,6 +249,7 @@
       el.classList.add('gone'); home(el);
       items[i] = null; left--;
       sfx('land'); note(4 + n++);
+      speak('it.' + order[i][0]);                        // 放對了：唸出它的名字（冰塊、雨…）
       if (n === 1) sayBox.classList.add('wg-faded');     // 會玩了：說明退到旁邊
     }
     sfx('ok');
@@ -547,21 +548,27 @@
     await endCard(8, A.popsicle(1));
   }
 
-  // ---------- 第九關：生活裡的變身（連線） ----------
+  // ---------- 第九關：生活裡的變身（連連看） ----------
+  // 連法：點左再點右、點右再點左、從任一邊拖到另一邊（放開時差一點也會吸到最近的卡）、字母鍵 A～E 加 J～L。
+  // 同一張卡再點一次、或點空白處＝取消。多張左卡可以連到同一張右卡。
+  // 手指點一下常會抖幾個像素：移動超過 MOVE 才算拖，否則一律當成「點」。
   async function ch9() {
     show();
     const SITS = [['c9.s1', A.clothes(), 0, 'c9.r1'], ['c9.s2', A.cupDrops(), 1, 'c9.r2'], ['c9.s3', A.mirror(), 1, 'c9.r3'],
       ['c9.s4', A.soupSmoke(), 1, 'c9.r4'], ['c9.s5', A.freezer(), 2, 'c9.r5']];
     const ANS = [['c9.evap', A.evapIcon()], ['c9.cond', A.condIcon()], ['c9.frz', A.freezeIcon()]];
+    const MOVE = 14, SNAP = 56;
     const sits = shuffle(SITS);
     stage.innerHTML = '<div class="wg-match" id="mx"><svg class="wg-lines" id="lines"><g id="perm"></g><line id="tmp" visibility="hidden"/></svg>' +
       '<div class="wg-left">' + sits.map((s, i) => '<button class="wg-sit wg-touch" data-i="' + i + '">' + kc('ABCDE'[i]) + '<span class="wg-si">' + s[1] + '</span><span class="wg-sl">' + Z(s[0]) + '</span><i class="wg-dot"></i></button>').join('') + '</div>' +
       '<div class="wg-right">' + ANS.map((a, i) => '<button class="wg-ans wg-touch" data-a="' + i + '"><i class="wg-dot"></i>' + kc('JKL'[i]) + '<span class="wg-ai">' + a[1] + '</span><span class="wg-al">' + Z(a[0]) + '</span></button>').join('') + '</div></div>';
     const mx = $('#mx'), svgL = $('#lines'), perm = $('#perm'), tmp = $('#tmp');
     const sEls = all('.wg-sit'), aEls = all('.wg-ans');
+    const EL = { s: sEls, a: aEls };
     const pairs = [], miss = sits.map(() => 0);
-    let from = -1, left = sits.length;
-    const pt = (el, side) => {
+    const sel = { s: -1, a: -1 };
+    let left = sits.length, busy = false, vTok = 0;
+    const pt = el => {
       const r = el.querySelector('.wg-dot').getBoundingClientRect(), m = mx.getBoundingClientRect();
       return [r.left - m.left + r.width / 2, r.top - m.top + r.height / 2];
     };
@@ -572,66 +579,101 @@
     };
     redraw();
     addEventListener('resize', redraw);
-    const select = i => { from = i; sEls.forEach((e, k) => e.classList.toggle('sel', k === i)); if (i >= 0) sfx('tap'); };
+    const paint = () => { sEls.forEach((e, k) => e.classList.toggle('sel', k === sel.s)); aEls.forEach((e, k) => e.classList.toggle('sel', k === sel.a)); };
+    const clear = () => { sel.s = sel.a = -1; paint(); };
+    const voice = key => { vTok++; G.speak(key); };
     say('c9.goal');
     await new Promise(res => {
       let stop = guide(sEls[0], 'swipe');
       const regl = () => { stop(); const f = sEls.find(e => !e.classList.contains('done')); stop = f ? guide(f, 'swipe') : () => {}; };
-      const finish = () => { stop(); offT(); offK(); removeEventListener('resize', redraw); res(); };
+      const outside = ev => { if (!busy && !ev.target.closest('.wg-match,#top,#say')) clear(); };   // 點連線區外的空白也取消
+      addEventListener('pointerdown', outside);
+      const finish = () => { stop(); offT(); offK(); removeEventListener('pointerdown', outside); removeEventListener('resize', redraw); res(); };
       const attempt = async (i, a) => {
+        if (busy || sEls[i].classList.contains('done')) return;
         tmp.setAttribute('visibility', 'hidden');
-        if (i < 0 || sEls[i].classList.contains('done')) return;
         if (sits[i][2] !== a) {
           shake(aEls[a]); sfx('no');
           miss[i]++;
+          sel.s = i; sel.a = -1; paint();        // 左邊那張留著選起來，直接再點別的右卡就好
+          vTok++;
           tip(miss[i] >= 2 ? 'g.no2' : 'c9.wrong');
           if (miss[i] >= 2) aEls[sits[i][2]].classList.add('wg-hint');
           if (miss[i] < 3) return;
+          busy = true;
           await demo(aEls[sits[i][2]]);
+          busy = false;
           a = sits[i][2];
         }
         aEls.forEach(e => e.classList.remove('wg-hint'));
         pairs.push([i, a]); redraw();
         sEls[i].classList.add('done'); squash(sEls[i]); squash(aEls[a]);
-        select(-1);
+        clear();
         sfx('ok'); left--;
-        if (!left) { await say(sits[i][3]); finish(); return; }
-        say(sits[i][3]);
+        // 先唸右卡的名字（凝結！），再唸為什麼；中途又點了別的卡就不接著唸
+        const tok = ++vTok;
+        const why = (async () => { await G.speak(ANS[a][0]); if (tok === vTok) await say(sits[i][3]); })();
+        if (!left) { busy = true; await why; finish(); return; }
         regl();
       };
-      const under = ev => {
-        const e = document.elementFromPoint(ev.clientX, ev.clientY);
-        return e ? [e.closest('.wg-sit'), e.closest('.wg-ans')] : [null, null];
+      // 點（或按字母）一張卡
+      const pick = (side, k) => {
+        if (busy) return;
+        const el = EL[side][k];
+        if (side === 's' && el.classList.contains('done')) { voice(sits[k][3]); return; }
+        const other = side === 's' ? 'a' : 's';
+        if (sel[other] >= 0) { const i = side === 's' ? k : sel.s, a = side === 'a' ? k : sel.a; attempt(i, a); return; }
+        if (sel[side] === k) { clear(); sfx('tap'); return; }       // 再點一次＝取消
+        sel[side] = k; paint(); sfx('tap');
+        voice(side === 's' ? sits[k][0] : ANS[k][0]);
       };
-      let moved = false, startI = -1;
+      const cardAt = (x, y) => {
+        const e = document.elementFromPoint(x, y);
+        const s = e && e.closest('.wg-sit'), a = e && e.closest('.wg-ans');
+        return s ? ['s', +s.dataset.i] : a ? ['a', +a.dataset.a] : null;
+      };
+      // 放開時沒剛好在卡上：找對面那一排最近、在 SNAP 像素內的卡
+      const nearest = (side, x, y) => {
+        let best = -1, bd = SNAP;
+        EL[side].forEach((e, k) => {
+          const r = e.getBoundingClientRect();
+          const d = Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
+          if (d < bd) { bd = d; best = k; }
+        });
+        return best;
+      };
+      let start = null, moved = false, x0 = 0, y0 = 0;
       const offT = track(mx, {
         down(p, ev) {
-          const [s, a] = under(ev);
-          moved = false;
-          if (a && from >= 0) { attempt(from, +a.dataset.a); startI = -1; return; }
-          if (s && !s.classList.contains('done')) { startI = +s.dataset.i; select(startI); } else startI = -1;
+          start = cardAt(ev.clientX, ev.clientY); moved = false; x0 = ev.clientX; y0 = ev.clientY;
+          if (start && start[0] === 's' && sEls[start[1]].classList.contains('done')) start = ['done', start[1]];
         },
-        move(p) {
-          if (startI < 0) return;
+        move(p, ev) {
+          if (!start || start[0] === 'done' || busy) return;
+          if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < MOVE) return;
           moved = true;
-          const q = pt(sEls[startI]);
+          const q = pt(EL[start[0]][start[1]]);
           tmp.setAttribute('x1', q[0]); tmp.setAttribute('y1', q[1]); tmp.setAttribute('x2', p.x); tmp.setAttribute('y2', p.y);
           tmp.setAttribute('visibility', 'visible');
         },
         up(p, ev) {
           tmp.setAttribute('visibility', 'hidden');
-          if (startI < 0) return;
-          const [, a] = under(ev);
-          if (a) attempt(startI, +a.dataset.a);
-          else if (moved) select(-1);
-          startI = -1;
+          const st = start; start = null;
+          if (ev.type === 'pointercancel') return;
+          if (!st) { if (!moved) clear(); return; }                 // 點空白處＝取消
+          if (st[0] === 'done') { if (!moved) pick('s', st[1]); return; }
+          if (!moved) { pick(st[0], st[1]); return; }
+          const other = st[0] === 's' ? 'a' : 's';
+          const hit = cardAt(ev.clientX, ev.clientY);
+          const k = hit && hit[0] === other ? hit[1] : nearest(other, ev.clientX, ev.clientY);
+          if (k < 0) { if (sel[st[0]] !== st[1]) pick(st[0], st[1]); return; }   // 沒拖到對面：留著選起來
+          sel.s = sel.a = -1; sel[st[0]] = st[1];
+          pick(other, k);
         },
       });
       const offK = onKeys(['a', 'b', 'c', 'd', 'e', 'j', 'k', 'l'], k => {
         const li = 'abcde'.indexOf(k);
-        if (li >= 0) { if (!sEls[li].classList.contains('done')) select(li); return; }
-        if (from >= 0) attempt(from, 'jkl'.indexOf(k));
-        else { shake(sEls.find(e => !e.classList.contains('done'))); }
+        if (li >= 0) pick('s', li); else pick('a', 'jkl'.indexOf(k));
       });
     });
     await say('c9.done');
@@ -703,6 +745,7 @@
       '<div class="wg-pcard"><b class="wg-pl">' + Z('ui.parent') + '</b><div class="wg-pt">' + Z('fin.parent') + '</div></div></div>';
     all('.wg-stk').forEach((e, i) => e.addEventListener('click', () => { squash(e); note(3 + i); }));
     sfx('win');
+    await speak('fin.title');
     await say('fin.hi');
     await say('fin.task');
   }
