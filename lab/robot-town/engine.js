@@ -211,21 +211,23 @@ window.G = (() => {
       let done = false, timer = 0;
       const fin = () => { if (done) return; done = true; clearTimeout(timer); if (finishCur === fin) finishCur = null; res(); };
       finishCur = fin;
-      const quiet = () => {                       // 沒有音檔：等這句該有的長度再往下
-        if (e.v && !missing.has(key)) { missing.add(key); console.info('[配音] 還沒錄 audio/' + e.v + '.mp3 →', e.t); }
+      // 不播音檔：等這句該有的長度再往下。miss＝音檔真的載不到（404），之後這句就不再試；
+      // 聲音關掉、?fast=1、瀏覽器還不讓播都不算，打開聲音以後要照常出聲
+      const quiet = miss => {
+        if (miss && e.v && !missing.has(key)) { missing.add(key); console.info('[配音] 還沒錄 audio/' + e.v + '.mp3 →', e.t); }
         timer = setTimeout(fin, FAST ? 30 : Math.max(1200, e.t.length * 220));
       };
       // ?fast=1 是測試用（旁白不等）：不載音檔，免得還沒錄好的句子在試玩報告裡變成 404 錯誤
       if (!S.sound || !e.v || missing.has(key) || FAST) { quiet(); return; }
       VO.onended = () => { if (my === token) { playing = false; fin(); } };
-      VO.onerror = () => { if (my === token) { playing = false; if (!done) quiet(); } };
+      VO.onerror = () => { if (my === token) { playing = false; if (!done) quiet(true); } };
       try {
         VO.volume = 1;
         VO.src = 'audio/' + e.v + '.mp3';
         playing = true;
         const p = VO.play();
         if (p && p.catch) p.catch(() => { if (my === token) { playing = false; if (!done) quiet(); } });
-      } catch (err) { playing = false; quiet(); }
+      } catch (err) { playing = false; quiet(true); }
     });
   }
   // 現在這句播到哪裡（0～1）；沒有在播音檔（靜音、還沒錄、?fast=1）回傳 null
