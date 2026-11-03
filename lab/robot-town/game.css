@@ -1,0 +1,92 @@
+/* 《機器人出任務》：整個畫面就是一個 3D 小鎮。主畫面沒有字：左上回首頁、右上聲音、右下給家長；任務時上方三個小點＝三小關。 */
+:root{ --rt-bg:#F7F0E4; --rt-ink:#3B3430; --rt-coral:#F05A3C; --rt-amber:#F2A33A; --rt-sky:#3C9BE0; }
+html,body.rt-body{height:100%;overflow:hidden;background:var(--rt-bg);overscroll-behavior:none}
+body.rt-body{font-size:16px;-webkit-text-size-adjust:100%}
+#rt{position:fixed;inset:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.rt-view{position:absolute;inset:0;touch-action:none}
+.rt-view .gl{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;outline:none}
+.rt-ov{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+
+/* 鍵帽：掛在物件上方；觸控裝置不顯示 */
+.rt-kc{position:absolute;left:0;top:0;font-size:20px;font-family:"Avenir Next","Helvetica Neue",system-ui,sans-serif!important;font-weight:700;color:#8a7a70;opacity:.55;will-change:transform}
+.rt-kc.cur{opacity:1;color:var(--rt-coral);border-color:#e9b7a8;box-shadow:0 0 0 5px rgba(240,90,60,.16);animation:rt-breathe 2.4s ease-in-out infinite}
+.rt-kc.off{display:none}
+@keyframes rt-breathe{50%{box-shadow:0 0 0 9px rgba(240,90,60,.08)}}
+@media (hover:none),(pointer:coarse){.rt-kc,.rt-bk{display:none!important}}
+
+/* 觸控搖桿：按在哪裡，哪裡就是中心 */
+.rt-stick{position:absolute;left:-64px;top:-64px;width:128px;height:128px;border-radius:50%;border:2px solid rgba(59,52,48,.14);background:rgba(255,248,238,.28);will-change:transform}
+.rt-stick i{position:absolute;left:44px;top:44px;width:40px;height:40px;border-radius:50%;background:rgba(240,90,60,.32);box-shadow:0 2px 6px rgba(59,52,48,.12)}
+
+/* 小手示範 */
+.rt-hand{position:absolute;left:-14px;top:-8px;width:58px;height:58px;will-change:transform,opacity;filter:drop-shadow(0 3px 4px rgba(59,52,48,.22))}
+.rt-hand svg{width:100%;height:100%;display:block;overflow:visible}
+.rt-hand .hd{fill:#FFF8EE;stroke:#8a7a70;stroke-width:2.5;stroke-linejoin:round}
+.rt-hand .tip{fill:rgba(240,90,60,0);stroke:rgba(240,90,60,0);stroke-width:3;transition:fill .15s ease,stroke .15s ease;transform-origin:20px 12px}
+.rt-hand.press .tip{fill:rgba(240,90,60,.25);stroke:rgba(240,90,60,.6);animation:rt-tap .6s ease-out infinite}
+@keyframes rt-tap{from{transform:scale(.6)}to{transform:scale(1.6);opacity:.2}}
+
+/* 三小關的小點 */
+.rt-pips{position:absolute;z-index:4;left:50%;top:max(28px,calc(env(safe-area-inset-top,0px) + 28px));transform:translateX(-50%);display:flex;gap:9px}
+.rt-pips i{width:11px;height:11px;border-radius:50%;box-shadow:inset 0 0 0 1.5px rgba(59,52,48,.3);transition:background .3s ease,box-shadow .3s ease}
+.rt-pips i.done{background:var(--rt-ink);box-shadow:none}
+.rt-pips i.cur{box-shadow:inset 0 0 0 2.5px var(--rt-coral);animation:rt-pip 1.6s ease-in-out infinite}
+@keyframes rt-pip{50%{transform:scale(1.3)}}
+
+/* 任務按鈕列（播放、燈泡、兩隻腳……）：圖示，不寫字 */
+.rt-ctl{position:absolute;z-index:4;left:50%;transform:translateX(-50%);bottom:max(16px,env(safe-area-inset-bottom,0px));display:flex;gap:14px;justify-content:center;pointer-events:none}
+.rt-btn{pointer-events:auto;position:relative;width:76px;height:76px;border-radius:24px;border:1.5px solid rgba(185,142,90,.35);background:rgba(255,253,248,.92);color:var(--rt-ink);display:grid;place-items:center;cursor:pointer;
+  box-shadow:0 4px 14px rgba(59,52,48,.12);transition:transform .22s cubic-bezier(.34,1.56,.64,1),opacity .2s ease,background .2s ease;touch-action:none;animation:rt-up .45s cubic-bezier(.34,1.56,.64,1)}
+.rt-btn svg{width:38px;height:38px}
+.rt-btn .f{fill:none}
+.rt-btn.on{transform:scale(.9);background:#fff}
+.rt-btn.pk{animation:rt-pk .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes rt-pk{40%{transform:scale(.86)}}
+@keyframes rt-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.rt-btn.coral{color:#fff;background:var(--rt-coral);border-color:transparent}
+.rt-btn.dim{opacity:.35;pointer-events:none}
+.rt-btn.lit{color:#fff;background:var(--rt-amber);border-color:transparent;box-shadow:0 0 0 6px rgba(242,163,58,.2)}
+.rt-btn.glow{animation:rt-breathe 2.4s ease-in-out infinite}
+.rt-btn.rt-big{width:96px;height:96px;border-radius:30px}
+.rt-btn.rt-big svg{width:50px;height:50px}
+.rt-btn[hidden]{display:none}
+.rt-bk{position:absolute;right:-8px;top:-10px;font-size:13px!important;padding:1px 5px;opacity:.85}
+
+/* 角落的小圖示 */
+.rt-ico{position:absolute;z-index:5;width:48px;height:48px;display:grid;place-items:center;border-radius:50%;
+  background:rgba(255,248,238,.8);color:#8a7a70;border:1px solid rgba(185,142,90,.22);cursor:pointer;
+  transition:transform .24s cubic-bezier(.34,1.56,.64,1),color .2s ease;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.rt-ico svg{width:24px;height:24px;display:block}
+.rt-ico:hover{color:var(--rt-ink);transform:scale(1.06)}
+.rt-ico:active{transform:scale(.9)}
+.rt-ico[hidden]{display:none}
+#hubBtn{left:max(12px,env(safe-area-inset-left,0px));top:max(12px,env(safe-area-inset-top,0px))}
+#sndBtn{right:max(12px,env(safe-area-inset-right,0px));top:max(12px,env(safe-area-inset-top,0px))}
+#sndBtn.off{color:#c2b4a6}
+#infoBtn{right:max(12px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));width:40px;height:40px;opacity:.75}
+#legsBtn{right:max(12px,env(safe-area-inset-right,0px));bottom:calc(max(12px,env(safe-area-inset-bottom,0px)) + 56px);width:60px;height:60px;color:var(--rt-amber)}
+#legsBtn svg{width:30px;height:30px}
+#legsBtn .rt-bk{right:-6px;top:-8px}
+
+/* 給家長（點 ⓘ 才出現） */
+.rt-info{position:absolute;z-index:6;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(max(12px,env(safe-area-inset-bottom,0px)) + 56px);
+  margin:0 auto;max-width:min(680px,100%);max-height:min(72vh,620px);overflow:auto;-webkit-overflow-scrolling:touch;
+  background:#FFF8EE;color:var(--rt-ink);border-radius:18px;padding:18px 20px 14px;box-shadow:0 10px 30px rgba(59,52,48,.16);
+  font-size:15px;line-height:1.65;overflow-wrap:anywhere;word-break:normal;user-select:text;-webkit-user-select:text;touch-action:pan-y}
+.rt-info h2{margin:0 0 6px;font-size:17px}
+.rt-info p{margin:0 0 8px}
+.rt-info ul{margin:0;padding-left:1.1em}
+.rt-info li{margin:0 0 7px}
+.rt-info a{color:#9a4a36;overflow-wrap:anywhere}
+.rt-close{position:absolute;right:8px;top:8px;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;color:#8a7a70}
+.rt-close svg{width:20px;height:20px}
+.rt-nogl{position:absolute;inset:0;display:grid;place-content:center;gap:10px;text-align:center;padding:24px;font-size:20px;color:var(--rt-ink);overflow-wrap:anywhere}
+.rt-nogl a{color:#9a4a36}
+
+/* 抖動表（第 9 關）：右上角一個小半圓，指針越靠中間手越穩 */
+.rt-meter{position:absolute;z-index:4;right:max(70px,calc(env(safe-area-inset-right,0px) + 70px));top:max(14px,env(safe-area-inset-top,0px));width:92px;height:56px;pointer-events:none}
+.rt-meter svg{width:100%;height:100%;overflow:visible}
+@media (max-width:420px){.rt-btn{width:68px;height:68px;border-radius:22px}.rt-btn.rt-big{width:84px;height:84px}.rt-meter{right:64px;width:76px;height:46px}}
+/* 拍照時畫面閃一下白（第 4 關） */
+.rt-flash{position:absolute;inset:0;z-index:7;background:#fff;pointer-events:none;animation:rt-flash .6s ease-out forwards}
+@keyframes rt-flash{from{opacity:.85}to{opacity:0}}

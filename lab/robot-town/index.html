@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>機器人出任務</title>
+<meta name="description" content="給 6 歲小朋友的 3D 黏土小鎮：開著自己做好的機器人，到十個任務站借十種真實機器人的本事（送貨車、掃地機器人、工廠手臂、火星車、無人機、水下機器人、機器狗、倉庫機器人、精密機器手），每關一種不同的手勢，做完就多一個裝備。有配音、畫面沒有字。">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="game.css">
+</head>
+<body class="rt-body">
+<div id="rt">
+  <div id="v3" class="rt-view"></div>
+  <div id="ov" class="rt-ov" aria-hidden="true">
+    <div id="stick" class="rt-stick" hidden><i></i></div>
+    <div id="hand" class="rt-hand" hidden><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="tip" cx="20" cy="12" r="11"/><path class="hd" d="M14 12 v24 l-6 -5 c-3 -3 -8 1 -5 5 l12 16 c3 4 7 7 13 7 h10 c8 0 13 -6 13 -13 v-14 c0 -4 -6 -4 -6 0 v-2 c0 -4 -6 -4 -6 0 v-2 c0 -4 -6 -4 -6 0 v-16 c0 -5 -8 -5 -8 0z"/></svg></div>
+  </div>
+  <div id="pips" class="rt-pips" hidden><i></i><i></i><i></i></div>
+  <div id="ctl" class="rt-ctl"></div>
+
+  <a class="rt-ico" id="hubBtn" href="../../" aria-label="回到所有遊戲"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14l2-5h11l3 5v4H3z"/><path d="M7 9V6h7l2 3"/><circle cx="7" cy="18" r="1.6" fill="currentColor"/><circle cx="17" cy="18" r="1.6" fill="currentColor"/></svg></a>
+  <button class="rt-ico" id="sndBtn" aria-label="聲音開關"></button>
+  <button class="rt-ico" id="legsBtn" aria-label="換成腳／輪子" hidden></button>
+  <button class="rt-ico" id="infoBtn" aria-label="給家長" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".9" fill="currentColor" stroke="none"/></svg></button>
+
+  <section class="rt-info" id="info" hidden>
+    <button class="rt-close" id="infoClose" aria-label="關上"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <h2>給家長</h2>
+    <p>十個任務，各借一種真實機器人的本事。每關只講一件事：它怎麼「看」、怎麼「想」、怎麼「動」。數字是方便記的近似值。</p>
+    <ul id="infoList">
+      <li><b>1 送包裹・送貨機器人</b>：Starship Technologies 的人行道送貨車（公司 2014 年成立）：六個輪子，最快大約時速 6 公里，跟大人走路差不多；靠好幾台攝影機、雷達和超音波感測器看路，可以裝約 10 公斤。〔<a href="https://en.wikipedia.org/wiki/Starship_Technologies" target="_blank" rel="noopener">Wikipedia: Starship Technologies</a>〕</li>
+      <li><b>2 掃房間・掃地機器人</b>：iRobot 的 Roomba 2002 年開始賣。早期型號靠前面的碰撞保險桿和紅外線感測器，碰到東西就轉彎；新的型號多了攝影機或雷射，會畫出房間的地圖。遊戲講的「碰到才轉」是早期的作法。〔<a href="https://en.wikipedia.org/wiki/Roomba" target="_blank" rel="noopener">Wikipedia: Roomba</a>〕</li>
+      <li><b>3 工廠分類・工廠手臂</b>：1961 年 Unimate 在美國通用汽車的工廠上工，一般公認是第一台工業機器人。今天的工廠手臂，同一個動作一天可以做好幾千次，許多型號標示的重複定位誤差在 0.1 毫米以內（看型號）。〔<a href="https://en.wikipedia.org/wiki/Unimate" target="_blank" rel="noopener">Wikipedia: Unimate</a>、<a href="https://en.wikipedia.org/wiki/Industrial_robot" target="_blank" rel="noopener">Wikipedia: Industrial robot</a>〕</li>
+      <li><b>4 火星探路・火星車</b>：毅力號（Perseverance）2021 年 2 月 18 日降落火星，有六個輪子。無線電從地球到火星單程大約 3～22 分鐘（看兩顆行星離多遠），所以每天要做的事，是人在地球先規畫好一整批再送上去，火星車再自己照著做。〔<a href="https://science.nasa.gov/blog/speaking-percys-language-how-to-talk-so-perseverance-will-listen/" target="_blank" rel="noopener">NASA: How to talk so Perseverance will listen</a>、<a href="https://en.wikipedia.org/wiki/Perseverance_(rover)" target="_blank" rel="noopener">Wikipedia: Perseverance (rover)</a>〕</li>
+      <li><b>5 飛過河・無人機</b>：四旋翼無人機靠四個螺旋槳轉速的差別來上升、下降、傾斜和轉向；相鄰的螺旋槳反方向轉，機身才不會跟著打轉。〔<a href="https://en.wikipedia.org/wiki/Quadcopter" target="_blank" rel="noopener">Wikipedia: Quadcopter</a>〕</li>
+      <li><b>6 水底找東西・水下機器人</b>：遙控潛水器（ROV）用一條纜線從船上送電、傳訊號，因為無線電波在水裡傳不遠；深海沒有陽光，要自己帶燈。〔<a href="https://en.wikipedia.org/wiki/Remotely_operated_underwater_vehicle" target="_blank" rel="noopener">Wikipedia: Remotely operated underwater vehicle</a>〕</li>
+      <li><b>7 爬樓梯・四腳機器狗</b>：Boston Dynamics 的 Spot 2020 年開始販售，用四條腿走路，能爬樓梯、跨過障礙物，去輪子到不了的地方。〔<a href="https://bostondynamics.com/products/spot/" target="_blank" rel="noopener">Boston Dynamics: Spot</a>、<a href="https://en.wikipedia.org/wiki/Spot_(robot)" target="_blank" rel="noopener">Wikipedia: Spot (robot)</a>〕</li>
+      <li><b>8 倉庫搬架子・倉庫機器人</b>：Kiva Systems 的小機器人會鑽到貨架底下，把整個架子抬起來送到揀貨員面前，靠地上的條碼記號認路；Amazon 2012 年以約 7.75 億美元買下這家公司（後來叫 Amazon Robotics）。〔<a href="https://en.wikipedia.org/wiki/Amazon_Robotics" target="_blank" rel="noopener">Wikipedia: Amazon Robotics</a>、<a href="https://techcrunch.com/2012/03/19/amazon-acquires-online-fulfillment-company-kiva-systems-for-775-million-in-cash/" target="_blank" rel="noopener">TechCrunch 2012</a>〕</li>
+      <li><b>9 修小東西・精密機器手</b>：達文西手術系統（da Vinci）2000 年獲美國 FDA 核准用於腹腔鏡手術：醫生坐在旁邊的操作台控制，系統會濾掉手的抖動、把動作縮小，傷口可以更小。遊戲改成「修音樂盒」，不出現手術畫面。〔<a href="https://en.wikipedia.org/wiki/Da_Vinci_Surgical_System" target="_blank" rel="noopener">Wikipedia: Da Vinci Surgical System</a>、<a href="https://ieeemilestones.ethw.org/Milestone-Proposal:Robotic_Telepresence_Surgery_System,_SRI_International,_1987%E2%80%931995" target="_blank" rel="noopener">IEEE Milestone（SRI 遙控手術）</a>〕</li>
+      <li><b>10 自己選裝備</b>：沒有一台機器人什麼都會：輪子、腿、螺旋槳、纜線，都是照它要做的工作選的。</li>
+    </ul>
+  </section>
+
+  <div class="rt-nogl" id="nogl" hidden>這台裝置打不開 3D 畫面。<a href="../../">回到所有遊戲</a></div>
+</div>
+<script src="../../vendor/three.min.js"></script>
+<script src="content.js"></script>
+<script src="space.js"></script>
+<script src="engine.js"></script>
+<script src="sound.js"></script>
+<script src="art.js"></script>
+<script src="town.js"></script>
+<script src="missions/m1.js"></script>
+<script src="missions/m2.js"></script>
+<script src="missions/m3.js"></script>
+<script src="missions/m4.js"></script>
+<script src="missions/m5.js"></script>
+<script src="missions/m6.js"></script>
+<script src="missions/m7.js"></script>
+<script src="missions/m8.js"></script>
+<script src="missions/m9.js"></script>
+<script src="missions/m10.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
