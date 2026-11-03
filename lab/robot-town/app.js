@@ -3,7 +3,7 @@
 //       回小鎮、裝備「喀」一聲裝上身 → 下一站 …… → 第 10 關自己選裝備 → 結尾 → 自由玩。
 // 每關都有三條路：鍵盤（ev.code）、手指（觸控）、點目標（它自己做）。提示階梯：5 秒光暈變亮、15 秒小手示範、
 // 失敗兩次光暈指出正確位置、三次自動示範。失敗只會彈回＋輕搖＋低木魚，講怎麼改。
-// 測試網址：?fast=1、?m=N&fast=1（直接進第 N 關，前面算做完）、?m=N&sub=S、?town=1&done=5、?end=1。console：__town.state()。
+// 測試網址：?fast=1、?m=N&fast=1（直接進第 N 關，前面算做完）、?m=N&sub=S、?town=1&done=5、?end=1。console：__town.state()、__town.say('m8.aha')。
 (() => {
   'use strict';
   const { $, S, save, setSave, speak, stopVoice, unlockAudio, keyName } = G;
@@ -184,13 +184,85 @@
     return pts[pts.length - 1];
   }
 
+  // ---------- 字幕：旁白講到哪句，上方就出現那句（有注音）；講完停一下再淡出，點一下重聽 ----------
+  // 最多三行：先縮字；手機上還是太長，就在句號、分號後面切成幾頁，照配音播到哪裡換頁。
+  const cap = $('#cap'), capT = cap.querySelector('.bt');
+  cap.querySelector('.spk').innerHTML = G.speakerIcon;
+  let capTok = 0, capTimer = 0, capIv = 0, capPages = [], capPage = 0, capT0 = 0;
+  function capLines() {
+    const tops = new Set();
+    capT.querySelectorAll('.nb').forEach(el => tops.add(Math.round(el.offsetTop / 6)));
+    return tops.size;
+  }
+  const capFits = z => { capT.innerHTML = G.Z({ z }); return capLines() <= 3; };
+  const zText = z => z.map(it => typeof it === 'string' ? it : Array.isArray(it) ? it[0] : '').join('');
+  function capSplit(z) {
+    const cut = (zz, marks) => {
+      const out = []; let cur = [];
+      zz.forEach(it => { cur.push(it); if (typeof it === 'string' && marks.includes(it)) { out.push(cur); cur = []; } });
+      if (cur.length) out.push(cur);
+      return out;
+    };
+    const segs = cut(z, '。！？；').flatMap(s => capFits(s) ? [s] : cut(s, '，、'));
+    const pages = []; let cur = [];
+    segs.forEach(s => { const t = cur.concat(s); if (cur.length && !capFits(t)) { pages.push(cur); cur = s; } else cur = t; });
+    if (cur.length) pages.push(cur);
+    return pages.map(zz => ({ z: zz, t: zText(zz) }));
+  }
+  function capRender(i) {
+    capPage = i; capT.innerHTML = G.Z(capPages[i]);
+    capT.classList.remove('in'); void capT.offsetWidth; capT.classList.add('in');
+  }
+  function capShow(k) {
+    capTok++; clearTimeout(capTimer); clearInterval(capIv);
+    const e = TX[k] || { t: String(k), z: [String(k)] };
+    cap.style.fontSize = '';
+    capPages = [e];
+    if (!capFits(e.z)) {
+      if (parseFloat(getComputedStyle(cap).fontSize) > 22) cap.style.fontSize = '22px';
+      if (!capFits(e.z)) { cap.style.fontSize = ''; capPages = capSplit(e.z); }
+    }
+    capRender(0); capT0 = performance.now();
+    cap.classList.add('on');
+    if (capPages.length > 1) capIv = setInterval(capTick, 100);
+    return capTok;
+  }
+  // 分頁：照字數比例對到配音的進度（沒有音檔就用靜音等待的長度估）
+  function capTick() {
+    const total = capPages.reduce((a, p) => a + p.t.length, 0), pos = G.voicePos();
+    const prog = pos != null ? pos : (performance.now() - capT0) / Math.max(1200, total * 220);
+    let acc = 0, want = capPages.length - 1;
+    for (let i = 0; i < capPages.length; i++) { acc += capPages[i].t.length; if (prog < acc / total) { want = i; break; } }
+    if (want > capPage) capRender(want);
+  }
+  // 這句講完：停留 max(2.5 秒, 字數 × 0.25 秒) 再淡出（下一句先來就直接換字）
+  function capHold(tok) {
+    if (tok !== capTok) return;
+    clearInterval(capIv); clearTimeout(capTimer);
+    const last = capPages.length - 1;
+    if (capPage < last) capRender(last);
+    capTimer = setTimeout(capHide, Math.max(2500, capPages[last].t.length * 250));
+  }
+  function capHide() { capTok++; clearTimeout(capTimer); clearInterval(capIv); cap.classList.remove('on'); }
+
   // ---------- 說話：一句一句排隊（換場景就取消） ----------
-  let talkTok = 0;
+  let talkTok = 0, talkLeft = [];
   async function talk(...keys) {
     const my = ++talkTok;
-    for (const k of keys) { if (my !== talkTok) return; if (k) await speak(k); }
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i];
+      if (my !== talkTok) return;
+      if (!k) continue;
+      talkLeft = keys.slice(i);
+      const tok = capShow(k);
+      await speak(k);
+      if (my === talkTok) capHold(tok);
+    }
   }
-  const hush = () => { talkTok++; stopVoice(); };
+  const hush = () => { talkTok++; stopVoice(); capHide(); };
+  // 點字幕＝從這句重講（後面排著的句子照講）
+  cap.addEventListener('click', e => { e.stopPropagation(); act(); unlockAudio(); if (talkLeft.length && cap.classList.contains('on')) talk(...talkLeft); });
+  cap.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); });   // 不搶焦點：之後按空白鍵不會變成重聽
 
   // ---------- 狀態 ----------
   let mode = 'town';          // town | busy | mission | ending
@@ -567,6 +639,7 @@
     probe: () => { if (M && M.probe && ctx) { try { return M.probe(ctx); } catch (e) { return {}; } } return town.probe(); },
     meshes: () => { let n = 0; scene.traverse(o => { if (o.isMesh || o.isSprite) n++; }); return n; },
     go: n => runMission(n),
+    say: (...keys) => talk(...keys),   // 測試用：講這幾句（字幕一起出現）
     cam: () => ({ pos: cam.position.toArray().map(x => +x.toFixed(2)), want: camWant.pos.toArray().map(x => +x.toFixed(2)), look: camWant.look.toArray().map(x => +x.toFixed(2)), fov: cam.fov, w: v.w, h: v.h }),
   };
 })();

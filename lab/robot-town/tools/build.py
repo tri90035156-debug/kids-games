@@ -8,8 +8,8 @@
     content.js              遊戲讀取的文字
     tools/narration.json    要請 VoAI 配音的句子清單
 
-這個遊戲 ZHUYIN = False（有配音、畫面不放注音），所以不需要 pypinyin；
-如果哪天要打開注音，裝 pypinyin（pip install pypinyin）再把 content.py 的 ZHUYIN 改成 True。
+ZHUYIN = True（2026-11-03 起旁白同步顯示字幕、要注音），需要 pypinyin：pip install pypinyin。
+破音字在 content.py 用 字[注音] 手動指定；只改注音、不改字，配音的 hash 才不會變。
 """
 import hashlib
 import json
@@ -34,6 +34,13 @@ if ZHUYIN:
 TOKEN = re.compile(r'\{([A-Za-z0-9])\}|([㐀-鿿])(?:\[([^\]]+)\])?|(.)', re.S)
 
 
+def fix_tone(zy):
+    """pypinyin 把輕聲放在後面（ㄗ˙），課本是放在前面（˙ㄗ）。"""
+    if zy.endswith('˙'):
+        return '˙' + zy[:-1]
+    return zy
+
+
 def annotate(text):
     """回傳 (z 清單, 純文字)。{S} → 鍵帽；字[注音] → 手動注音（ZHUYIN = False 時只留字）。"""
     items = []
@@ -53,7 +60,13 @@ def annotate(text):
                     j += 1
                 zys = pinyin(''.join(x[1] for x in items[i:j]), style=Style.BOPOMOFO, errors=lambda c: [c])
                 for k in range(i, j):
-                    items[k] = ('h', items[k][1], items[k][2] or (zys[k - i][0] if k - i < len(zys) else ''))
+                    forced = items[k][2]
+                    zy = fix_tone(forced or (zys[k - i][0] if k - i < len(zys) else ''))
+                    if not forced and items[k][1] == '一':
+                        zy = 'ㄧ'          # 一、不 一律用原調（跟其他遊戲一致）
+                    elif not forced and items[k][1] == '不':
+                        zy = 'ㄅㄨˋ'
+                    items[k] = ('h', items[k][1], zy)
                 i = j
             else:
                 i += 1

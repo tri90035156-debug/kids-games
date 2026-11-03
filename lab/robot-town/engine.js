@@ -49,7 +49,7 @@ window.G = (() => {
     return h + '</span>';
   }
   function Z(key) {
-    const e = TX[key];
+    const e = typeof key === 'object' ? key : TX[key];   // 也可以直接給 { z }（字幕分頁用）
     if (!e) return esc(String(key));
     const cells = [];
     let pend = '';
@@ -228,6 +228,8 @@ window.G = (() => {
       } catch (err) { playing = false; quiet(); }
     });
   }
+  // 現在這句播到哪裡（0～1）；沒有在播音檔（靜音、還沒錄、?fast=1）回傳 null
+  const voicePos = () => playing ? (VO.duration > 0 ? VO.currentTime / VO.duration : 0) : null;
   let lastKey = null;
   function say(key) {
     lastKey = key;
@@ -526,7 +528,7 @@ window.G = (() => {
 
   return {
     $, stage, foot, sayBox, S, save, load, setSave, sleep, shuffle, clamp, shake, ring, parent, esc, FAST,
-    Z, sfx, strike, hum, speak, say, stopVoice, fadeVoice, unlockAudio, waitAction, next, keyName,
+    Z, sfx, strike, hum, speak, say, stopVoice, fadeVoice, unlockAudio, waitAction, next, keyName, speakerIcon, voicePos,
     dragPick, home, dropInto, holdLoop, track, onKeys, quiz, setDots,
     run: cfg => { SAVE_KEY = cfg.saveKey; load(); paintSnd(); return run0(cfg); },
   };
