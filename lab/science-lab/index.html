@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>試試看實驗室</title>
+<meta name="description" content="給 6 歲小朋友的 3D 黏土實驗桌：十個在家做得出來的實驗。每一關都走「假設、實驗、結果」，一關至少兩圈；每關一句結論貼進記錄本，十關做完有總結：科學，就是一次一次學習的過程。全程配音、字幕有注音。">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="game.css">
+</head>
+<body class="sl-body">
+<div id="sl">
+  <div id="v3" class="sl-view"></div>
+  <div id="ov" class="sl-ov" aria-hidden="true">
+    <div id="hand" class="sl-hand" hidden><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="tip" cx="20" cy="12" r="11"/><path class="hd" d="M14 12 v24 l-6 -5 c-3 -3 -8 1 -5 5 l12 16 c3 4 7 7 13 7 h10 c8 0 13 -6 13 -13 v-14 c0 -4 -6 -4 -6 0 v-2 c0 -4 -6 -4 -6 0 v-2 c0 -4 -6 -4 -6 0 v-16 c0 -5 -8 -5 -8 0z"/></svg></div>
+  </div>
+  <div id="ring" class="sl-ring" hidden></div>
+  <button id="cap" class="sl-cap" type="button" aria-label="再聽一次這句"><span class="spk"></span><span class="bt"></span></button>
+  <div id="mine" class="sl-mine" hidden></div>
+  <div id="hyp" class="sl-hyp" hidden></div>
+  <div id="ctl" class="sl-ctl"></div>
+  <div id="book" class="sl-book" hidden></div>
+
+  <a class="sl-ico" id="hubBtn" href="../../" aria-label="回到所有遊戲"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14l2-5h11l3 5v4H3z"/><path d="M7 9V6h7l2 3"/><circle cx="7" cy="18" r="1.6" fill="currentColor"/><circle cx="17" cy="18" r="1.6" fill="currentColor"/></svg></a>
+  <button class="sl-ico" id="sndBtn" aria-label="聲音開關"></button>
+  <button class="sl-ico" id="bookBtn" aria-label="記錄本" hidden></button>
+  <button class="sl-ico" id="infoBtn" aria-label="給家長" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".9" fill="currentColor" stroke="none"/></svg></button>
+
+  <section class="sl-info" id="info" hidden>
+    <button class="sl-close" id="infoClose" aria-label="關上"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <h2>給家長</h2>
+    <p>每一關都走「假設（先猜）→ 實驗（動手）→ 結果（看真的發生什麼）」，一關至少兩圈；猜錯不扣分，孩子自己把答案改成對的。十個實驗在家都做得出來，結果和遊戲一樣。溫水、熱飲請大人倒；小東西（彈珠、迴紋針、硬幣）請大人在旁邊，別放進嘴裡。</p>
+    <ul id="infoList">
+      <li><b>1 沉下去？浮起來？</b>材料：一盆水、蘋果、葡萄、小石頭、木塊、橘子。做法：先猜、一個一個放進水裡、把橘子剝皮再放一次。原理：整顆東西平均起來比水輕就浮、比水重就沉；蘋果果肉裡有不少空氣，葡萄比水稍重；橘子皮裡有很多小氣室，像救生衣，剝掉後果肉比水重就沉下去。偶有例外（很熟或很小的水果、加了很多糖的水會不一樣）。〔<a href="https://melscience.com/GB-en/articles/does-orange-float-or-sink/" target="_blank" rel="noopener">MEL Science：橘子會浮還是沉</a>、<a href="https://www.education.com/activity/article/fruits-vegetables-denser-than-others/" target="_blank" rel="noopener">Education.com：哪些蔬果比較重</a>〕</li>
+      <li><b>2 磁鐵吸什麼？</b>材料：磁鐵、迴紋針、鐵釘、木湯匙、橡皮擦、鋁罐、鐵罐（罐頭）、十元硬幣。做法：先猜、拿磁鐵掃過去、分成兩堆。原理：磁鐵會吸鐵、鎳、鈷和大部分的鋼（鐵罐、迴紋針、鐵釘都是鋼鐵）；鋁、銅不會被吸。十元硬幣是銅 75％、鎳 25％ 的白銅（中央銀行資料），這種合金不會被一般磁鐵吸住（英國舊的白銅硬幣也是，改成鍍鎳鋼以後才會被吸）。不鏽鋼湯匙有的吸有的不吸，所以遊戲不用它。〔<a href="https://www.cbc.gov.tw/public/data/issue/MONEY/a1/T04.htm" target="_blank" rel="noopener">中央銀行：流通硬幣</a>、<a href="https://www.royalmint.com/stories/collect/why-are-some-uk-coins-magnetic/" target="_blank" rel="noopener">Royal Mint：為什麼有的硬幣會被磁鐵吸</a>、<a href="https://en.wikipedia.org/wiki/Ferromagnetism" target="_blank" rel="noopener">Wikipedia: Ferromagnetism</a>〕</li>
+      <li><b>3 斜坡賽車</b>材料：一塊板子、幾本書墊高、玩具車、毛巾、積木（量距離）。做法：低的放一次、高的放一次；換大車時只改車子、坡不改；再鋪毛巾。原理：坡越高，車到坡底越快、滑得越遠；毛巾表面粗糙、摩擦大，車很快停下；同樣高度下，車子重一點輕一點，跑的距離差不多（摩擦力和推它的力都跟著重量一起變）。「一次只改一件事」叫做控制變因。〔<a href="https://en.wikipedia.org/wiki/Inclined_plane" target="_blank" rel="noopener">Wikipedia: Inclined plane</a>、<a href="https://en.wikipedia.org/wiki/Friction" target="_blank" rel="noopener">Wikipedia: Friction</a>〕</li>
+      <li><b>4 影子變大變小</b>材料：手電筒、小玩偶、一面白牆。做法：燈從遠慢慢靠近玩偶，看影子。原理：光走直線，燈越靠近東西，擋住的光越張越開，牆上的影子就越大（相似三角形）。知道規律以後，可以先猜「燈放哪裡、影子會多大」。〔<a href="https://en.wikipedia.org/wiki/Shadow" target="_blank" rel="noopener">Wikipedia: Shadow</a>〕</li>
+      <li><b>5 誰不見了？</b>材料：四個透明杯、糖、鹽、沙、小石頭；兩杯溫水、冷水。做法：各舀一匙攪一攪；再比溫水、冷水哪杯的糖先不見。原理：糖和鹽會溶解，分成很小很小的粒子散在水裡（嚐得到甜、鹹），沙和石頭不溶；水溫高，粒子動得快，溶得比較快。孩子版說「躲進水裡」，大人的詞是「溶解」。溫水請大人倒。〔<a href="https://en.wikipedia.org/wiki/Solubility" target="_blank" rel="noopener">Wikipedia: Solubility</a>、<a href="https://en.wikipedia.org/wiki/Dissolution_(chemistry)" target="_blank" rel="noopener">Wikipedia: Dissolution</a>〕</li>
+      <li><b>6 冰塊穿外套</b>材料：兩塊一樣大的冰、兩個盤子、毛巾；兩杯溫熱的飲料。做法：一塊包毛巾、一塊不包，過 30～60 分鐘比；熱飲也一樣比。原理：毛巾自己不會發熱，它裡面有很多空氣，熱不容易穿過去：外面的熱進不去冰，熱飲裡的熱也出不來。所以包著的冰融得慢、包著的熱飲涼得慢。熱飲請大人倒。〔<a href="https://en.wikipedia.org/wiki/Thermal_insulation" target="_blank" rel="noopener">Wikipedia: Thermal insulation</a>〕</li>
+      <li><b>7 豆子要不要光？</b>材料：兩個小盆或杯子、棉花、綠豆、一個紙箱。做法：每天澆一點水，一盆蓋紙箱，連續 6～7 天記錄；之後把箱子拿掉放窗邊。原理：綠豆發芽靠的是豆子裡存的養分，不用光；在暗處長的苗又高又細、黃黃白白（叫做「黃化」，植物在找光）；照到光以後，幾小時內就開始做葉綠素，一兩天看得出慢慢轉綠、葉子打開。天數會隨溫度不同；太冷的時候轉綠會變慢。〔<a href="https://en.wikipedia.org/wiki/Etiolation" target="_blank" rel="noopener">Wikipedia: Etiolation</a>、<a href="https://en.wikipedia.org/wiki/Photomorphogenesis" target="_blank" rel="noopener">Wikipedia: Photomorphogenesis</a>、<a href="https://jurnal.habi.ac.id/index.php/JP-IPA/article/download/557/493" target="_blank" rel="noopener">綠豆芽光照與黑暗六天觀察（2025）</a>〕</li>
+      <li><b>8 誰先落地？</b>材料：一顆重的球、一顆輕的小球、兩張一樣的紙。做法：從同一個高度同時放手，多放幾次；再把一張紙揉成團比。原理：在桌子這樣的高度，重的球和輕的球差不多同時落地（伽利略的發現；空氣的影響很小）；攤開的紙面積大，空氣托著它，所以飄得慢，揉成團就快了。〔<a href="https://en.wikipedia.org/wiki/Galileo%27s_Leaning_Tower_of_Pisa_experiment" target="_blank" rel="noopener">Wikipedia: Galileo's Leaning Tower of Pisa experiment</a>、<a href="https://en.wikipedia.org/wiki/Drag_(physics)" target="_blank" rel="noopener">Wikipedia: Drag</a>〕</li>
+      <li><b>9 抓住空氣</b>材料：透明杯、紙巾、一大盆水。做法：紙巾塞緊杯底，杯口朝下直直壓進水裡再拿出來；第二次在水裡把杯子歪一邊。原理：杯子裡裝滿了空氣，空氣佔著位子，水只能進來一點點，紙巾是乾的；杯子一歪，空氣變成泡泡跑出去，水就進來了。潛水鐘就是這個道理。〔<a href="https://en.wikipedia.org/wiki/Diving_bell" target="_blank" rel="noopener">Wikipedia: Diving bell</a>〕</li>
+      <li><b>10 我的實驗：鋁箔船</b>材料：幾張一樣大的鋁箔（例如 15×15 公分）、彈珠或硬幣、一盆水。做法：捏成一團、窄窄的船、寬寬平平的船，先猜能放幾顆，再一顆一顆放到沉。原理：船底越寬、邊夠高，能推開的水越多，就載得越多；捏成一團的鋁箔推開的水很少，一放東西就沉。遊戲裡的數字只是示意，實際顆數看鋁箔大小、船邊高度和彈珠重量，但「一團最少、寬平最多」的順序在家做會一樣。比的時候只改形狀（同一種鋁箔、同一種彈珠）。〔<a href="https://www.noaa.gov/office-education/outreach-communication/hands-on-science-activities/build-a-boat" target="_blank" rel="noopener">NOAA：Build a boat</a>、<a href="https://en.wikipedia.org/wiki/Buoyancy" target="_blank" rel="noopener">Wikipedia: Buoyancy</a>〕</li>
+    </ul>
+  </section>
+
+  <div class="sl-nogl" id="nogl" hidden>這台裝置打不開 3D 畫面。<a href="../../">回到所有遊戲</a></div>
+</div>
+<script src="../../vendor/three.min.js"></script>
+<script src="content.js"></script>
+<script src="space.js"></script>
+<script src="engine.js"></script>
+<script src="sound.js"></script>
+<script src="art.js"></script>
+<script src="ring.js"></script>
+<script src="match.js"></script>
+<script src="book.js"></script>
+<script src="lab.js"></script>
+<script src="experiments/e1.js"></script>
+<script src="experiments/e2.js"></script>
+<script src="experiments/e3.js"></script>
+<script src="experiments/e4.js"></script>
+<script src="experiments/e5.js"></script>
+<script src="experiments/e6.js"></script>
+<script src="experiments/e7.js"></script>
+<script src="experiments/e8.js"></script>
+<script src="experiments/e9.js"></script>
+<script src="experiments/e10.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
