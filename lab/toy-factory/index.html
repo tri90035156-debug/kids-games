@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>玩偶怎麼來？</title>
+<meta name="description" content="給 6 歲小朋友的互動遊戲：一隻絨毛玩偶的旅行——原料從哪裡來、工廠怎麼組裝、檢查、貨櫃船過海、海關、商店，最後到你手上。全程配音、注音字幕、連連看、排順序、按住塞棉花。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="game.css">
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <a class="pill" id="hubBtn" href="../../" aria-label="回到所有遊戲"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14l2-5h11l3 5v4H3z"/><path d="M7 9V6h7l2 3"/><circle cx="7" cy="18" r="1.6" fill="currentColor"/><circle cx="17" cy="18" r="1.6" fill="currentColor"/></svg></a>
+    <h1 id="title">玩偶怎麼來？</h1>
+    <button class="pill" id="sndBtn" aria-label="聲音開關"></button>
+  </header>
+  <nav id="map" aria-label="旅程"></nav>
+  <main id="main">
+    <button id="cap" class="cap" aria-label="再聽一次"><span class="spk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a8 8 0 0 1 0 11"/></svg></span><span class="bt"></span></button>
+    <div id="stage"></div>
+  </main>
+  <footer id="foot"><button class="big" id="nextBtn" hidden>繼續</button></footer>
+  <details id="info"><summary>給家長</summary>
+    <p>這個遊戲講一隻絨毛玩偶（小熊）的旅行，十關、三站：原料哪裡來、工廠怎麼組裝、貿易怎麼到孩子手上。玩法只有四種：連連看（點左再點右，或按 A～E 與 1～5）、排順序（照順序點卡片，或按 1～6）、選一個（A B C）、按住塞棉花（按住畫面或空白鍵）。猜錯不罰，再試就好；每句旁白都有注音字幕，點字幕可以重聽。</p>
+    <p>內容依據：一般絨毛玩偶的絨布（plush）與填充棉（polyester fiberfill，市面常稱 PP 棉）多為聚酯纖維，原料來自石油煉製的對苯二甲酸與乙二醇聚合、熔融紡絲；安全眼（safety eyes）為塑膠眼珠加後扣墊圈，塞棉前裝上；工廠流程為裁布（刀模）→ 裝眼 → 反面縫合 → 翻面 → 填充 → 手縫封口 → 整毛 → 金屬探測（找斷針）與拉力測試 → 包裝。出口流程為裝箱 → 裝櫃 → 拖車至港口 → 貨櫃船 → 進口港海關查驗 → 倉庫 → 零售。棉花、羊毛兩種天然材料在第 1 關一起介紹，讓孩子知道材料也可以從田裡與動物身上來。</p>
+  </details>
+</div>
+<script src="content.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
