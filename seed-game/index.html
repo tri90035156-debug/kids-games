@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>種子小偵探</title>
-<meta name="description" content="給 6 歲小朋友的種子互動遊戲：注音、鍵盤 ABC、VoAI 配音，十五分鐘認識樹的種子。">
+<meta name="description" content="給 6 歲小朋友的 3D 黏土種子遊戲：沿著花園小徑切開果實找種子、澆水讓樹長高、按住種子長出它的樹、把種子丟給風和松鼠。注音字幕、VoAI 配音。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="kit3d.css">
 <link rel="stylesheet" href="game.css">
 </head>
 <body>
@@ -25,9 +26,15 @@
   </main>
   <footer id="foot"></footer>
 </div>
-<script src="restart.js"></script>
+<script src="../vendor/three.min.js"></script>
 <script src="content.js"></script>
 <script src="art.js"></script>
+<script src="restart.js"></script>
+<script src="engine.js"></script>
+<script src="sound.js"></script>
+<script src="space.js"></script>
+<script src="kit3d.js"></script>
+<script src="garden.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

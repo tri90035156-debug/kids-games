@@ -1,556 +1,394 @@
-// 種子小偵探：七關、約 15 分鐘。文字在 content.js（由 tools/build.py 產生）、插圖在 art.js。
+// 《種子小偵探》3D 版（2026-11-08 第 6 批）：一條黏土花園小徑，一關往右走一段（鏡頭跟著平移）。
+// 接上共用引擎（engine.js：封面、標題卡、?ch=N、重來鈕、字幕泡泡＋配音），3D 用 kit3d.js、場景在 garden.js。八關（七關＋加碼關），每關一種 3D 動作，相鄰兩關不一樣：
+// 1 手指劃過果實把它切開，找種子  2 照順序點（開花、蜜蜂、小果實、熟了），東西排上小木架  3 拖澆水壺去澆水、點太陽，樹一段一段長高
+// 4 按住種子，它的樹從種子長出來  5 點一棵對的樹（這顆種子會長成哪一種）  6 把種子丟給風、水或松鼠，看它飛去哪裡
+// 7 照順序點，種子的一生排成一圈  8 把孢子、種子、花拖到時間軸上
+// 配音稿一句沒改（tools/content.py 沒動、沒重錄）。各關最後的「選一個」也是點 3D 東西。測試：?ch=N&fast=1、?fin=1、__sd.win()、__sd.aid()。
 (() => {
   'use strict';
-  const TX = window.TX, A = window.A;
-  const $ = s => document.querySelector(s);
-  const stage = $('#stage'), foot = $('#foot'), sayBox = $('#say'), bubble = $('#bubble'), dots = $('#dots');
-  const SAVE_KEY = 'seed-game-v1';
-  const N_CH = 8;
-
-  // ---------- 存檔 ----------
-  let S = { done: 0, sound: true };
-  try { Object.assign(S, JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch (e) { /* 無痕模式等 */ }
-  const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } };
-
-  // ---------- 小工具 ----------
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
-  const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  function shuffle(a) {
-    a = a.slice();
-    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
-    return a;
+  const { $, stage, Z, say, speak, sleep, shuffle, FAST } = G;
+  const K = K3, { T } = K;
+  const sfx = n => G.sfx(n);
+  const note = i => G.note && G.note(i);
+  K.init({ bg: 0xF3EEDF, ground: 0xCFDDB0 });
+  if (K.ok) GD.ground(K.scene);
+  const V = (x, y, z) => new T.Vector3(x, y, z);
+  const W = (o, k = 150, d = 7) => K.wrap(o, k, d);
+  let winStep = null, aid = null, X = 0;
+  const scr = (o, dy = 0) => { const q = K.sp(K.pos(o).add(V(0, dy, 0))), r = K.v.el.getBoundingClientRect(); return { x: Math.round(r.left + q.x), y: Math.round(r.top + q.y) }; };
+  function coach(goal, demo) {
+    let last = performance.now(), off = null;
+    const act = () => { last = performance.now(); if (off) { off(); off = null; } };
+    addEventListener('pointerdown', act, true); addEventListener('keydown', act, true);
+    const iv = setInterval(() => { if (performance.now() - last < 15000) return; last = performance.now(); if (goal) say(goal); if (demo) { if (off) off(); off = demo(); setTimeout(() => { if (off) { off(); off = null; } }, 4000); } }, 1000);
+    return () => { clearInterval(iv); removeEventListener('pointerdown', act, true); removeEventListener('keydown', act, true); if (off) off(); };
   }
-
-  // ---------- 注音排版：注音直排在字的右邊 ----------
-  const CLOSE = '，。！？、：；」』）', OPEN = '「『（';
-  function cell(ch, zy) {
-    let h = '<span class="zc"><span class="zh">' + esc(ch) + '</span>';
-    if (zy) {
-      const light = zy.charAt(0) === '˙';
-      let s = light ? zy.slice(1) : zy, tn = '';
-      const last = s.charAt(s.length - 1);
-      if ('ˊˇˋ'.indexOf(last) >= 0) { tn = last; s = s.slice(0, -1); }
-      h += '<span class="zy' + (tn ? ' has-t' : '') + '">' + (light ? '<b class="tl">˙</b>' : '') +
-        '<span class="zs">' + Array.from(s).map(c => '<i>' + c + '</i>').join('') + '</span>' +
-        (tn ? '<b class="tn">' + tn + '</b>' : '') + '</span>';
-    }
-    return h + '</span>';
+  let wrong = 0, hints = [];
+  function missed(obj, rightObj) { K.poke(obj.userData.j || obj, -.35); sfx('no'); wrong++; say(wrong >= 2 ? 'g.no2' : 'g.no1'); if (wrong === 2 && rightObj) hints.push(K.halo(rightObj, 2.4)); }
+  const clearHints = () => { hints.forEach(K.haloOff); hints = []; wrong = 0; };
+  const okSay = () => say(['g.ok1', 'g.ok2', 'g.ok3'][Math.floor(Math.random() * 3)]);
+  // 每一關在小徑上的位置（往右走）
+  const at = (x, y, z) => V(X + x, y, z);
+  const P = (o, x, y, z) => K.add(o, X + x, y, z);
+  const PT = () => K.portrait();
+  // 每關第一次框鏡頭：先跳到位置左邊一點，再慢慢往右滑過去（像沿著小徑往右走）
+  let framedX = null;
+  function frame(pts, o) {
+    const pp = pts.map(p => p.clone().add(V(X, 0, 0)));
+    if (framedX !== X) { framedX = X; K.frameTo(pp, o, true); K.cam.position.x -= 4; } else K.frameTo(pp, o);
   }
-  function Z(key) {
-    const cells = zcells(key);
-    if (!cells) return esc(String(key));
-    return cells.map(c => c.sp ? ' ' : '<span class="nb">' + c.h + '</span>').join('');
-  }
-  // 標題用：在逗號後面分段，手機放不下時從逗號那裡換行（和共用 engine.js 的 Zs 一樣）
-  function Zs(key) {
-    const cells = zcells(key);
-    if (!cells) return esc(String(key));
-    const segs = [[]];
-    cells.forEach(c => { segs[segs.length - 1].push(c.sp ? ' ' : '<span class="nb">' + c.h + '</span>'); if (c.brk) segs.push([]); });
-    const out = segs.filter(g => g.length);
-    return out.length < 2 ? out.map(g => g.join('')).join('') : out.map(g => '<span class="seg">' + g.join('') + '</span>').join('');
-  }
-  function zcells(key) {
-    const e = TX[key];
-    if (!e) return null;
-    const cells = [];
-    let pend = '';
-    for (const it of e.z) {
-      let h;
-      if (typeof it === 'string') {
-        if (it === ' ') { cells.push({ sp: 1 }); continue; }
-        h = cell(it, '');
-        if (CLOSE.includes(it) && cells.length && !cells[cells.length - 1].sp) {
-          const last = cells[cells.length - 1];
-          last.h += h;
-          if ('，、：；！？'.includes(it)) last.brk = 1;
-          continue;
-        }
-        if (OPEN.includes(it)) { pend = h; continue; }
-      } else if (Array.isArray(it)) {
-        h = cell(it[0], it[1]);
-      } else {
-        h = '<kbd class="kc">' + esc(it.k) + '</kbd>';
-      }
-      if (pend) { h = pend + h; pend = ''; }
-      cells.push({ h });
-    }
-    return cells;
-  }
-
-  // ---------- 音效 ----------
-  let AC;
-  function tone(f, t0, dur, type = 'sine', vol = .16) {
-    const o = AC.createOscillator(), g = AC.createGain();
-    o.type = type; o.frequency.value = f;
-    g.gain.setValueAtTime(0, AC.currentTime + t0);
-    g.gain.linearRampToValueAtTime(vol, AC.currentTime + t0 + .02);
-    g.gain.exponentialRampToValueAtTime(.001, AC.currentTime + t0 + dur);
-    o.connect(g).connect(AC.destination); o.start(AC.currentTime + t0); o.stop(AC.currentTime + t0 + dur + .05);
-  }
-  function sfx(name) {
-    if ((name === 'ok' || name === 'win') && window.RESTART) RESTART.progress();   // 答對、過關＝有進展
-    if (!S.sound) return;
-    try {
-      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
-      if (name === 'ok') { tone(660, 0, .14); tone(880, .1, .22); }
-      else if (name === 'no') { tone(240, 0, .22, 'triangle'); }
-      else if (name === 'tap') { tone(520, 0, .07); }
-      else if (name === 'win') { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .13, .3)); }
-      else if (name === 'water') { tone(900, 0, .08); tone(700, .09, .1); }
-    } catch (e) { /* 沒有 WebAudio 就算了 */ }
-  }
-
-  // ---------- 配音：只播 VoAI 預錄的 audio/<id>.mp3（不使用瀏覽器內建的聲音） ----------
-  // 還沒錄好的句子會安靜地顯示文字，停一小段「閱讀時間」再繼續。
-  let audioEl = null, finishCur = null;
-  const missing = new Set();
-  function stopVoice() {
-    if (audioEl) { try { audioEl.pause(); } catch (e) { /* ignore */ } audioEl = null; }
-    if (finishCur) { const f = finishCur; finishCur = null; f(); }
-  }
-  function speak(key) {
+  // 點一個 3D 東西（或按它的鍵）
+  function tapOne(objs, keys, right, dy = .8) {
     return new Promise(res => {
-      stopVoice();
-      const e = TX[key];
-      if (!e) { res(); return; }
-      let done = false, timer = 0;
-      const fin = () => { if (done) return; done = true; clearTimeout(timer); if (finishCur === fin) finishCur = null; res(); };
-      finishCur = fin;
-      const quiet = () => {                       // 沒聲音時，給小朋友讀注音的時間
-        if (e.v && !missing.has(key)) { missing.add(key); console.info('[配音] 找不到 audio/' + e.v + '.mp3 →', e.t); }
-        timer = setTimeout(fin, Math.max(1200, e.t.length * 260));
-      };
-      if (!S.sound || !e.v) { quiet(); return; }
-      const a = new Audio('audio/' + e.v + '.mp3');
-      audioEl = a;
-      a.onended = fin;
-      a.onerror = () => { if (audioEl === a) quiet(); };
-      const p = a.play();
-      if (p && p.catch) p.catch(() => { if (audioEl === a) quiet(); });
+      const pick = i => { if (i < 0 || !objs[i]) return; if (i === right) { offK(); res(i); return; } missed(objs[i], objs[right]); if (wrong >= 3) { offK(); res(right); } };
+      K.inputs({ up(p) { if (!p.cancel) pick(K.nearest(p, objs, { max: 120, at: o => K.pos(o).add(V(0, dy, 0)) })); } });
+      const offK = K.keys((k, dn) => { const i = keys.indexOf(k); if (dn && i >= 0) { pick(i); return true; } return false; });
+      winStep = () => { offK(); res(right); };
+      aid = () => ({ kb: [keys[right]], ptr: { tap: scr(objs[right], dy) } });
     });
   }
-  let lastKey = null;
-  function say(key) {
-    lastKey = key;
-    sayBox.hidden = false;
-    bubble.innerHTML = '<span class="spk">' + A.speaker() + '</span><span class="bt">' + Z(key) + '</span>';
-    return speak(key);
-  }
-  bubble.addEventListener('click', () => { if (lastKey) speak(lastKey); });
-
-  // ---------- 等待點擊或鍵盤 ----------
-  function keyName(ev) {
-    const c = ev.code || '';
-    let m;
-    if ((m = /^Key([A-Z])$/.exec(c))) return m[1].toLowerCase();
-    if ((m = /^(?:Digit|Numpad)(\d)$/.exec(c))) return m[1];
-    if (c === 'Enter' || c === 'NumpadEnter') return 'enter';
-    if (c === 'Space') return 'space';
-    return '';
-  }
-  // targets: [{ el, keys:[…] } | null]，回傳被選到的索引
-  function waitAction(targets) {
-    return new Promise(res => {
-      const offs = [];
-      const done = i => { offs.forEach(f => f()); res(i); };
-      targets.forEach((t, i) => {
-        if (!t || !t.el) return;
-        const h = () => done(i);
-        t.el.addEventListener('click', h);
-        offs.push(() => t.el.removeEventListener('click', h));
-      });
-      const kh = ev => {
-        if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
-        const k = keyName(ev);
-        if (!k) return;
-        const i = targets.findIndex(t => t && t.keys && t.keys.includes(k));
-        if (i >= 0) { ev.preventDefault(); done(i); }
-      };
-      addEventListener('keydown', kh);
-      offs.push(() => removeEventListener('keydown', kh));
-    });
-  }
-  async function next(label = 'ui.next') {
-    foot.innerHTML = '<button class="big" id="nx">' + Z(label) + ' ▶</button>';
-    await waitAction([{ el: $('#nx'), keys: ['enter', 'space'] }]);
-    sfx('tap');
-    if (window.RESTART) RESTART.progress();
-    foot.innerHTML = '';
-  }
-
-  function setDots(cur) {
-    dots.innerHTML = Array.from({ length: N_CH }, (_, i) => '<i class="' + (i < cur ? 'on' : i === cur ? 'cur' : '') + '"></i>').join('');
-  }
-
-  const ring = (svg, size = 'md') => '<div class="ring ' + size + '">' + svg + '</div>';
-
-  // ---------- 共用關卡元件 ----------
-  // 選擇題：選項標 A B C，可點也可按鍵盤
-  async function quiz({ q, show, showRaw, opts, ok, after }) {
-    sayBox.hidden = false;
-    const ord = shuffle(opts.map((_, i) => i));
-    stage.innerHTML = '<div class="qshow">' + (showRaw || (show ? ring(show, 'lg') : '')) + '</div><div class="opts n' + opts.length + '">' +
-      ord.map((oi, p) => {
-        const o = opts[oi];
-        return '<button class="opt"><kbd class="kc">' + 'ABC'[p] + '</kbd><span class="oa">' + (o.art ? ring(o.art, 'sm') : '') +
-          '</span><span class="ot">' + (o.text ? Z(o.text) : '') + '</span></button>';
-      }).join('') + '</div>';
-    foot.innerHTML = '';
-    const btns = [...stage.querySelectorAll('.opt')];
-    const right = ord.findIndex(oi => opts[oi].ok);
-    const alive = btns.map((b, p) => ({ el: b, keys: ['abc'[p]] }));
+  // 選一個（3D）：兩三個東西放在小徑前面，下面有字
+  async function quiz3d({ q, ok, opts }) {
+    const gs = opts.map((o, i) => { const g = W(o.make()); P(g, (i - (opts.length - 1) / 2) * 2.8, 0, 4.6); K.tag(g, Z(o.text), -.15); K.cap(g, 'ABC'[i], 1.7); return g; });
+    gs.forEach((g, i) => setTimeout(() => K.poke(g.userData.j, .5), i * 90)); sfx('pop');
+    frame([V(-4.4, 0, 6), V(4.4, 0, 6), V(-4.4, 2, 2.6), V(4.4, 2, 2.6)], { elev: 26, elevPt: 34 });
     say(q);
-    let tries = 0;
-    for (;;) {
-      const p = await waitAction(alive);
-      if (p === right) {
-        btns[p].classList.add('right');
-        btns.forEach((b, k) => { if (k !== p) b.classList.add('dim'); });
-        btns.forEach(b => b.classList.remove('hint'));
-        sfx('ok'); if (after) after();
-        say(ok);
-        break;
-      }
-      btns[p].classList.add('wrong');
-      alive[p] = null;
-      sfx('no');
-      tries++;
-      speak(tries === 1 ? 'g.no1' : 'g.no2');
-      if (tries >= 2) btns[right].classList.add('hint');
-    }
-    await next();
+    const right = opts.findIndex(o => o.ok);
+    const offC = coach(q, () => K.hand(gs[right], 'tap'));
+    await tapOne(gs, 'abc', right, .6);
+    offC(); clearHints(); K.inputs({}); aid = null;
+    K.poke(gs[right].userData.j, .6); sfx('ok');
+    await say(ok);
+    await G.next();
   }
 
-  // 排順序：把亂掉的卡片，照正確順序一張一張點
-  async function order({ intro, items, done }) {
-    const n = items.length;
-    const ord = shuffle(items.map((_, i) => i));
-    stage.innerHTML = '<div class="slots">' + items.map((_, i) => '<div class="slot">' + (i + 1) + '</div>').join('') + '</div>' +
-      '<div class="cards">' + ord.map(i => '<button class="card">' + ring(items[i].art) + '<span>' + Z(items[i].label) + '</span></button>').join('') + '</div>';
-    foot.innerHTML = '';
-    const slots = [...stage.querySelectorAll('.slot')];
-    const cards = [...stage.querySelectorAll('.card')];
-    const alive = cards.map((c, k) => ({ el: c, keys: [String(k + 1)] }));
+  // ========== 1 找種子：手指劃過果實把它切開 ==========
+  async function ch1() {
+    if (!K.mount()) return;
+    K.level(); X = 0;
+    const stall = P(K.box(8.4, .3, 2.4, GD.mat('trunk')), 0, .9, .4); void stall;
+    [-3.9, 3.9].forEach(x => P(K.box(.3, .9, 2, GD.mat('trunk')), x, .45, .4));
+    const KIND = [['apple', 'c1.apple', 'c1.apple.l'], ['mango', 'c1.mango', 'c1.mango.l'], ['pinecone', 'c1.pine', 'c1.pine.l']];
+    const fr = KIND.map(([k], i) => { const g = W(GD[k](false)); g.userData.k = k; P(g, (i - 1) * 2.6, 1.05, .4); return g; });
+    fr.forEach((g, i) => { K.tag(g, Z(KIND[i][2]), 2); K.cap(g, String(i + 1), 2.9); });
+    frame([V(-4.4, .6, 1.8), V(4.4, .6, 1.8), V(-4.4, 3.6, -.4), V(4.4, 3.6, -.4)], { elev: 22, elevPt: 26 });
+    say('c1.intro');
+    let opened = 0;
+    const open = async i => {
+      const g = fr[i]; if (g.userData.open) return;
+      g.userData.open = true; opened++;
+      const j = g.userData.j; j.remove(j.children[0]); j.add(GD[g.userData.k](true)); K.poke(j, .6); sfx('ok');
+      const p = say(KIND[i][1]);
+      if (opened === 3) { await p; finish(); }
+    };
+    let finish;
+    const offC = coach('c1.intro', () => { const i = fr.findIndex(g => !g.userData.open); return i >= 0 ? K.hand(fr[i], 'wipe') : null; });
+    await new Promise(res => {
+      finish = res;
+      // 劃過：按下去移動超過 30 像素就切開；點一下也可以（先抖一下，再點一次才開）
+      let st = null;
+      K.inputs({
+        down(p) { st = { x: p.x, y: p.y, i: K.nearest(p, fr.map(g => (g.userData.open ? null : g)), { max: 120, at: o => K.pos(o).add(V(0, .7, 0)) }), cut: false }; if (st.i >= 0) K.poke(fr[st.i].userData.j, .2); },
+        move(p) { if (!st || st.cut) return; if (Math.hypot(p.x - st.x, p.y - st.y) > 30) { const i = st.i >= 0 ? st.i : K.nearest(p, fr.map(g => (g.userData.open ? null : g)), { max: 120, at: o => K.pos(o).add(V(0, .7, 0)) }); if (i >= 0) { st.cut = true; open(i); } } },
+        up(p) { if (st && !st.cut && st.i >= 0 && Math.hypot(p.x - st.x, p.y - st.y) < 12) open(st.i); st = null; },
+      });
+      K.keys((k, dn) => { const i = '123'.indexOf(k); if (dn && i >= 0) { open(i); return true; } return false; });
+      winStep = () => fr.forEach((g, i) => open(i));
+      aid = () => { const i = fr.findIndex(g => !g.userData.open); return i >= 0 ? { kb: [String(i + 1)], ptr: { wipe: scr(fr[i], .7) } } : null; };
+    });
+    offC(); K.inputs({}); aid = null;
+    await say('c1.done');
+    await quiz3d({ q: 'c1.q', ok: 'c1.ok', opts: [{ text: 'c1.o1', make: () => GD.apple(true), ok: true }, { text: 'c1.o2', make: () => { const g = new T.Group(); const r = K.ball(.6, GD.mat('grey'), 0, .5, 0, 12); r.scale.set(1.2, .8, 1); g.add(r); return g; } }, { text: 'c1.o3', make: () => { const g = new T.Group(); [[0, .9, .5], [.45, .85, .38], [-.45, .85, .38]].forEach(([x, y, r]) => g.add(K.ball(r, GD.mat('white'), x, y, 0, 12))); return g; } }] });
+  }
+
+  // ========== 照順序點：東西排上小木架（第 2、7 關共用） ==========
+  async function orderTap({ intro, done, items, ring = false }) {
+    const n = items.length, ord = shuffle(items.map((_, i) => i));
+    const two = PT() && n >= 5;
+    const gs = ord.map((k, j) => { const g = W(items[k].make()); g.userData.k = k; if (two) P(g, j < 3 ? (j - 1) * 2.8 : (j - 3.5) * 2.8, 0, j < 3 ? 3.2 : 5.2); else P(g, (j - (n - 1) / 2) * (PT() ? 1.9 : 2.4), 0, 3.6); return g; });
+    gs.forEach((g, j) => { K.tag(g, Z(items[g.userData.k].label), -.15); K.cap(g, String(j + 1), 1.9); });
+    // 目的地：一排（或一圈）木頭小圓盤
+    const R = 2.6;
+    const slots = items.map((_, i) => ring ? at(Math.cos(-Math.PI / 2 + i / n * Math.PI * 2) * R, .08, -.6 + Math.sin(-Math.PI / 2 + i / n * Math.PI * 2) * R * .7) : at((i - (n - 1) / 2) * (PT() ? 1.9 : 2.4), .08, -.6));
+    slots.forEach(s => K.add(GD.slotDisc(), s.x, 0, s.z));
+    const ex = Math.max(3.4, (n - 1) / 2 * (PT() ? 1.9 : 2.4) + 1);
+    frame(ring ? [V(-3.8, 0, two ? 6.2 : 4.6), V(3.8, 0, two ? 6.2 : 4.6), V(-3.6, 1.4, -2.8), V(3.6, 1.4, -2.8)] : [V(-ex, 0, 4.6), V(ex, 0, 4.6), V(-ex, 1.6, -1.4), V(ex, 1.6, -1.4)], { elev: 34, elevPt: 46 });
     say(intro);
-    let exp = 0, wrong = 0;
-    while (exp < n) {
-      const k = await waitAction(alive);
-      if (ord[k] === exp) {
-        const s = slots[exp];
-        s.classList.add('f');
-        s.innerHTML = items[exp].art + '<b>' + (exp + 1) + '</b>';
-        cards[k].classList.add('gone');
-        cards.forEach(c => c.classList.remove('hint'));
-        alive[k] = null;
-        sfx('ok');
-        exp++; wrong = 0;
-        const p = say(items[exp - 1].say);
-        if (exp === n) await p;
-      } else {
-        cards[k].classList.remove('wrong'); void cards[k].offsetWidth; cards[k].classList.add('wrong');
-        sfx('no');
-        speak('g.order');
-        if (++wrong >= 2) cards[ord.indexOf(exp)].classList.add('hint');
-      }
+    for (let s = 0; s < n; s++) {
+      const right = gs.findIndex(g => g && g.userData.k === s);
+      const offC = coach(intro, () => K.hand(gs[right], 'tap'));
+      await tapOne(gs, '123456'.slice(0, n), right, .8);
+      offC(); clearHints(); K.inputs({}); aid = null;
+      const g = gs[right]; gs[right] = null;
+      const from = g.position.clone(), to = slots[s];
+      await K.tween(.5, k => { g.position.lerpVectors(from, to, K.ease(k)); g.position.y = to.y + Math.sin(k * Math.PI) * 1.4; });
+      K.poke(g.userData.j, .4); sfx('bump');
+      await say(items[s].say);
     }
-    sfx('win');
+    if (ring) { const t = new T.Mesh(new T.TorusGeometry(R, .06, 6, 48), K.clay(0xF2A23A)); t.rotation.x = -Math.PI / 2; t.scale.y = .7; K.add(t, X, .1, -.6); sfx('win'); }
     await say(done);
   }
 
-  // ---------- 開場 ----------
-  async function intro() {
-    setDots(-1);
-    sayBox.hidden = true;
-    stage.innerHTML = '<div class="hero"><div class="stamp">種子</div><div class="t"><div class="logo">' + Zs('ui.title') + '</div><div class="sub">' + Zs('ui.sub') + '</div></div></div>';
-    if (S.done > 0 && S.done < N_CH) {
-      foot.innerHTML = '<button class="big" id="b1">' + Z('ui.cont') + '</button><button class="big alt" id="b2" style="margin-left:14px">' + Z('ui.restart') + '</button>';
-      const i = await waitAction([{ el: $('#b1'), keys: ['enter', 'space'] }, { el: $('#b2'), keys: [] }]);
-      foot.innerHTML = '';
-      if (i === 1) { S.done = 0; save(); }
-      return S.done;
-    }
-    S.done = 0;
-    foot.innerHTML = '<button class="big" id="go"><kbd class="kc">S</kbd> ' + Z('ui.go') + '</button>';
-    let started = false;
-    (async () => {
-      await say('intro.hi'); if (started) return;
-      await say('intro.found'); if (started) return;
-      await say('intro.press');
-    })();
-    await waitAction([{ el: $('#go'), keys: ['s'] }]);
-    started = true;
-    sfx('ok'); stopVoice();
-    foot.innerHTML = '';
-    return 0;
-  }
-
-  async function titleCard(i) {
-    sayBox.hidden = true;
-    foot.innerHTML = '';
-    stage.innerHTML = '<div class="center"><div class="chnum">' + (i + 1) + '</div><div class="chtitle">' + Zs('c' + (i + 1) + '.title') + '</div></div>';
-    await Promise.all([speak('c' + (i + 1) + '.title'), sleep(1600)]);
-  }
-
-  // ---------- 第一關：找種子 ----------
-  async function ch1() {
-    say('c1.intro');
-    const items = [
-      { whole: A.appleWhole(), open: A.appleHalf(), say: 'c1.apple', lab: 'c1.apple.l' },
-      { whole: A.mangoWhole(), open: A.mangoHalf(), say: 'c1.mango', lab: 'c1.mango.l' },
-      { whole: A.pinecone(), open: A.pineOpen(), say: 'c1.pine', lab: 'c1.pine.l' },
-    ];
-    stage.innerHTML = '<div class="reveal">' + items.map(it =>
-      '<button class="rv todo">' + ring(it.whole, 'lg') + '<span>' + Z(it.lab) + '</span></button>').join('') + '</div>';
-    foot.innerHTML = '';
-    const btns = [...stage.querySelectorAll('.rv')];
-    const alive = btns.map((b, i) => ({ el: b, keys: [String(i + 1)] }));
-    let opened = 0;
-    while (opened < 3) {
-      const i = await waitAction(alive);
-      alive[i] = null;
-      const b = btns[i];
-      b.classList.remove('todo'); b.classList.add('open');
-      b.querySelector('svg').outerHTML = items[i].open;
-      sfx('ok');
-      opened++;
-      const p = say(items[i].say);
-      if (opened === 3) await p;
-    }
-    await say('c1.done');
-    await quiz({
-      q: 'c1.q', ok: 'c1.ok',
-      opts: [{ text: 'c1.o1', art: A.appleHalf(), ok: true }, { text: 'c1.o2', art: A.rock() }, { text: 'c1.o3', art: A.cloud() }],
-    });
-  }
-
-  // ---------- 第二關：種子怎麼來 ----------
+  // ========== 2 種子怎麼來：照順序點 ==========
   async function ch2() {
-    await order({
-      intro: 'c2.intro', done: 'c2.done',
-      items: [
-        { art: A.flowerCut(), label: 'c2.l1', say: 'c2.n1' },
-        { art: A.flowerBee(), label: 'c2.l2', say: 'c2.n2' },
-        { art: A.tinyFruitCut(), label: 'c2.l3', say: 'c2.n3' },
-        { art: A.appleHalf(), label: 'c2.l4', say: 'c2.n4' },
-      ],
-    });
-    await next();
-    await quiz({
-      q: 'c2.q', show: A.flowerBee(), ok: 'c2.ok',
-      opts: [{ text: 'c2.o1', art: A.flowerCut(), ok: true }, { text: 'c2.o2', art: A.appleWhole() }, { text: 'c2.o3', art: A.sprout() }],
-    });
+    if (!K.mount()) return;
+    K.level(); X = 18;
+    const bee0 = W(GD.bee()); P(bee0, -3.4, 2.6, -2); let t0 = 0; K.on(dt => { t0 += dt; bee0.position.set(X - 3.4 + Math.sin(t0) * 1.2, 2.6 + Math.sin(t0 * 3) * .2, -2 + Math.cos(t0) * .5); });
+    await orderTap({ intro: 'c2.intro', done: 'c2.done', items: [
+      { make: () => GD.flower(), label: 'c2.l1', say: 'c2.n1' },
+      { make: () => { const g = GD.flower(); const b = GD.bee(); b.position.set(.3, 1.6, 0); g.add(b); return g; }, label: 'c2.l2', say: 'c2.n2' },
+      { make: () => GD.tinyFruit(), label: 'c2.l3', say: 'c2.n3' },
+      { make: () => GD.apple(false), label: 'c2.l4', say: 'c2.n4' },
+    ] });
+    await G.next();
+    K.level();
+    await quiz3d({ q: 'c2.q', ok: 'c2.ok', opts: [{ text: 'c2.o1', make: () => GD.flower(), ok: true }, { text: 'c2.o2', make: () => GD.apple(false) }, { text: 'c2.o3', make: () => { const g = new T.Group(); g.add(K.box(1.2, .4, 1.2, GD.mat('soil'), 0, .2, 0)); return g; } }] });
   }
 
-  // ---------- 第三關：種子變成樹（按 W 澆水、按 S 曬太陽） ----------
+  // ========== 3 種子變成樹：拖澆水壺去澆水、點太陽 ==========
   async function ch3() {
-    sayBox.hidden = false;
-    stage.innerHTML = '<div class="grow todo" id="gr">' + A.growScene() + '<div class="sun" id="sun">' + A.sun() + '</div></div>' +
-      '<div class="keys"><button class="keybtn" id="kw"><kbd class="kc">W</kbd>' + A.drop() + '</button><button class="keybtn" id="ks"><kbd class="kc">S</kbd>' + A.sun() + '</button></div>';
-    foot.innerHTML = '';
-    const gr = $('#gr'), kw = $('#kw'), ks = $('#ks'), sun = $('#sun');
-    const groups = [...gr.querySelectorAll('g[data-from]')];
-    const setStage = n => groups.forEach(g => { g.style.opacity = (n >= +g.dataset.from && n <= +g.dataset.to) ? 1 : 0; });
-    const mark = want => { kw.classList.toggle('want', want === 'w'); ks.classList.toggle('want', want === 's'); };
-    const drops = () => {
-      for (let i = 0; i < 6; i++) {
-        const d = document.createElement('span');
-        d.className = 'fx'; d.innerHTML = A.drop();
-        d.style.left = (30 + Math.random() * 40) + '%'; d.style.top = (6 + Math.random() * 12) + '%';
-        d.style.animationDelay = (i * .12) + 's';
-        gr.appendChild(d); setTimeout(() => d.remove(), 2200);
-      }
-    };
-    setStage(0); mark('');
+    if (!K.mount()) return;
+    K.level(); X = 36;
+    const pt = W(GD.pot(), 120, 8); P(pt, 0, 0, .4);
+    const gr = GD.growing(); pt.userData.j.add(gr);
+    const can = W(GD.can()); P(can, -3.2, 0, 2.4);
+    const sn = W(GD.sun(.8)); P(sn, 3.2, 4, -1.6);
+    const drops = K.dots(18, .08, GD.mat('water')); K.lv.add(drops);
+    K.on(dt => { drops.userData.P.forEach(q => { if (q.life > 0) { q.p.y -= dt * 3; q.life -= dt; if (q.p.y < 1) q.life = 0; } }); drops.userData.sync(); });
+    const kw = K.cap(can, 'W', 1.3), ks = K.cap(sn, 'S', 1.2);
+    frame([V(-4.4, 0, 3.6), V(4.4, 0, 3.6), V(-3, 5.2, -1.6), V(4.2, 5, -1.6)], { elev: 18, elevPt: 24 });
+    // 先點一下泥土把種子種進去
     say('c3.intro');
-    await waitAction([{ el: gr, keys: ['space', 'enter'] }]);
-    gr.classList.remove('todo');
-    sfx('ok'); setStage(1);
-    await say('c3.s1');
-
-    const want = ['w', 'w', 's', 's', 'w', 's'];
-    for (let k = 1; k <= 6; k++) {
-      mark(want[k - 1]);
-      say('c3.k' + k);
-      for (;;) {
-        const i = await waitAction([{ el: kw, keys: ['w'] }, { el: ks, keys: ['s'] }]);
-        if ('ws'[i] === want[k - 1]) break;
-        const b = i ? ks : kw;
-        b.classList.remove('wrong'); void b.offsetWidth; b.classList.add('wrong');
-        sfx('no');
-      }
-      mark('');
-      if (want[k - 1] === 'w') { sfx('water'); drops(); }
-      else { sfx('ok'); sun.classList.add('on'); setTimeout(() => sun.classList.remove('on'), 2600); }
-      setStage(k + 1);
-      const p = say('c3.s' + (k + 1));
-      if (k === 6) { sfx('win'); await p; } else await p;
-    }
-    await say('c3.done');
-    await quiz({
-      q: 'c3.q', show: A.sprout(), ok: 'c3.ok',
-      opts: [{ text: 'c3.o1', art: A.root(), ok: true }, { text: 'c3.o2', art: A.leaf() }, { text: 'c3.o3', art: A.flower() }],
+    await new Promise(res => {
+      K.inputs({ up(p) { if (!p.cancel && K.nearest(p, [pt], { max: 150, at: o => K.pos(o).add(V(0, 1, 0)) }) >= 0) res(); } });
+      const offK = K.keys((k, dn) => { if (dn && (k === 'space' || k === 'enter')) { offK(); res(); return true; } return false; });
+      winStep = res; aid = () => ({ kb: ['space'], ptr: { tap: scr(pt, 1) } });
     });
+    K.inputs({}); aid = null;
+    K.poke(pt.userData.j, .4); sfx('ok'); gr.userData.set(1);
+    await say('c3.s1');
+    const want = ['w', 'w', 's', 's', 'w', 's'];
+    const canHome = can.position.clone();
+    for (let k = 1; k <= 6; k++) {
+      const w = want[k - 1];
+      const h = K.halo(w === 'w' ? can : sn, 1.8);
+      say('c3.k' + k);
+      const offC = coach('c3.k' + k, () => (w === 'w' ? K.hand(can, 'drag', pt) : K.hand(sn, 'tap')));
+      await new Promise(res => {
+        const water = async () => {
+          if (w !== 'w') { K.poke(can.userData.j, -.3); sfx('no'); return; }
+          offK(); K.inputs({});
+          const from = can.position.clone(), to = at(-1.4, 1.6, .4);
+          await K.tween(.4, t => { can.position.lerpVectors(from, to, K.ease(t)); });
+          can.rotation.z = -.6; sfx('pour');
+          drops.userData.P.forEach((q, i) => { q.life = 1; q.s = 1; q.p.set(X - .6 + Math.random() * .5, 2 + i * .08, .4 + (Math.random() - .5) * .5); });
+          await K.wait(.6); can.rotation.z = 0;
+          await K.tween(.35, t => { can.position.lerpVectors(to, canHome, K.ease(t)); });
+          res();
+        };
+        const shine = () => { if (w !== 's') { K.poke(sn.userData.j, -.3); sfx('no'); return; } offK(); K.poke(sn.userData.j, .6); sfx('ok'); res(); };
+        let grab = null;
+        K.inputs({
+          down(p) { if (K.nearest(p, [can], { max: 100, at: o => K.pos(o).add(V(0, .4, 0)) }) >= 0) grab = { x: p.x, y: p.y }; },
+          move(p) { if (!grab) return; const g = K.ground(p, 0); if (g) can.position.set(K.clamp(g.x, X - 5, X + 5), .6, K.clamp(g.z, -2, 4)); },
+          up(p) {
+            if (grab) { const moved = Math.hypot(p.x - grab.x, p.y - grab.y) > 10; grab = null; const near = can.position.distanceTo(at(0, .6, .4)) < 2.2 || K.nearest(p, [pt], { max: 160, at: o => K.pos(o).add(V(0, 1, 0)) }) >= 0; if (!moved || near) water(); else K.tween(.3, t => can.position.lerp(canHome, t)); return; }
+            if (K.nearest(p, [sn], { max: 110 }) >= 0) shine();
+            else if (K.nearest(p, [pt], { max: 120, at: o => K.pos(o).add(V(0, 1, 0)) }) >= 0 && w === 'w') water();
+          },
+        });
+        const offK = K.keys((key, dn) => { if (!dn) return false; if (key === 'w') { water(); return true; } if (key === 's') { shine(); return true; } return false; });
+        winStep = () => { offK(); res(); };
+        aid = () => (w === 'w' ? { kb: ['w'], ptr: { drag: [scr(can, .4), scr(pt, 1.2)] } } : { kb: ['s'], ptr: { tap: scr(sn) } });
+      });
+      offC(); K.haloOff(h); aid = null;
+      gr.userData.set(k + 1); K.poke(pt.userData.j, .3); note(2 + k);
+      if (k === 6) sfx('win');
+      await say('c3.s' + (k + 1));
+    }
+    K.capOff(kw); K.capOff(ks);
+    await say('c3.done');
+    await G.next();
+    K.level();
+    await quiz3d({ q: 'c3.q', ok: 'c3.ok', opts: [{ text: 'c3.o1', make: () => { const g = new T.Group(); const r = K.cyl(.06, .01, 1.2, GD.mat('cream'), 0, .6, 0, 8); g.add(r); [-1, 1].forEach(s => { const b = K.cyl(.03, .01, .5, GD.mat('cream'), s * .2, .4, 0, 6); b.rotation.z = s * .7; g.add(b); }); return g; }, ok: true },
+      { text: 'c3.o2', make: () => { const g = new T.Group(); const l = K.ball(.5, GD.mat('leaf'), 0, .5, 0, 12); l.scale.set(1.3, .25, .7); g.add(l); return g; } }, { text: 'c3.o3', make: () => GD.flower('petal', .6) }] });
   }
 
-  // ---------- 第四關：認識六種樹的種子 ----------
+  // ========== 4 認識種子：按住種子，它的樹從種子長出來 ==========
   const IDS = ['oak', 'pine', 'maple', 'coconut', 'mango', 'apple'];
   async function ch4() {
-    sayBox.hidden = false;
-    stage.innerHTML = '<div class="focus empty" id="fc">' + Z('c4.tap') + '</div>' +
-      '<div class="grid6">' + IDS.map((id, i) =>
-        '<button class="sd"><span class="num">' + (i + 1) + '</span>' + ring(A.SEED_ART[id]()) + '<span>' + Z('seed.' + id) + '</span></button>').join('') + '</div>';
-    foot.innerHTML = '';
-    const btns = [...stage.querySelectorAll('.sd')];
-    const alive = btns.map((b, i) => ({ el: b, keys: [String(i + 1)] }));
-    const fc = $('#fc');
+    if (!K.mount()) return;
+    K.level(); X = 54;
+    const pt = PT();
+    const seeds = IDS.map((id, i) => { const g = W(GD.SEED[id](1.6)); g.userData.id = id; if (pt) P(g, (i % 3 - 1) * 2.8, 0, 1.4 + Math.floor(i / 3) * 3.2); else P(g, (i - 2.5) * 2.4, 0, 3); return g; });
+    const trees = IDS.map((id, i) => { const t = GD.tree(id, .01); t.position.copy(seeds[i].position).add(V(0, 0, -1)); K.lv.add(t); return t; });
+    seeds.forEach((g, i) => K.cap(g, String(i + 1), 1.2));
+    frame(pt ? [V(-3.8, 0, 5.6), V(3.8, 0, 5.6), V(-3.8, 3.2, -.6), V(3.8, 3.2, -.6)] : [V(-6.6, 0, 4.4), V(6.6, 0, 4.4), V(-6.6, 3.4, 1), V(6.6, 3.4, 1)], { elev: 22, elevPt: 30 });
     say('c4.intro');
-    const seen = new Set();
-    while (seen.size < IDS.length) {
-      const i = await waitAction(alive);
-      const id = IDS[i];
-      btns.forEach(b => b.classList.remove('sel'));
-      btns[i].classList.add('seen', 'sel');
-      fc.className = 'focus';
-      fc.innerHTML = ring(A.SEED_ART[id](), 'md') + '<div><div class="nm">' + Z('seed.' + id) + '</div><div class="tr">→ ' + Z('tree.' + id) + '</div></div>';
-      sfx('tap');
-      seen.add(id);
-      const p = say('info.' + id);
-      if (seen.size === IDS.length) await p;
-    }
+    const grow = IDS.map(() => 0), seen = new Set();
+    let holding = -1;
+    const offC = coach('c4.intro', () => { const i = IDS.findIndex(id => !seen.has(id)); return i >= 0 ? K.hand(seeds[i], 'hold') : null; });
+    await new Promise(res => {
+      K.on(dt => {
+        if (holding >= 0 && grow[holding] < 1) {
+          grow[holding] = Math.min(1, grow[holding] + dt * (FAST ? 4 : .9));
+          trees[holding].scale.setScalar(.01 + grow[holding] * .85); K.poke(seeds[holding].userData.j, .02);
+          if (grow[holding] >= 1) {
+            const id = IDS[holding]; seen.add(id); sfx('ok'); note(seen.size + 2); K.tag(seeds[holding], Z('seed.' + id), -.15);
+            const p = say('info.' + id);
+            if (seen.size === IDS.length) p.then(res);
+            holding = -1;
+          }
+        }
+      });
+      K.inputs({ down(p) { const i = K.nearest(p, seeds, { max: 110, at: o => K.pos(o).add(V(0, .4, 0)) }); if (i >= 0 && grow[i] < 1) { holding = i; sfx('tap'); } }, up() { holding = -1; } });
+      K.keys((k, dn) => { const i = '123456'.indexOf(k); if (i < 0) return false; if (dn) { if (grow[i] < 1) holding = i; } else if (holding === i) holding = -1; return true; });
+      winStep = () => { IDS.forEach((id, i) => { grow[i] = 1; trees[i].scale.setScalar(.86); seen.add(id); }); res(); };
+      aid = () => { const i = grow.findIndex(g => g < 1); return i >= 0 ? { kb: { hold: String(i + 1), ms: FAST ? 400 : 1300 }, ptr: { hold: scr(seeds[i], .4), ms: FAST ? 400 : 1300 } } : null; };
+    });
+    offC(); K.inputs({}); aid = null;
     await say('c4.done');
-    await next();
+    await G.next();
   }
 
-  // ---------- 第五關：種子配對 ----------
+  // ========== 5 種子配對：點一棵對的樹 ==========
   async function ch5() {
+    if (!K.mount()) return;
+    K.level(); X = 72;
+    frame([V(-4.6, 0, 4.4), V(4.6, 0, 4.4), V(-4.6, 3.6, -1.4), V(4.6, 3.6, -1.4)], { elev: 18, elevPt: 24 });
     await say('c5.intro');
     for (const id of shuffle(IDS).slice(0, 4)) {
+      K.level();
+      const sd = W(GD.SEED[id](1.6)); P(sd, 0, 0, 3.6); K.poke(sd.userData.j, .5);
       const others = shuffle(IDS.filter(x => x !== id)).slice(0, 2);
-      await quiz({
-        q: 'q5.' + id, show: A.SEED_ART[id](), ok: 'ok5.' + id,
-        opts: [{ text: 'tree.' + id, art: A.TREES[id](), ok: true }].concat(others.map(o => ({ text: 'tree.' + o, art: A.TREES[o]() }))),
-      });
+      const opts = shuffle([id, ...others]);
+      const ts = opts.map((t, i) => { const g = W(GD.tree(t, .9), 120, 8); P(g, (i - 1) * 3, 0, -.6); K.tag(g, Z('tree.' + t), -.2); K.cap(g, 'ABC'[i], 3.2); return g; });
+      sfx('pop');
+      say('q5.' + id);
+      const right = opts.indexOf(id);
+      const offC = coach('q5.' + id, () => K.hand(ts[right], 'tap'));
+      await tapOne(ts, 'abc', right, 1.6);
+      offC(); clearHints(); K.inputs({}); aid = null;
+      K.poke(ts[right].userData.j, .5); sfx('ok');
+      const from = sd.position.clone(), to = ts[right].position.clone().add(V(0, 0, 1));
+      await K.tween(.5, k => { sd.position.lerpVectors(from, to, K.ease(k)); sd.position.y = Math.sin(k * Math.PI) * 1.4; });
+      await say('ok5.' + id);
     }
   }
 
-  // ---------- 第六關：種子去旅行 ----------
+  // ========== 6 種子去旅行：把種子丟給風、水或松鼠 ==========
   async function ch6() {
+    if (!K.mount()) return;
+    K.level(); X = 90;
     await say('c6.intro');
-    const rounds = [
-      { n: 1, seed: A.samara(), who: 'wind' },
-      { n: 2, seed: A.coconut(), who: 'water' },
-      { n: 3, seed: A.acorn(), who: 'animal' },
-    ];
-    const helper = { wind: [A.wind(), 'h.wind'], water: [A.wave(), 'h.water'], animal: [A.squirrel(), 'h.animal'] };
+    const rounds = [{ n: 1, id: 'maple', who: 0 }, { n: 2, id: 'coconut', who: 1 }, { n: 3, id: 'oak', who: 2 }];
+    const HELP = [['h.wind', () => GD.wind()], ['h.water', () => GD.stream()], ['h.animal', () => GD.squirrel()]];
     for (const r of rounds) {
-      await quiz({
-        q: 'c6.q' + r.n, ok: 'c6.ok' + r.n,
-        showRaw: '<div class="travel ' + r.who + '" id="tv"><div class="tseed" id="ts">' + r.seed + '</div></div>',
-        opts: ['wind', 'water', 'animal'].map(w => ({ text: helper[w][1], art: helper[w][0], ok: w === r.who })),
-        after: () => {
-          const tv = $('#tv'), ts = $('#ts');
-          const who = document.createElement('div');
-          who.className = 'twho'; who.innerHTML = helper[r.who][0];
-          tv.appendChild(who);
-          void tv.offsetWidth;                       // 先讓瀏覽器排版一次，transition 才會動
-          ts.style.left = '78%';
-          ts.style.bottom = r.who === 'wind' ? '52%' : r.who === 'water' ? '34%' : '12%';
-          who.style.transition = 'left 2.4s ease-in-out'; who.style.left = '70%';
-          if (r.who === 'animal') setTimeout(() => { const s = document.createElement('div'); s.className = 'twho'; s.style.left = '80%'; s.style.top = '38%'; s.innerHTML = A.sprout(); tv.appendChild(s); }, 2500);
-        },
+      K.level();
+      const hs = HELP.map(([lab, f], i) => { const g = W(f(), 120, 8); P(g, (i - 1) * 3.2, 0, -.6); K.tag(g, Z(lab), -.2); K.cap(g, 'ABC'[i], 2); return g; });
+      const sd = W(GD.SEED[r.id](1.5)); P(sd, 0, 0, 3.8);
+      frame([V(-4.8, 0, 4.8), V(4.8, 0, 4.8), V(-4.8, 2.6, -1.6), V(4.8, 2.6, -1.6)], { elev: 30, elevPt: 40 });
+      say('c6.q' + r.n);
+      const offC = coach('c6.q' + r.n, () => K.hand(sd, 'drag', hs[r.who]));
+      await new Promise(res => {
+        const judge = (j, viaDrop) => {
+          if (j !== r.who) { missed(hs[j], hs[r.who]); if (wrong >= 3) { setTimeout(() => { D.land(0, hs[r.who].position.clone().add(V(0, .3, .8))).then(res); }, 300); } return null; }
+          const to = hs[j].position.clone().add(V(0, .3, .8));
+          if (!viaDrop) D.land(0, to).then(res); else setTimeout(res, 450);
+          return to;
+        };
+        const D = K.drag([sd], { h: 0, lift: .7, drop: (_, p) => { const j = K.nearest(K.v.toScreen(p), hs, { max: 140 }); return j >= 0 ? judge(j, true) : null; } });
+        K.inputs({ down: D.down, move: D.move, up(p) { if (D.sel() === 0) { const j = K.nearest(p, hs, { max: 130, at: o => K.pos(o).add(V(0, .8, 0)) }); if (j >= 0) { D.select(-1); judge(j, false); return; } } else { const j = K.nearest(p, hs, { max: 110, at: o => K.pos(o).add(V(0, .8, 0)) }); if (j >= 0 && K.nearest(p, [sd], { max: 70 }) < 0) { judge(j, false); return; } } D.up(p); } });
+        const offK = K.keys((k, dn) => { const j = 'abc'.indexOf(k); if (dn && j >= 0) { judge(j, false); return true; } return false; });
+        winStep = () => { offK(); res(); };
+        aid = () => ({ kb: ['abc'[r.who]], ptr: { drag: [scr(sd, .3), scr(hs[r.who], .8)] } });
       });
+      offC(); clearHints(); K.inputs({}); aid = null;
+      sfx('ok');
+      // 看它去哪裡：風把種子吹高飛遠、水讓椰子漂走、松鼠把橡實埋進土裡（冒出小芽）
+      const from = sd.position.clone();
+      if (r.who === 0) await K.tween(1.6, k => { sd.position.set(from.x + k * 6, from.y + Math.sin(k * Math.PI) * 3, from.z - k * 2); sd.rotation.y += .3; });
+      else if (r.who === 1) await K.tween(1.6, k => { sd.position.set(from.x + k * 5, .1 + Math.sin(k * 12) * .08, from.z - k * 1.5); });
+      else { await K.tween(.8, k => { sd.position.y = from.y - k * .6; }); const sp = GD.flower('leaf2', .5); P(sp, from.x - X, 0, from.z); K.poke(sp, .4); }
+      await say('c6.ok' + r.n);
     }
     await say('c6.done');
-    await next();
+    await G.next();
   }
 
-  // ---------- 第七關：種子的一生 ----------
+  // ========== 7 種子的一生：照順序點，排成一圈 ==========
   async function ch7() {
-    await order({
-      intro: 'c7.intro', done: 'c7.done',
-      items: [
-        { art: A.acorn(), label: 'c7.l1', say: 'c7.n1' },
-        { art: A.sprout(), label: 'c7.l2', say: 'c7.n2' },
-        { art: A.bigTree(), label: 'c7.l3', say: 'c7.n3' },
-        { art: A.floweringTree(), label: 'c7.l4', say: 'c7.n4' },
-        { art: A.fruitTree(), label: 'c7.l5', say: 'c7.n5' },
-      ],
-    });
-    const cy = document.createElement('div');
-    cy.className = 'cycle'; cy.innerHTML = A.cycle();
-    stage.appendChild(cy);
-    await next();
+    if (!K.mount()) return;
+    K.level(); X = 108;
+    await orderTap({ intro: 'c7.intro', done: 'c7.done', ring: true, items: [
+      { make: () => GD.acorn(1.4), label: 'c7.l1', say: 'c7.n1' },
+      { make: () => { const g = new T.Group(); g.add(GD.flower('leaf2', .5)); return g; }, label: 'c7.l2', say: 'c7.n2' },
+      { make: () => GD.tree('oak', .55), label: 'c7.l3', say: 'c7.n3' },
+      { make: () => { const t = GD.tree('oak', .55); [[.4, 1.4, .4], [-.3, 1.2, .5]].forEach(([x, y, z]) => t.add(GD.flower('petal', .01)).position.set(x, y, z)); return t; }, label: 'c7.l4', say: 'c7.n4' },
+      { make: () => { const t = GD.tree('oak', .55); [[.4, 1.2, .5], [-.4, 1.4, .4]].forEach(([x, y, z]) => t.add(GD.acorn(.8)).position.set(x, y - .3, z)); return t; }, label: 'c7.l5', say: 'c7.n5' },
+    ] });
+    await G.next();
   }
 
-  // ---------- 加碼關：最早的種子 ----------
+  // ========== 8 最早的種子：把孢子、種子、花拖到時間軸上 ==========
   async function ch8() {
-    await order({
-      intro: 'c8.intro', done: 'c8.done',
-      items: [
-        { art: A.fern(), label: 'c8.l1', say: 'c8.n1' },
-        { art: A.pinecone(), label: 'c8.l2', say: 'c8.n2' },
-        { art: A.flowerCut(), label: 'c8.l3', say: 'c8.n3' },
-      ],
+    if (!K.mount()) return;
+    K.level(); X = 126;
+    const ITEMS = [[() => GD.fern(), 'c8.l1', 'c8.n1'], [() => GD.pinecone(true), 'c8.l2', 'c8.n2'], [() => GD.flower(), 'c8.l3', 'c8.n3']];
+    // 時間軸：一條木頭長條，左邊很久很久以前 → 右邊
+    P(K.box(9, .14, .6, GD.mat('trunk')), 0, .07, -.8);
+    const ar = new T.Mesh(new T.ConeGeometry(.35, .7, 10), GD.mat('trunk')); ar.rotation.z = -Math.PI / 2; P(ar, 4.8, .14, -.8);
+    const slots = [-3, 0, 3].map(x => at(x, .14, -.8));
+    slots.forEach(s => K.add(GD.slotDisc('cream'), s.x, .1, s.z));
+    const ord = shuffle([0, 1, 2]);
+    const gs = ord.map((k, j) => { const g = W(ITEMS[k][0]()); g.userData.k = k; P(g, (j - 1) * 3, 0, 3.2); K.tag(g, Z(ITEMS[k][1]), -.15); return g; });
+    const caps = gs.map((g, j) => K.cap(g, String(j + 1), 1.8));
+    frame([V(-5, 0, 4.4), V(5.2, 0, 4.4), V(-5, 1.8, -1.6), V(5.2, 1.8, -1.6)], { elev: 30, elevPt: 40 });
+    say('c8.intro');
+    let n = 0;
+    const offC = coach('c8.intro', () => { const i = gs.findIndex(g => g.userData.k === n); return K.hand(gs[i], 'drag', slots[n]); });
+    await new Promise(res => {
+      const dm = gs.slice();
+      const judge = (i, viaDrop) => {
+        if (gs[i].userData.k !== n) { missed(gs[i], gs.find(g => g.userData.k === n)); return null; }
+        clearHints(); dm[i] = null; K.capOff(caps[i]);
+        const to = slots[n].clone(); sfx('ok'); const s = say(ITEMS[n][2]); n++;
+        if (!viaDrop) D.land(i, to);
+        if (n === 3) s.then(res);
+        return to;
+      };
+      const D = K.drag(dm, { h: 0, lift: .7, drop: (i, p) => (Math.abs(p.z + .8) < 1.6 ? judge(i, true) : null) });
+      K.inputs({ down: D.down, move: D.move, up(p) { const s = D.sel(); if (s >= 0 && K.nearest(p, slots, { max: 120 }) >= 0) { D.select(-1); judge(s, false); return; } D.up(p); } });
+      K.keys((k, dn) => { const i = '123'.indexOf(k); if (dn && i >= 0 && dm[i]) { judge(i, false); return true; } return false; });
+      winStep = () => { while (n < 3) judge(gs.findIndex(g => g.userData.k === n), false); };
+      aid = () => { if (n >= 3) return null; const i = gs.findIndex(g => g.userData.k === n); return { kb: [String(i + 1)], ptr: { drag: [scr(gs[i], .4), scr(slots[n], .1)] } }; };
     });
-    const note = document.createElement('div');
-    note.className = 'parent';
-    note.innerHTML = '<b>給家長：</b>化石證據顯示，種子植物約在 3.6 億年前（泥盆紀晚期）出現，最早的開花植物約在 1.3 億年前（白堊紀早期，確切時間仍有討論）。' +
-      '孢子通常是單一細胞，沒有儲存養分；種子裡有胚、養分和種皮。第一顆種子不是某一天突然出現，是很多代慢慢演變出來的。';
-    stage.appendChild(note);
-    await next();
-    await quiz({
-      q: 'c8.q', ok: 'c8.ok',
-      opts: [{ text: 'c8.o1', art: A.acorn(), ok: true }, { text: 'c8.o2', art: A.flowerCut() }],
-    });
+    offC(); K.inputs({}); aid = null;
+    await say('c8.done');
+    const c = document.createElement('div'); c.className = 'k3-card';
+    c.innerHTML = '<b>給家長：</b>化石證據顯示，種子植物約在 3.6 億年前（泥盆紀晚期）出現，最早的開花植物約在 1.3 億年前（白堊紀早期，確切時間仍有討論）。孢子通常是單一細胞，沒有儲存養分；種子裡有胚、養分和種皮。第一顆種子不是某一天突然出現，是很多代慢慢演變出來的。';
+    K.ov.appendChild(c);
+    await G.next();
+    c.remove();
+    K.level();
+    await quiz3d({ q: 'c8.q', ok: 'c8.ok', opts: [{ text: 'c8.o1', make: () => GD.acorn(1.4), ok: true }, { text: 'c8.o2', make: () => GD.flower() }] });
   }
 
-  // ---------- 結尾 ----------
+  // ---------- 結尾：小徑盡頭一排六棵樹，點了會晃 ----------
   async function finale() {
-    S.done = N_CH; save();
-    setDots(N_CH);
-    sayBox.hidden = false;
-    stage.innerHTML = '<div class="center"><div class="stamp">種子<br>博士</div><div class="chtitle">' + Zs('fin.title') + '</div>' +
-      '<div class="stickers">' + IDS.map(id => ring(A.SEED_ART[id](), 'md')).join('') + '</div>' +
-      '<div style="font-size:24px">' + Z('fin.got') + '</div>' +
-      '<div class="parent"><b>給家長：</b>回家後可以一起做兩件事 —— ①把一顆綠豆或黃豆放在濕紙巾上，每天看牠怎麼長根、長芽；②散步時撿橡實、松果、楓香果，比一比哪些種子長得像今天認識的。</div></div>';
-    foot.innerHTML = '';
+    if (!K.mount()) { stage.innerHTML = '<div class="chtitle">' + G.Zs('fin.title') + '</div>'; await say('fin.hi'); return; }
+    K.level(); X = 144;
+    const ts = IDS.map((id, i) => { const g = W(GD.tree(id, .8), 120, 8); P(g, (i - 2.5) * 2.2, 0, -.4); return g; });
+    const sds = IDS.map((id, i) => { const g = W(GD.SEED[id](1.1)); P(g, (i - 2.5) * 2.2, 0, 2); return g; });
+    frame([V(-6.6, 0, 3), V(6.6, 0, 3), V(-6.6, 3.4, -.4), V(6.6, 3.4, -.4)], { elev: 18, elevPt: 24 });
+    K.inputs({ up(p) { const i = K.nearest(p, ts.concat(sds), { max: 100, at: o => K.pos(o).add(V(0, .8, 0)) }); if (i >= 0) { K.poke((ts.concat(sds))[i].userData.j, .5); note(i % 8 + 2); } } });
+    ts.forEach((g, i) => setTimeout(() => K.poke(g.userData.j, .5), i * 120));
+    const c = document.createElement('div'); c.className = 'k3-card'; c.innerHTML = '<div class="chtitle">' + G.Zs('fin.title') + '</div>'; K.ov.appendChild(c);
     sfx('win');
-    (async () => { await say('fin.hi'); await say('fin.task'); })();
-    foot.innerHTML = '<button class="big" id="again">' + Z('ui.again') + '</button>';
-    await waitAction([{ el: $('#again'), keys: ['enter', 'space'] }]);
-    S.done = 0; save(); location.reload();
+    await say('fin.hi'); await say('fin.task');
   }
 
-  // ---------- 主流程 ----------
-  const CH = [ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8];
-  async function main() {
-    const qs = new URLSearchParams(location.search);
-    let from;
-    if (qs.has('fin')) from = N_CH;                                                         // 測試用：?fin=1 直接看結尾
-    else if (qs.has('ch')) from = Math.max(0, Math.min(N_CH - 1, (+qs.get('ch') || 1) - 1));   // ?ch=3 直接跳到第三關（重來鈕也是用它）
-    else { RESTART.set(null); from = await intro(); }
-    for (let i = from; i < N_CH; i++) {
-      setDots(i);
-      RESTART.set(() => RESTART.reload({ ch: i + 1 }));      // 重來：重新載入到這一關，進度不丟
-      await titleCard(i);
-      await CH[i]();
-      S.done = i + 1; save();
-    }
-    RESTART.set(null);
-    await finale();
-  }
-
-  // ---------- 上方按鈕 ----------
-  $('#homeBtn').addEventListener('click', () => { stopVoice(); location.href = location.pathname; });
-  const sndBtn = $('#sndBtn');
-  // 聲音開關：只有圖示（喇叭＋聲波／喇叭＋斜線），不寫字（和共用引擎一樣）
-  const muteIcon = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M10 38 H28 L50 18 V82 L28 62 H10Z" fill="currentColor"/>' +
-    '<g fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"><path d="M64 38 L88 62"/><path d="M88 38 L64 62"/></g></svg>';
-  const paintSnd = () => { sndBtn.innerHTML = S.sound ? A.speaker() : muteIcon; sndBtn.classList.toggle('off', !S.sound); sndBtn.setAttribute('aria-pressed', S.sound ? 'true' : 'false'); };
-  sndBtn.addEventListener('click', () => { S.sound = !S.sound; save(); paintSnd(); if (!S.sound) stopVoice(); });
-  paintSnd();
-  RESTART.init({ sound: () => S.sound, stop: () => stopVoice() });
-
-  main();
+  const wrapCh = f => async () => { aid = null; winStep = null; wrong = 0; hints = []; await f(); aid = null; winStep = null; };
+  G.run({ saveKey: 'seed-game-v1', stamp: '種子', heroArt: A.acorn ? A.acorn() : '', chapters: [ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8].map(wrapCh), finale });
+  window.__sd = { win: () => { if (winStep) winStep(); }, aid: () => { try { return aid ? aid() : null; } catch (e) { return null; } } };
 })();
