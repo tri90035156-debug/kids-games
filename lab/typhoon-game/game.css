@@ -57,3 +57,8 @@
   .ty-arrows{grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px)}
   .ty-arrows button{width:48px;height:48px}
 }
+/* 3D 版（第 5 批）：力氣條、場景底色 */
+.k3{background:#EEF4F6}
+.ty-bar{display:flex;align-items:center;gap:8px}
+.ty-bar .pw{display:block;width:110px;height:14px;border-radius:7px;background:#fff;box-shadow:inset 0 0 0 2px #E2D6C4;overflow:hidden}
+.ty-bar .pf{display:block;height:100%;background:#D2402A;border-radius:7px}

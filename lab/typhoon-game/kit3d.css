@@ -1,0 +1,38 @@
+/* 3D 關卡工具的樣式（kit3d.js 用；六個 3D 化的遊戲共用，每個資料夾一份一模一樣的複本）。 */
+.k3{position:relative;width:100%;flex:1;min-height:0;align-self:stretch;border-radius:28px;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+.k3-v{position:absolute;inset:0}
+.k3-v canvas{display:block;width:100%!important;height:100%!important}
+.k3-ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.k3-ctl{position:absolute;left:0;right:0;bottom:10px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding:0 10px;pointer-events:none}
+.k3-ctl:empty{display:none}
+.k3-btn{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;min-height:60px;padding:8px 20px;border:0;border-radius:999px;background:#FFF8EE;color:var(--ink,#3B3430);
+  font:inherit;font-size:22px;font-weight:700;cursor:pointer;box-shadow:0 5px 0 rgba(90,60,20,.18),0 10px 22px rgba(90,60,20,.12);touch-action:none;transition:transform .15s}
+.k3-btn:active,.k3-btn.on{transform:translateY(3px) scale(.97);box-shadow:0 2px 0 rgba(90,60,20,.18),0 4px 10px rgba(90,60,20,.12)}
+.k3-btn .k3-bi svg{width:34px;height:34px;display:block}
+.k3-btn.hot{background:#F2A33A;color:#fff}
+.k3-btn.hot .zy{color:#fff}
+.k3-btn.cold{background:#CFE6F2}
+.k3-kc{position:absolute;left:0;top:0;font-size:20px;will-change:transform;opacity:.9}
+@media (hover:none),(pointer:coarse){.k3-kc{display:none!important}}
+.k3-tag{position:absolute;left:0;top:0;will-change:transform;background:rgba(255,248,238,.92);border-radius:14px;padding:2px 8px;font-size:18px;font-weight:700;white-space:nowrap;box-shadow:0 3px 8px rgba(90,60,20,.12)}
+.k3-tag svg{width:40px;height:40px;display:block}
+.k3-hand{position:absolute;left:-14px;top:-8px;width:58px;height:58px;z-index:9;will-change:transform;filter:drop-shadow(0 3px 4px rgba(59,52,48,.22))}
+.k3-hand svg{width:100%;height:100%;display:block;overflow:visible;animation:k3-tap 1.1s ease-in-out infinite}
+.k3-hand.hold svg{animation:k3-press 1.4s ease-in-out infinite}
+.k3-hand .hd{fill:#FFF8EE;stroke:#8a7a70;stroke-width:2.5;stroke-linejoin:round}
+.k3-hand .tip{fill:rgba(240,90,60,.2);stroke:rgba(240,90,60,.55);stroke-width:3}
+@keyframes k3-tap{0%,100%{transform:translateY(-10px)}50%{transform:translateY(4px) scale(.94)}}
+@keyframes k3-press{0%,100%{transform:translateY(-8px)}30%,70%{transform:translateY(4px) scale(.92)}}
+.k3-card{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:min(94%,640px);max-height:calc(100% - 24px);overflow:auto;pointer-events:auto;
+  background:rgba(255,251,244,.96);border-radius:22px;padding:12px 16px;font-size:17px;line-height:1.7;box-shadow:0 10px 30px rgba(90,60,20,.16);animation:k3-pop .3s ease-out}
+.k3-card b{color:var(--maroon,#8E2A1A)}
+@keyframes k3-pop{from{transform:translateX(-50%) translateY(14px);opacity:0}to{transform:translateX(-50%);opacity:1}}
+.k3-nogl{font-size:24px;text-align:center;padding:40px 16px;line-height:1.8}
+.k3-nogl a{color:var(--red,#C0392B)}
+@media (max-width:560px){
+  .k3{border-radius:20px}
+  .k3-btn{font-size:19px;min-height:54px;padding:6px 14px}
+  .k3-card{font-size:15px}
+}
+.k3-btn.sm{font-size:17px;min-height:46px;padding:4px 12px;gap:6px}
+@media (max-width:560px){.k3-btn.sm{font-size:15px;min-height:42px;padding:3px 9px}}
