@@ -1,0 +1,8 @@
+/* 《我的身體裡面》主題色（共用元件在 style.css、kit3d.css）：米白底、珊瑚紅、小人的草綠、門的琥珀。 */
+:root{
+  --bg:#F7F0E4; --paper:#FFF8EE; --paper2:#FFFBF4; --ink:#3B3430; --line:#E8DCC8;
+  --red:#E0533C; --maroon:#9A3A2A; --gold:#F2A23A; --goldsoft:#F3E8D6; --zy:#6F8A5A;
+}
+.big:hover{background:#C9452F}
+.ring{border-color:var(--red)}
+.k3{background:#F7F0E4}
