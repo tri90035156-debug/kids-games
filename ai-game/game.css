@@ -148,3 +148,7 @@
   .arr{width:64px;height:64px}
   .node.l0,.node.l2{width:60px;height:60px;margin:-30px 0 0 -30px}.node .nl{font-size:15px}
 }
+/* 3D 版（第 7 批） */
+.k3{background:#F3EEDF}
+.ai-blank{display:inline-block;min-width:2.4em;border-bottom:3px solid #C0392B;text-align:center;margin-left:.2em}
+.ai-story{max-width:min(92vw,560px);white-space:normal;text-align:left;line-height:2.1}

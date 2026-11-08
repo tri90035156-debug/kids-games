@@ -160,7 +160,8 @@ window.K3 = (() => {
   // ---------- 拖曳有重量：抓起來會浮高一點、跟手慢一點、往旁邊甩會歪；放開落地有木琴＋果凍 ----------
   // items：物件（外層 group，內層 userData.j 是果凍）；drop(i, worldPos) 回傳 Vector3（放到哪）或 null（彈回去）
   // 也可以「點一下東西、再點位置」：pick(i) 選起來，再點地面 → drop(i, pos)
-  function drag(items, { h = 0, lift = .5, drop, onPick, bounds = null, keyPick = null, homeOf = null } = {}) {
+  // dropScreen(i, 螢幕座標)：放手時用手指在畫面上的位置判斷（目標是立著的東西、不在地上時用這個）
+  function drag(items, { h = 0, lift = .5, drop, dropScreen = null, onPick, bounds = null, keyPick = null, homeOf = null } = {}) {
     const st = items.map(o => ({ o, home: (homeOf ? homeOf(o) : o.position.clone()), want: null, vel: new T.Vector3(), held: false, busy: false }));
     let cur = -1, sel = -1, down = null;
     const bound = p => { if (bounds) { p.x = clamp(p.x, bounds[0], bounds[1]); p.z = clamp(p.z, bounds[2], bounds[3]); } return p; };
@@ -211,7 +212,11 @@ window.K3 = (() => {
     api.up = p => {
       const d = down; down = null;
       if (!d) return;
-      if (cur >= 0 && st[cur].held) { const i = cur; cur = -1; const g = ground(p, h); api.release(i, g ? bound(g.setY(h)) : st[i].home.clone()); return; }
+      if (cur >= 0 && st[cur].held) {
+        const i = cur; cur = -1;
+        if (dropScreen) { st[i].held = false; st[i].want = null; Promise.resolve(dropScreen(i, p)).then(to => (to ? api.land(i, to, { arc: .3, dur: .25 }) : api.home(i))); return; }
+        const g = ground(p, h); api.release(i, g ? bound(g.setY(h)) : st[i].home.clone()); return;
+      }
       cur = -1;
       if (d.moved) return;
       if (d.i >= 0) { api.select(sel === d.i ? -1 : d.i); return; }        // 點東西＝選起來（再點一次＝取消）

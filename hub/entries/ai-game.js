@@ -1,4 +1,5 @@
-/* 首頁入口：AI 從哪裡來。主角是電腦（不是機器人：機器人是另一個遊戲的身體）。 */
+/* 首頁入口：AI 從哪裡來。主角是電腦（不是機器人：機器人是另一個遊戲的身體）。
+   2026-11-08 3D 化後的場景是方形書桌：入口小物件的電腦放在一小塊木頭書桌上，旁邊一張貓的照片卡。 */
 HUB.register({
   dir: 'ai-game', name: 'AI 從哪裡來', zy: [null, null, null, 'ㄘㄨㄥˊ', 'ㄋㄚˇ', 'ㄌㄧˇ', 'ㄌㄞˊ'], sub: '電腦怎麼學會',
   acc: '#3C9BE0',
@@ -13,6 +14,9 @@ HUB.register({
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(.13, .17, .5, 16), M.goldsoft); neck.position.y = .45; g.add(neck);
     const base = new THREE.Mesh(new THREE.CylinderGeometry(.5, .55, .14, 32), M.goldsoft); base.position.y = .1; g.add(base);
     const led = new THREE.Mesh(new THREE.SphereGeometry(.05, 10, 8), new THREE.MeshStandardMaterial({ color: C.red, emissive: C.red, emissiveIntensity: .6 })); led.position.set(.62, -.45, .21); tv.add(led);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(2.6, .18, 1.7), new THREE.MeshStandardMaterial({ color: 0xD9B48A, roughness: .9 })); top.position.y = -.09; g.add(top);
+    const card = new THREE.Mesh(new THREE.BoxGeometry(.5, .6, .05), new THREE.MeshStandardMaterial({ color: 0xFFFBF4, roughness: .9 })); card.position.set(.95, .3, .45); card.rotation.set(-.4, -.4, 0); g.add(card);
+    const cat = new THREE.Mesh(new THREE.SphereGeometry(.14, 12, 8), new THREE.MeshStandardMaterial({ color: 0xF2A23A, roughness: .9 })); cat.position.set(.96, .33, .49); cat.scale.z = .3; g.add(cat);
     g.userData.anim = (t, e) => { const blink = (Math.sin(t * 3) > .96 || e > .5) ? .15 : 1; eyes.forEach(ey => ey.scale.y = blink); tv.rotation.y = Math.sin(t * .7) * .12; tv.rotation.x = Math.sin(t * 1.1) * .03; };
     return g;
   },
