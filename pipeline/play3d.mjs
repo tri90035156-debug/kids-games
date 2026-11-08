@@ -47,7 +47,7 @@ async function doPtr(p) {
   else if (p.hold) { await m.move(p.hold.x, p.hold.y); await m.down(); await sleep(p.ms || 700); await m.up(); }
   else if (p.drag) { const [a, b] = p.drag; await m.move(a.x, a.y); await m.down(); for (let i = 1; i <= 12; i++) { await m.move(a.x + (b.x - a.x) * i / 12, a.y + (b.y - a.y) * i / 12); await sleep(16); } await sleep(150); await m.up(); }
   else if (p.circle) { const c = p.circle; await m.move(c.x + 60, c.y); await m.down(); for (let i = 0; i <= 48; i++) { const a = (p.ccw ? -1 : 1) * i / 48 * Math.PI * 4; await m.move(c.x + Math.cos(a) * 60, c.y + Math.sin(a) * 60); await sleep(8); } await m.up(); }
-  else if (p.wipe) { const c = p.wipe; await m.move(c.x - 50, c.y - 40); await m.down(); for (let i = 0; i <= 40; i++) { await m.move(c.x + Math.sin(i * .6) * 55, c.y - 60 + i * 3); await sleep(8); } await m.up(); }
+  else if (p.wipe) { const c = p.wipe, w = c.w || 55, hh = c.h || 60; await m.move(c.x - w, c.y - hh); await m.down(); for (let i = 0; i <= 40; i++) { await m.move(c.x + Math.sin(i * .6) * w, c.y - hh + i * hh / 20); await sleep(8); } await m.up(); }
 }
 async function doKb(k) {
   if (!k) return;

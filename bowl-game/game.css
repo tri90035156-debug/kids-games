@@ -147,3 +147,7 @@
   .quench{grid-template-columns:1fr 1fr}.qmid{grid-column:1/-1;grid-row:1;min-height:120px}
   .bw{padding:34px 8px 8px}.bw .bwa{width:calc(var(--w) * .5)}
 }
+/* 3D 版（第 8 批） */
+.k3{background:#F3EEDF}
+.bw-meter{display:block;width:150px;height:14px;border-radius:7px;background:#fff;box-shadow:inset 0 0 0 2px #E2D6C4;overflow:hidden}
+.bw-fill{display:block;height:100%;width:0;background:#C9964A;border-radius:7px}

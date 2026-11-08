@@ -76,6 +76,11 @@
     bump: () => { mallet(pick(step++ % 9 + 1), 0, .15, .55); },                   // 3D 東西落地：木琴，一次比一次高（五聲音階）
     scrub: () => wood(1250 + Math.random() * 200, 0, .03),                       // 擦霧
     pour: () => { drop(0, .1); drop(.09, .08, 700, 300); },                       // 水花
+    crack: () => { wood(1400, 0, .1); wood(900, .05, .08); },                      // 敲石頭
+    clang: () => { mallet(392, 0, .18, 1); mallet(784, .02, .08, .6); },           // 鐵槌敲在缽上
+    whoosh: () => glide(320, 140, .5, .04),                                       // 風箱、火
+    beep: () => mallet(pick(9), 0, .08, .3),                                      // 電腦嗶
+    step: () => wood(620, 0, .08),
   };
   let step = 0;
   const sfx = (name, v) => {
