@@ -73,7 +73,11 @@
     steam: () => glide(900, 420, 1, .03),
     cold: () => mallet(pick(9), 0, .07, .5),
     warm: () => mallet(pick(2), 0, .08, .6),
+    bump: () => { mallet(pick(step++ % 9 + 1), 0, .15, .55); },                   // 3D 東西落地：木琴，一次比一次高（五聲音階）
+    scrub: () => wood(1250 + Math.random() * 200, 0, .03),                       // 擦霧
+    pour: () => { drop(0, .1); drop(.09, .08, 700, 300); },                       // 水花
   };
+  let step = 0;
   const sfx = (name, v) => {
     if (!G.S.sound) return;
     const f = MAP[name];

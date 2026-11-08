@@ -1,707 +1,549 @@
-// 小水滴變變變：十關。文字在 content.js（由 tools/build.py 產生）、插圖在 art.js、
-// 粒子放大鏡在 particles.js（window.P）、柔和音效在 sound.js（覆寫 G.sfx、加上 G.note）、共用引擎在 engine.js。
+// 《小水滴變變變》3D 版（2026-11-08 第 3 批）：一座黏土廚房流理台。十關，每關一種 3D 才有的動作，相鄰兩關不一樣：
+// 1 按住讓太陽曬冰塊（冰塊真的融成一灘）  2 點放大鏡玻璃球（球裡小點點怎麼動）  3 按住讓瓶子變冷（冰冒出瓶口）＋把冰塊丟進水杯（浮起來）
+// 4 把東西丟進兩個盆（有重量、落地木琴）  5 手指繞圈轉爐子旋鈕（火變大、水滾、冒煙）  6 沿著木軌拖溫度珠（球裡小點點變）
+// 7 擦冰杯上的霧（擦掉的地方真的變清楚、水珠流下來）  8 照順序點冰棒（飛到托盤上）  9 3D 連連看（拉一條黏土線）  10 照亮光點 S U R 轉三圈水循環
+// 配音稿完全沒改（tools/content.py 的 SAY 一句都沒動，不用重錄）。字幕＝引擎的泡泡（注音、點了重聽）。
+// 鍵盤、手指、點目標三條路都通；15 秒沒動作：重講這一步＋小手示範；錯兩次：光暈指答案；錯三次：自己做一次。
+// 測試：?ch=N&fast=1、?fin=1；console：__k.meshes()、__wg.win()（直接過這一步）。
 (() => {
   'use strict';
-  const A = window.A, P = window.P;
-  const { $, stage, foot, sayBox, sleep, shuffle, shake, Z, speak, say, tip, waitAction, next, dragPick, home, holdLoop, track, onKeys, clamp } = G;
+  const A = window.A;
+  const { $, stage, foot, sleep, shuffle, Z, speak, say, tip, next, holdLoop, FAST } = G;
+  const K = K3, { T } = K;
   const sfx = (n, v) => G.sfx(n, v);
   const note = (i, v) => G.note && G.note(i, v);
-  const FAST = /[?&]fast=1/.test(location.search);
   const kc = k => '<kbd class="kc">' + k + '</kbd>';
-  const show = () => { sayBox.hidden = false; sayBox.classList.remove('wg-faded'); foot.innerHTML = ''; };
-  const all = s => [...stage.querySelectorAll(s)];
 
-  // ---------- 提示：同色呼吸光暈；5 秒沒動作變亮；15 秒出現手勢示範 ----------
-  let lastAct = performance.now();
-  const act = () => { lastAct = performance.now(); };
-  addEventListener('pointerdown', act, true);
-  addEventListener('pointermove', ev => { if (ev.buttons) act(); }, true);
-  addEventListener('keydown', act, true);
-  function handAt(el, motion = 'tap') {
-    const h = document.createElement('div');
-    h.className = 'wg-hand ' + motion;
-    h.innerHTML = A.hand();
-    const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
-    h.style.left = (r.left - s.left + r.width / 2) + 'px';
-    h.style.top = (r.top - s.top + r.height / 2) + 'px';
-    stage.appendChild(h);
-    return h;
-  }
-  function guide(els, motion = 'tap') {
-    els = [].concat(els).filter(Boolean);
-    const t0 = performance.now();
-    els.forEach(e => e.classList.add('wg-glow'));
-    let hand = null;
+  if (!K.init({ bg: 0xF7F0E4 })) { /* WebGL 開不了：每關 mount() 會顯示一句話＋回首頁 */ }
+  let kitchen = null;
+  if (K.ok) kitchen = KIT.kitchen(K.scene);
+  const sunInWin = () => kitchen.userData.sun;
+
+  // ---------- 小幫手 ----------
+  let winStep = null;                         // 測試用：__wg.win() 直接過這一步
+  // 測試用：__wg.aid() 告訴試玩腳本「下一步」要按哪些鍵（kb）、手指要點／拖／按住哪裡（ptr，頁面座標）
+  let aid = null;
+  const scr = (o, dy = 0) => { const q = K.sp(K.pos(o).add(new T.Vector3(0, dy, 0))), r = K.v.el.getBoundingClientRect(); return { x: Math.round(r.left + q.x), y: Math.round(r.top + q.y) }; };
+  // 15 秒沒動作：重講這一步＋小手示範
+  function coach(goal, demo) {
+    let last = performance.now(), off = null;
+    const act = () => { last = performance.now(); if (off) { off(); off = null; } };
+    addEventListener('pointerdown', act, true); addEventListener('keydown', act, true);
     const iv = setInterval(() => {
-      const idle = performance.now() - Math.max(lastAct, t0);
-      els.forEach(e => e.classList.toggle('wg-glow-hi', idle > 5000));
-      if (idle > 15000 && !hand && els[0] && els[0].isConnected) hand = handAt(els[0], motion);
-      if (idle < 15000 && hand) { hand.remove(); hand = null; }
-    }, 250);
-    return () => { clearInterval(iv); els.forEach(e => e.classList.remove('wg-glow', 'wg-glow-hi')); if (hand) hand.remove(); };
+      if (performance.now() - last < 15000) return;
+      last = performance.now();
+      if (goal) say(goal);
+      if (demo) { if (off) off(); off = demo(); setTimeout(() => { if (off) { off(); off = null; } }, 4000); }
+    }, 1000);
+    return () => { clearInterval(iv); removeEventListener('pointerdown', act, true); removeEventListener('keydown', act, true); if (off) off(); };
   }
-  // 錯三次：手出來示範一次
-  async function demo(el, motion = 'tap') {
-    tip('g.demo');
-    const h = handAt(el, motion);
-    await sleep(FAST ? 60 : 1100);
-    h.remove();
+  // 錯的時候：搖一下、低音、提示句；兩次光暈指答案；三次自己做
+  let hints = [];
+  function missed(obj, n, key, rightObj) {
+    K.poke(obj.userData.j || obj, -.35); sfx('no');
+    tip(n >= 2 ? 'g.no2' : key);
+    if (n === 2 && rightObj) hints.push(K.halo(rightObj, 2.2));
   }
-  // 落點的果凍回彈
-  function squash(el) {
-    if (!el) return;
-    el.classList.remove('wg-squash'); void el.offsetWidth; el.classList.add('wg-squash');
-    setTimeout(() => el.classList.remove('wg-squash'), 300);
-  }
-  // 彈簧＋阻尼（setInterval，背景分頁也會跑完）
-  function spring(set, from, to, { k = 140, d = 9 } = {}) {
-    return new Promise(res => {
-      let x = from, v = 0;
-      const iv = setInterval(() => {
-        for (let i = 0; i < 2; i++) { const dt = 1 / 120; v += (k * (to - x) - d * v) * dt; x += v * dt; }
-        set(x);
-        if (Math.abs(to - x) < .2 && Math.abs(v) < .8) { clearInterval(iv); set(to); res(); }
-      }, 16);
-    });
-  }
-  const mix = (a, b, t) => '#' + [0, 2, 4].map(i => Math.round(parseInt(a.substr(1 + i, 2), 16) * (1 - t) + parseInt(b.substr(1 + i, 2), 16) * t).toString(16).padStart(2, '0')).join('');
-
-  // ---------- 每關結尾：印章＋和弦，然後一張「給家長」小卡 ----------
-  async function ritual() {
+  const clearHints = () => { hints.forEach(K.haloOff); hints = []; };
+  async function ritual(objs = []) {
     sfx('win');
-    const s = document.createElement('div');
-    s.className = 'wg-seal pop';
-    s.innerHTML = A.drop();
-    stage.appendChild(s);
-    await sleep(FAST ? 60 : 1300);
+    objs.forEach((o, i) => setTimeout(() => K.poke(o.userData.j || o, .4), i * 90));
+    await K.wait(1.1);
   }
-  async function endCard(n, art) {
-    stage.innerHTML = '<div class="wg-end"><div class="wg-seal">' + art + '</div>' +
-      '<div class="wg-pcard"><b class="wg-pl">' + Z('ui.parent') + '</b><div class="wg-pt">' + Z('p' + n) + '</div></div></div>';
-    sfx('chord');
-    await next();
-  }
+  const endCard = n => K.card('<b>' + Z('ui.parent') + '：</b>' + Z('p' + n));
+  const W = (o, k = 150, d = 7) => K.wrap(o, k, d);          // 外層管位置、內層果凍
+  const V = (x, y, z) => new T.Vector3(x, y, z);
+  const smooth = (a, b, x) => { const t = K.clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 
-  // ---------- 第一關：融化（按住加熱） ----------
+  // ========== 第一關：融化（按住，讓太陽曬冰塊） ==========
   async function ch1() {
-    show();
-    stage.innerHTML = '<div class="wg-g13"><div class="wg-row wg-stack"><div class="wg-scene wg-melt">' + A.meltScene() + '</div><div class="wg-lens" id="lens"></div></div>' +
-      '<div class="wg-ctl"><button class="wg-hold warm" id="hold">' + kc('H') + '<span class="wg-hi">' + A.sun() + '</span><span class="wg-hl">' + Z('c1.heat') + '</span></button>' +
-      '<div class="wg-meter"><i id="mt"></i></div></div></div>';
-    const ps = P.create($('#lens'), { n: 30, solid: 1, energy: .12 });
-    const cube = $('#wgCube'), pud = $('#wgPuddle'), shine = $('#wgShine'), hb = $('#hold'), mt = $('#mt');
+    if (!K.mount()) return;
+    const L = K.level();
+    K.add(KIT.plate(1.7), 0, 0, .6);
+    const pud = K.add(KIT.puddle(1.3), 0, .14, .6); pud.scale.set(.1, 1, .1);
+    const cube = W(KIT.iceCube(1.4)); K.add(cube, 0, .14 + .7, .6);
+    const lens = K.add(KIT.lens(1.1), 3.4, 1.6, .4); const LS = lens.userData.lens; LS.snap({ solid: 1, energy: .1 });
+    // 從窗戶照下來的一道暖光（按住時變亮）
+    const beam = new T.Mesh(new T.CylinderGeometry(.9, 2.2, 6, 20, 1, true), new T.MeshBasicMaterial({ color: 0xFFD27A, transparent: true, opacity: 0, depthWrite: false, side: T.DoubleSide }));
+    beam.userData.noShadow = true; L.add(beam);
+    const from = V(-4.4, 5.1, -3.2), to = V(0, 1.2, .6); beam.position.lerpVectors(from, to, .5); beam.lookAt(to); beam.rotateX(Math.PI / 2);
+    K.on((dt, t) => LS.step(dt, t));
+    K.frameTo([V(-4.5, 5.5, -3.3), V(4.6, 0, 2), V(-2.5, 0, 2.4), V(4.6, 2.8, 0)], { elev: 22, elevPt: 26 });
+    const hb = K.btn({ key: 'H', icon: A.sun(), label: 'c1.heat', cls: 'hot' });
     say('c1.goal');
-    const stop = guide(hb, 'press');
-    let p = 0, tk = 0, mid = false;
-    await holdLoop(hb, ['h'], (dt, down) => {
-      if (down) {
-        p = Math.min(1, p + dt / 5);
-        tk += dt;
-        if (tk > .5) { tk = 0; sfx('drip', p); }
-      }
-      const sy = 1 - .86 * p, sx = 1 - .34 * p;
-      cube.setAttribute('transform', 'translate(120 146) scale(' + sx.toFixed(3) + ' ' + sy.toFixed(3) + ') translate(-120 -146)');
-      cube.setAttribute('opacity', (p > .85 ? 1 - (p - .85) / .15 : 1).toFixed(2));
-      pud.setAttribute('rx', (p ? 24 + 58 * p : 0).toFixed(1)); pud.setAttribute('ry', (p ? 4 + 7 * p : 0).toFixed(1));
-      shine.setAttribute('rx', (p ? 8 + 16 * p : 0).toFixed(1)); shine.setAttribute('ry', (p ? 2 + 2 * p : 0).toFixed(1));
-      mt.style.width = (p * 100) + '%';
-      ps.set({ solid: 1 - 1.1 * p, energy: .12 + (down ? .45 : .3) * p });
+    const offC = coach('c1.goal', () => K.hand(cube, 'hold'));
+    let finger = false, p = 0, mid = false;
+    K.inputs({ down(q) { if (K.nearest(q, [cube], { max: 110 }) >= 0) { finger = true; K.poke(cube.userData.j, .15); } }, up() { finger = false; } });
+    winStep = () => { p = 1; };
+    aid = () => ({ kb: { hold: 'h' }, ptr: { hold: scr(cube) } });
+    let snd = 0;
+    await holdLoop(hb, ['h', 'space'], (dt, down) => {
+      const on = down || finger;
+      hb.classList.toggle('on', on);
+      if (on) { p = Math.min(1, p + dt * (FAST ? 3 : .17)); snd -= dt; if (snd <= 0) { snd = .7; note(Math.floor(p * 6)); } }
+      beam.material.opacity = K.lerp(beam.material.opacity, on ? .32 : .05, .2);
+      const s = 1 - p * .82;
+      cube.scale.set(.25 + s * .75, s, .25 + s * .75); cube.position.y = .14 + .7 * s;
+      pud.scale.set(.1 + p * 1.1, 1, .1 + p * 1.1);
+      LS.set({ solid: 1 - smooth(.25, .7, p), energy: .1 + p * .45 });
       if (!mid && p > .45) { mid = true; say('c1.mid'); }
-      return p >= 1 ? 1 : 0;
+      return p >= 1;
     });
-    stop();
-    hb.disabled = true;
+    offC(); K.clearBtns(); beam.material.opacity = 0; cube.visible = false;
     sfx('ok');
-    squash($('.wg-melt'));
     await say('c1.done');
-    await ritual();
-    await endCard(1, A.drop());
+    await ritual([lens.children[0]]);
+    await endCard(1);
   }
 
-  // ---------- 第二關：三種樣子（點選 A／B／C） ----------
+  // ========== 第二關：三種樣子（點放大鏡玻璃球） ==========
   async function ch2() {
-    show();
+    if (!K.mount()) return;
+    K.level();
     const kinds = shuffle(['ice', 'water', 'steam']);
-    const CFG = { ice: { solid: 1, energy: .1 }, water: { solid: 0, energy: .5 }, steam: { solid: 0, gas: 1, energy: .6 } };
-    stage.innerHTML = '<div class="wg-ask" id="ask"></div><div class="wg-picks">' + kinds.map((k, i) => '<button class="wg-pick wg-touch" data-k="' + k + '">' + kc('ABC'[i]) +
-      '<span class="wg-lens"></span><span class="wg-name">' + Z('w.' + k) + '</span></button>').join('') + '</div>';
-    const btns = all('.wg-pick');
-    const sims = btns.map(b => P.create(b.querySelector('.wg-lens'), { n: 18, ...CFG[b.dataset.k] }));
+    const CFG = { ice: { solid: 1, energy: .1, gas: 0 }, water: { solid: 0, energy: .45, gas: 0 }, steam: { solid: 0, energy: .7, gas: 1 } };
+    const lenses = kinds.map((k, i) => { const g = W(KIT.lens(1.05), 160, 7); K.add(g, (i - 1) * 3.2, 1.55, .6); const LS = g.userData.j.children[0].userData.lens; LS.snap(CFG[k]); g.userData.k = k; g.userData.LS = LS; return g; });
+    K.on((dt, t) => lenses.forEach(g => g.userData.LS.step(dt, t)));
+    // 題目：一個 3D 小東西浮在上面（冰塊／水滴／一朵水蒸氣小雲）
+    const ASK = { ice: () => KIT.iceCube(.9), water: () => KIT.raindrop(), steam: () => KIT.cloud(.8) };
+    let ask = null;
+    K.frameTo([V(-5, 0, 2), V(5, 0, 2), V(0, 4.6, 0), V(-5, 3, 0), V(5, 3, 0)], { elev: 16, elevPt: 20 });
+    const caps = lenses.map((g, i) => K.cap(g, 'ABC'[i], 1.4));
     const QS = [['c2.q1', 'ice', 'c2.ice'], ['c2.q2', 'water', 'c2.water'], ['c2.q3', 'steam', 'c2.steam']];
-    const ASK = { ice: A.iceCube, water: A.drop, steam: A.evapIcon };
     for (const [q, k, msg] of QS) {
+      if (ask) K.lv.remove(ask);
+      ask = W(ASK[k]()); K.add(ask, 0, 3.2, -.4); K.poke(ask.userData.j, .5); sfx('pop');
       say(q);
-      $('#ask').innerHTML = ASK[k]();        // 題目也畫成圖：不看字也知道現在要找哪一種
-      squash($('#ask'));
-      const right = btns.findIndex(b => b.dataset.k === k);
-      const stop = guide(btns.filter(b => !b.classList.contains('wg-done')));
+      const right = lenses.findIndex(g => g.userData.k === k);
       let miss = 0;
-      for (;;) {
-        const i = await waitAction(btns.map((b, j) => ({ el: b, keys: ['abc'[j]] })));
-        if (i === right) break;
-        miss++;
-        shake(btns[i]); sfx('no');
-        tip(miss >= 2 ? 'g.no2' : 'c2.wrong');
-        if (miss >= 2) btns[right].classList.add('wg-hint');
-        if (miss >= 3) { await demo(btns[right]); break; }
-      }
-      stop();
-      btns[right].classList.remove('wg-hint');
-      btns[right].classList.add('wg-done');
-      squash(btns[right]); sfx('ok');
+      const offC = coach(q, () => K.hand(lenses[right], 'tap'));
+      await new Promise(res => {
+        const pick = i => {
+          if (i < 0 || lenses[i].userData.done) return;
+          if (i === right) { offK(); res(); return; }
+          miss++; missed(lenses[i], miss, 'c2.wrong', lenses[right]);
+          if (miss >= 3) { offK(); res(); }
+        };
+        K.inputs({ up(p) { if (!p.cancel) pick(K.nearest(p, lenses, { max: 110 })); } });
+        const offK = K.keys((key, dn) => { const i = 'abc'.indexOf(key); if (dn && i >= 0) { pick(i); return true; } return false; });
+        winStep = () => { offK(); res(); };
+        aid = () => ({ kb: ['abc'[right]], ptr: { tap: scr(lenses[right]) } });
+      });
+      offC(); K.inputs({});
+      clearHints();
+      const g = lenses[right]; g.userData.done = true; K.poke(g.userData.j, .45); sfx('ok');
       await say(msg);
     }
-    // 真的水蒸氣看不見：小點點淡掉，再回來
-    const st = sims[btns.findIndex(b => b.dataset.k === 'steam')];
+    caps.forEach(K.capOff);
+    const st = lenses.find(g => g.userData.k === 'steam').userData.LS;
     st.set({ ghost: 1 });
     await say('c2.see');
-    await sleep(FAST ? 30 : 600);
+    await K.wait(.6);
     st.set({ ghost: 0 });
-    await ritual();
-    await endCard(2, A.drop(A.C.blue2));
+    await ritual(lenses);
+    await endCard(2);
   }
 
-  // ---------- 第三關：凝固（按住冷卻），再把冰放進水裡 ----------
+  // ========== 第三關：凝固（按住變冷：冰冒出瓶口）＋ 把冰塊丟進水杯（浮起來） ==========
   async function ch3() {
-    show();
-    stage.innerHTML = '<div class="wg-g13"><div class="wg-row wg-stack"><div class="wg-scene wg-bottle">' + A.bottleScene() + '</div><div class="wg-side" id="side"><div class="wg-lens" id="lens"></div></div></div>' +
-      '<div class="wg-ctl" id="ctl"><button class="wg-hold cool" id="hold">' + kc('C') + '<span class="wg-hi">' + A.snowflake() + '</span><span class="wg-hl">' + Z('c3.cold') + '</span></button>' +
-      '<div class="wg-meter cool"><i id="mt"></i></div></div></div>';
-    const ps = P.create($('#lens'), { n: 30, solid: 0, energy: .5 });
-    const bw = $('#wgBw'), dome = $('#wgDome'), hb = $('#hold'), mt = $('#mt');
+    if (!K.mount()) return;
+    const L = K.level();
+    const bot = W(KIT.bottle(), 140, 8); K.add(bot, -2.4, 0, .4);
+    const B = bot.userData.j.children[0];
+    const ice = K.mesh(new T.CylinderGeometry(.24, .24, .6, 18), KIT.iceMat(), 0, 1.9, 0); ice.scale.y = .01; B.add(ice);
+    const lens = K.add(KIT.lens(1.05), 1.4, 1.6, .2); const LS = lens.userData.lens; LS.snap({ solid: 0, energy: .45 });
+    const frost = []; for (let i = 0; i < 7; i++) { const f = K.ball(.08, KIT.mat('white'), Math.cos(i) * .56, .3 + i * .22, Math.sin(i) * .56, 8); f.scale.setScalar(.01); B.add(f); frost.push(f); }
+    K.on((dt, t) => LS.step(dt, t));
+    K.frameTo([V(-4.2, 0, 2.2), V(3.2, 0, 2.2), V(-3.2, 3.4, 0), V(3, 3, 0)], { elev: 20, elevPt: 24 });
+    const hb = K.btn({ key: 'C', icon: A.snowflake(), label: 'c3.cold', cls: 'cold' });
     say('c3.goal');
-    const stop = guide(hb, 'press');
-    let p = 0, tk = 0, mid = false;
-    await holdLoop(hb, ['c'], (dt, down) => {
-      if (down) { p = Math.min(1, p + dt / 5); tk += dt; if (tk > .5) { tk = 0; sfx('cold'); } }
-      bw.setAttribute('fill', mix('#7FBCE8', '#CFE6F2', p));
-      dome.setAttribute('ry', (p > .6 ? (p - .6) / .4 * 13 : 0).toFixed(1));
-      mt.style.width = (p * 100) + '%';
-      ps.set({ solid: p * 1.1, energy: .5 - .4 * p });
+    let offC = coach('c3.goal', () => K.hand(bot, 'hold'));
+    let finger = false, p = 0, mid = false, snd = 0;
+    K.inputs({ down(q) { if (K.nearest(q, [bot], { max: 120, at: o => K.pos(o).add(V(0, 1, 0)) }) >= 0) { finger = true; K.poke(bot.userData.j, .15); } }, up() { finger = false; } });
+    winStep = () => { p = 1; };
+    aid = () => ({ kb: { hold: 'c' }, ptr: { hold: scr(bot, 1) } });
+    const waterM = B.userData.water.material.clone(); B.userData.water.material = waterM;
+    const iceC = new T.Color(0xD8EEF7), wC = waterM.color.clone();
+    await holdLoop(hb, ['c', 'space'], (dt, down) => {
+      const on = down || finger; hb.classList.toggle('on', on);
+      if (on) { p = Math.min(1, p + dt * (FAST ? 3 : .17)); snd -= dt; if (snd <= 0) { snd = .7; note(8 - Math.floor(p * 6)); } }
+      waterM.color.copy(wC).lerp(iceC, smooth(.3, .9, p)); waterM.opacity = .78 + p * .15;
+      frost.forEach((f, i) => f.scale.setScalar(smooth(i / 9, i / 9 + .3, p)));
+      LS.set({ solid: smooth(.3, .75, p), energy: .45 - p * .35 });
       if (!mid && p > .45) { mid = true; say('c3.mid'); }
-      return p >= 1 ? 1 : 0;
+      return p >= 1;
     });
-    stop();
-    sfx('knock');
-    squash($('.wg-bottle'));
+    offC(); K.clearBtns();
+    sfx('ok');
     await say('c3.done');
-    dome.classList.add('wg-blink');
+    // 冰變大：冒出瓶口一點點
+    await K.tween(.8, k => { ice.scale.y = Math.max(.01, K.outBack(k)); ice.position.y = 1.9 + .3 * k; });
+    K.poke(bot.userData.j, .3); sfx('pop');
     await say('c3.big');
-    dome.classList.remove('wg-blink');
-    // 第二步：把冰放進水裡
-    ps.stop();
-    $('#side').innerHTML = '<div class="wg-scene wg-cup zone" id="cup">' + A.floatScene() + '</div>';
-    $('#ctl').innerHTML = '<div class="drag wg-chip wg-touch" id="cube">' + kc('F') + '<span class="wg-ci">' + A.iceCube() + '</span></div>';
-    const cup = $('#cup'), chip = $('#cube'), fl = $('#wgFloat');
-    fl.setAttribute('opacity', '0');
+    // 把冰塊丟進水杯
+    const cup = W(KIT.cup(1.5, .85), 150, 7); K.add(cup, 3.6, 0, .8);
+    const cw = K.mesh(new T.CylinderGeometry(.8, .7, 1.05, 24), KIT.waterMat(), 0, .55, 0); cw.castShadow = false; cup.userData.j.children[0].add(cw);
+    const cube = W(KIT.iceCube(.8)); K.add(cube, -.2, .4, 1.8);
+    K.poke(cube.userData.j, .4); sfx('bump');
+    K.frameTo([V(-4.2, 0, 2.4), V(5, 0, 2.4), V(-3.2, 3.4, 0), V(5, 2.6, 0)], { elev: 22, elevPt: 26 });
+    const fc = K.cap(cube, 'F', .9);
     say('c3.drop');
-    const stop2 = guide(chip, 'drag');
-    await dragPick([chip], [cup], { itemKeys: [['f']] });
-    stop2();
-    chip.classList.add('gone'); home(chip);
-    fl.setAttribute('opacity', '1');
-    sfx('pop');
-    // 落進水裡，沉一下再浮起來：大約 1/10 露出水面（水面 y=100，冰高 42）
-    await spring(y => fl.setAttribute('transform', 'translate(0 ' + y.toFixed(1) + ')'), 20, 95.8, { k: 90, d: 8 });
-    sfx('land');
-    squash(cup);
-    await say('c3.float');
-    await ritual();
-    await endCard(3, A.iceCube());
-  }
-
-  // ---------- 第四關：硬硬的、會流動的（拖放分類） ----------
-  async function ch4() {
-    show();
-    const ITEMS = [['ice', A.iceCube(), 0], ['pop', A.popsicle(0), 0], ['snow', A.snow(), 0],
-      ['rain', A.rain(), 1], ['soup', A.soup(false), 1], ['milk', A.milk(), 1]];
-    const order = shuffle(ITEMS);
-    stage.innerHTML = '<div class="wg-basins">' + [0, 1].map(b => '<div class="zone wg-basin" data-b="' + b + '">' + kc(b ? 'L' : 'J') +
-      '<div class="wg-bart">' + A.basin(b ? A.C.blue2 : A.C.ice) + '<span class="wg-bi">' + (b ? A.drop() : A.iceCube()) + '</span><div class="wg-pile"></div></div>' +
-      '<span class="wg-bl">' + Z(b ? 'c4.liquid' : 'c4.solid') + '</span><span class="wg-bs">' + Z(b ? 'c4.liquidS' : 'c4.solidS') + '</span></div>').join('') + '</div>' +
-      '<div class="wg-items">' + order.map((it, i) => '<div class="drag wg-chip wg-touch" data-g="' + it[2] + '">' + kc('ABCDEF'[i]) +
-        '<span class="wg-ci">' + it[1] + '</span><span class="wg-cn">' + Z('it.' + it[0]) + '</span></div>').join('') + '</div>';
-    const basins = all('.wg-basin'), items = all('.wg-items .wg-chip');
-    say('c4.goal');
-    const miss = items.map(() => 0);
-    let left = items.length, n = 0;
-    while (left) {
-      const first = items.find(Boolean);
-      const stop = guide(first, 'drag');
-      let { i, t } = await dragPick(items, basins, { itemKeys: 'abcdef'.split('').map(k => [k]), targetKeys: [['j'], ['l']] });
-      stop();
-      const g = +items[i].dataset.g;
-      if (t !== g) {
-        home(items[i]); shake(basins[t]); sfx('no');
-        miss[i]++;
-        tip(miss[i] >= 2 ? 'g.no2' : 'c4.wrong');
-        if (miss[i] >= 2) basins[g].classList.add('wg-hint');
-        if (miss[i] < 3) continue;
-        await sleep(300);
-        await demo(basins[g]);
-        t = g;
-      }
-      basins.forEach(b => b.classList.remove('wg-hint'));
-      const el = items[i];
-      basins[t].querySelector('.wg-pile').insertAdjacentHTML('beforeend', '<span class="wg-mini">' + el.querySelector('.wg-ci').innerHTML + '</span>');
-      squash(basins[t].querySelector('.wg-pile').lastChild);
-      squash(basins[t]);
-      el.classList.add('gone'); home(el);
-      items[i] = null; left--;
-      sfx('land'); note(4 + n++);
-      speak('it.' + order[i][0]);                        // 放對了：唸出它的名字（冰塊、雨…）
-      if (n === 1) sayBox.classList.add('wg-faded');     // 會玩了：說明退到旁邊
-    }
-    sfx('ok');
-    sayBox.classList.remove('wg-faded');
-    basins.forEach(b => b.classList.add('named'));
-    await say('c4.done');
-    await ritual();
-    await endCard(4, A.snow());
-  }
-
-  // ---------- 第五關：繞圈轉旋鈕，把火轉大 ----------
-  async function ch5() {
-    show();
-    stage.innerHTML = '<div class="wg-row"><div class="wg-scene wg-pot">' + A.potScene() + '</div><div class="wg-lens sm" id="lens"></div></div>' +
-      '<div class="wg-knob wg-touch" id="knob">' + A.knob() + kc('K') + '<i class="wg-orbit"></i></div>';
-    const ps = P.create($('#lens'), { n: 22, solid: 0, energy: .3 });
-    const knob = $('#knob'), kg = $('#wgKnob'), flame = $('#wgFlame'), bub = $('#wgBub'), smoke = $('#wgSmoke');
-    let lv = 0, rot = 0, tick = 0, mid = false;
-    const paint = () => {
-      kg.setAttribute('transform', 'rotate(' + rot.toFixed(1) + ' 100 100)');
-      flame.style.transform = 'scale(' + (.35 + .75 * lv).toFixed(3) + ')';
-      ps.set({ energy: .3 + .6 * lv, gas: lv >= 1 ? .4 : lv * .12 });
-    };
-    paint();
-    // 鍋裡的泡泡：火越大越多、越大顆
-    const biv = setInterval(() => {
-      if (!bub.isConnected) { clearInterval(biv); return; }
-      if (Math.random() > lv * .9 + (lv >= 1 ? .3 : 0)) return;
-      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      const r = (lv >= 1 ? 4 + Math.random() * 5 : 2 + Math.random() * 2.5);
-      c.setAttribute('cx', (62 + Math.random() * 116).toFixed(1));
-      c.setAttribute('cy', (93 + Math.random() * 6).toFixed(1));
-      c.setAttribute('r', r.toFixed(1));
-      c.setAttribute('class', 'wg-bubble');
-      bub.appendChild(c);
-      setTimeout(() => c.remove(), 700);
-      if (lv >= 1 && Math.random() < .25) sfx('bubble');
-    }, 110);
-    say('c5.goal');
-    const stop = guide(knob, 'circle');
+    offC = coach('c3.drop', () => K.hand(cube, 'drag', cup));
+    const top = V(3.6, 1.05 - .8 * .4, .8);                // 冰塊大約九成在水面下
     await new Promise(res => {
-      let last = null, finished = false;
-      const add = d => {
-        if (finished) return;
-        lv = Math.min(1, lv + d);
-        if (lv > .995) lv = 1;
-        tick += d;
-        if (tick > 1 / 12) { tick = 0; sfx('tap'); }
-        paint();
-        if (!mid && lv >= .5) { mid = true; say('c5.mid'); }
-        if (lv >= 1) { finished = true; offT(); offK(); res(); }
-      };
-      const ang = p => Math.atan2(p.y - p.h / 2, p.x - p.w / 2);
-      const offT = track(knob, {
-        down(p) { last = ang(p); },
-        move(p) {
-          if (last === null) return;
-          const a = ang(p);
-          let d = a - last;
-          if (d > Math.PI) d -= 2 * Math.PI;
-          if (d < -Math.PI) d += 2 * Math.PI;
-          last = a;
-          rot += d * 180 / Math.PI;
-          add(Math.abs(d) / (3 * Math.PI));     // 大約繞一圈半就滾
-        },
-        up() { last = null; },
+      const D = K.drag([cube], {
+        h: 0, lift: .6,
+        drop: (i, p) => p.distanceTo(V(3.6, 0, .8)) < 1.8 ? (res(), top.clone()) : null,
       });
-      const offK = onKeys(['k'], () => { rot += 45; squash(knob); add(1 / 6); });
+      K.inputs({ down: D.down, move: D.move, up(p) { if (D.sel() === 0 && K.nearest(p, [cup], { max: 120, at: o => K.pos(o).add(V(0, .8, 0)) }) >= 0) { D.select(-1); D.release(0, V(3.6, 0, .8)); return; } D.up(p); } });
+      const goCup = () => { D.release(0, V(3.6, 0, .8)); };
+      const offK = K.keys((k, dn) => { if (dn && (k === 'f' || k === 'space')) { offK(); goCup(); return true; } return false; });
+      winStep = goCup;
+      aid = () => ({ kb: ['f'], ptr: { drag: [scr(cube), scr(cup, .6)] } });
     });
-    stop();
-    sfx('ok');
+    offC(); K.capOff(fc); K.inputs({});
+    await K.wait(.5);
+    sfx('pour'); K.poke(cup.userData.j, .3);
+    let tt = 0; K.on(dt => { tt += dt; cube.position.y = top.y + Math.sin(tt * 2.2) * .05 * Math.exp(-tt * .6); });
+    await say('c3.float');
+    await ritual([cup]);
+    await endCard(3);
+  }
+
+  // ========== 第四關：硬硬的、會流動的（把東西丟進兩個盆） ==========
+  async function ch4() {
+    if (!K.mount()) return;
+    K.level();
+    const ITEMS = [['ice', () => KIT.iceCube(.85), 0], ['pop', () => KIT.popsicle(0), 0], ['snow', () => KIT.snowBall(), 0], ['rain', () => KIT.raindrop(), 1], ['soup', () => KIT.soupBowl(), 1], ['milk', () => KIT.milkGlass(), 1]];
+    const order = shuffle(ITEMS.map((_, i) => i));
+    const PT = K.portrait();               // 手機直的：排兩排，東西大一點
+    const items = order.map((k, j) => { const g = W(ITEMS[k][1]()); g.userData.k = k; if (PT) K.add(g, (j % 3 - 1) * 2.6, 0, 1.1 + Math.floor(j / 3) * 1.8); else K.add(g, (j - 2.5) * 1.9, 0, 2.2); g.scale.setScalar(PT ? 1.15 : .95); return g; });
+    const basin = (x, col) => { const g = W(new T.Group(), 120, 8); const j = g.userData.j; j.add(K.cyl(2.1, 1.7, .7, K.clay(col), 0, .35, 0, 32)); j.add(K.cyl(1.85, 1.85, .05, K.clay(0xFFFBF4), 0, .68, 0, 32)); K.add(g, x, 0, -.9); return g; };
+    const bs = [basin(-2.8, 0xCFE6F2), basin(2.8, 0x5CC3E8)];
+    if (PT) bs.forEach(b => { b.position.z = -1.4; });
+    K.tag(bs[0], Z('c4.solid'), 1.3); K.tag(bs[1], Z('c4.liquid'), 1.3);
+    const bc = [K.cap(bs[0], 'J', 1.9), K.cap(bs[1], 'L', 1.9)];
+    const ic = items.map((g, j) => K.cap(g, 'ABCDEF'[j], 1.7));
+    K.frameTo(PT ? [V(-4.8, 0, 3.6), V(4.8, 0, 3.6), V(-4.8, 0, -2.4), V(4.8, 0, -2.4), V(0, 1.6, -1)] : [V(-6, 0, 3), V(6, 0, 3), V(-5, 0, -2.6), V(5, 0, -2.6), V(0, 2.5, -1)], { elev: 44, elevPt: 52 });
+    say('c4.goal');
+    let offC = coach('c4.goal', () => { const i = items.findIndex(g => !g.userData.done); return i >= 0 ? K.hand(items[i], 'drag', bs[ITEMS[items[i].userData.k][2]]) : null; });
+    const filled = [0, 0], miss = items.map(() => 0);
+    let left = items.length;
+    await new Promise(res => {
+      const slot = b => { const n = filled[b]++; return V(bs[b].position.x + (n - 1) * .9, .75, bs[b].position.z + (n % 2 ? .4 : -.3)); };
+      const dragItems = items.slice();
+      const D = K.drag(dragItems, {
+        h: 0, lift: .6,
+        drop: (i, p) => {
+          const d = bs.map(b => p.distanceTo(b.position)), b = d[0] < d[1] ? 0 : 1;
+          if (d[b] > 2.6) return null;
+          return judge(i, b, true);
+        },
+      });
+      // 放進 b 號盆：對了回傳落點，錯了彈回去
+      function judge(i, b, viaDrop) {
+        const g = items[i], want = ITEMS[g.userData.k][2];
+        if (b !== want) { miss[i]++; missed(g, miss[i], 'c4.wrong', bs[want]); if (miss[i] >= 3) setTimeout(() => put(i, want, false), 400); return null; }
+        return put(i, b, viaDrop);
+      }
+      function put(i, b, viaDrop) {
+        const g = items[i]; if (g.userData.done) return null;
+        g.userData.done = true; dragItems[i] = null; K.capOff(ic[i]); ic[i] = null; clearHints();
+        const to = slot(b);
+        K.poke(bs[b].userData.j, .3); sfx('ok');
+        speak('it.' + ITEMS[g.userData.k][0]);
+        if (!viaDrop) D.land(i, to);
+        if (--left === 0) setTimeout(res, FAST ? 10 : 900);
+        return to;
+      }
+      K.inputs({ down: D.down, move: D.move, up(p) { const s = D.sel(); if (s >= 0) { const b = K.nearest(p, bs, { max: 140 }); if (b >= 0) { D.select(-1); judge(s, b, false); return; } } D.up(p); } });
+      let picked = -1;
+      K.keys((k, dn) => {
+        if (!dn) return false;
+        const i = 'abcdef'.indexOf(k);
+        if (i >= 0 && items[i] && !items[i].userData.done) { picked = i; D.select(i); return true; }
+        const b = 'jl'.indexOf(k);
+        if (b >= 0 && picked >= 0) { const i2 = picked; picked = -1; D.select(-1); judge(i2, b, false); return true; }
+        return false;
+      });
+      winStep = () => items.forEach((g, i) => { if (!g.userData.done) put(i, ITEMS[g.userData.k][2], false); });
+      aid = () => { const i = items.findIndex(g => !g.userData.done); if (i < 0) return null; const w = ITEMS[items[i].userData.k][2]; return { kb: ['abcdef'[i], 'jl'[w]], ptr: { drag: [scr(items[i], .4), scr(bs[w], .6)] } }; };
+    });
+    offC(); bc.forEach(K.capOff); K.inputs({});
+    await K.wait(.4);
+    await say('c4.done');
+    await ritual(bs);
+    await endCard(4);
+  }
+
+  // ========== 第五關：水滾了（手指繞圈轉爐子旋鈕） ==========
+  async function ch5() {
+    if (!K.mount()) return;
+    K.level();
+    const sv = K.add(KIT.stove(), 0, 0, .4);
+    const knob = sv.userData.knob, flame = sv.userData.flame;
+    const pt = W(KIT.pot(), 120, 9); K.add(pt, 0, .38, .3);
+    const water = pt.userData.j.children[0].userData.water;
+    const bub = K.dots(24, .09, KIT.mat('white')); K.lv.add(bub);
+    const stm = K.dots(30, .2, new T.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: .75, roughness: 1 })); K.lv.add(stm);
+    K.frameTo([V(-3, 0, 2.6), V(3, 0, 2.6), V(0, 5.2, 0), V(-2, 3, -1)], { elev: 30, elevPt: 34 });
+    const kcap = K.cap(knob, 'K', .7);
+    say('c5.goal');
+    const offC = coach('c5.goal', () => K.hand(knob, 'circle'));
+    let lv = 0, rot = 0, mid = false, boil = false, lastA = null, tt = 0;
+    const add = d => { lv = Math.min(1, lv + d); };
+    K.on(dt => {
+      tt += dt;
+      knob.rotation.y = -rot * Math.PI / 180;
+      flame.scale.set(1, .15 + lv * 1.6 + Math.sin(tt * 30) * .06 * lv, 1); flame.visible = lv > .02;
+      // 泡泡：越熱越多越大
+      const B = bub.userData.P, rate = lv < .3 ? 0 : lv < 1 ? (lv - .3) * 14 : 24;
+      B.forEach(q => { if (q.life <= 0 && Math.random() < rate * dt / 10) { q.life = 1; q.p.set((Math.random() - .5) * 1.4, .45, .3 + (Math.random() - .5) * 1.2); q.s = lv >= 1 ? 1.8 : .7; } if (q.life > 0) { q.p.y += dt * (.6 + lv); q.life -= dt * 1.5; if (q.p.y > 1.38) q.life = 0; } });
+      bub.userData.sync();
+      water.position.y = .95 + (lv >= 1 ? Math.sin(tt * 18) * .02 : 0);
+      // 白煙（很小的水珠）
+      const S = stm.userData.P, sr = boil ? 18 : lv > .6 ? 4 : 0;
+      S.forEach(q => { if (q.life <= 0 && Math.random() < sr * dt / 10) { q.life = 1; q.p.set((Math.random() - .5) * 1.2, 1.5, .3 + (Math.random() - .5) * .8); q.v.set((Math.random() - .5) * .3, 1 + Math.random() * .5, 0); } if (q.life > 0) { q.p.addScaledVector(q.v, dt); q.life -= dt * .45; q.s = .6 + (1 - q.life) * 1.6; } });
+      stm.userData.sync();
+    });
+    const turn = d => { rot += d; add(Math.abs(d) / 1080); K.poke(pt.userData.j, .02); };
+    winStep = () => { lv = 1; };
+    aid = () => ({ kb: ['k'], ptr: { circle: scr(knob) } });
+    K.inputs({
+      down(p) { const c = K.sp(knob); lastA = Math.atan2(p.y - c.y, p.x - c.x); },
+      move(p) { if (lastA === null) return; const c = K.sp(knob); const a = Math.atan2(p.y - c.y, p.x - c.x); let d = a - lastA; if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; lastA = a; if (Math.hypot(p.x - c.x, p.y - c.y) > 14) turn(Math.abs(d) * 180 / Math.PI); },
+      up() { lastA = null; },
+    });
+    const offK = K.keys((k, dn) => { if (dn && (k === 'k' || k === 'space')) { turn(180); note(Math.floor(lv * 8)); return true; } return false; });
+    let snd = 0;
+    await new Promise(res => { const iv = setInterval(() => { snd++; if (snd % 8 === 0 && lv > 0 && lv < 1) note(Math.floor(lv * 8)); if (!mid && lv >= .5) { mid = true; say('c5.mid'); } if (lv >= 1) { clearInterval(iv); res(); } }, 60); });
+    offK(); offC(); K.capOff(kcap); K.inputs({});
+    boil = true; sfx('ok'); sfx('steam');
     await say('c5.boil');
-    smoke.style.opacity = '1';
-    sfx('steam');
     await say('c5.smoke');
     await say('c5.done');
-    await ritual();
-    clearInterval(biv);
-    await endCard(5, A.soup(true));
+    await ritual([pt]);
+    await endCard(5);
   }
 
-  // ---------- 第六關：左右拖溫度條，找 0 度與 100 度 ----------
+  // ========== 第六關：冷一點，熱一點（沿著木軌拖溫度珠） ==========
   async function ch6() {
-    show();
-    const LO = -20, HI = 120, pct = t => (t - LO) / (HI - LO) * 100;
-    stage.innerHTML = '<div class="wg-lens lg" id="lens"></div>' +
-      '<div class="wg-read"><b id="tv">30</b><span>°C</span></div>' +
-      '<div class="wg-thermo" id="th"><div class="wg-track"><i class="wg-fill" id="fill"></i></div>' +
-      '<div class="wg-flag" id="f0" style="left:' + pct(0) + '%"><b>0</b></div>' +
-      '<div class="wg-flag" id="f100" style="left:' + pct(100) + '%"><b>100</b></div>' +
-      '<div class="wg-flag yu" id="fy" style="left:' + pct(87) + '%" hidden><b>87</b><span>' + Z('c6.flag') + '</span></div>' +
-      '<div class="wg-thumb" id="thumb"></div></div>' +
-      '<div class="wg-ad"><button class="wg-step wg-touch" id="bA">' + kc('A') + '<span class="wg-arw l"></span></button>' +
-      '<button class="wg-step wg-touch" id="bD"><span class="wg-arw r"></span>' + kc('D') + '</button></div>';
-    const ps = P.create($('#lens'), { n: 30, solid: 0, energy: .3 });
-    const th = $('#th'), thumb = $('#thumb'), fill = $('#fill'), tv = $('#tv'), f0 = $('#f0'), f100 = $('#f100');
-    let T = 30, lastB = null;
-    const apply = () => {
-      T = clamp(Math.round(T), LO, HI);
-      thumb.style.left = pct(T) + '%';
-      fill.style.width = pct(T) + '%';
-      tv.textContent = T;
-      const solid = clamp(1 - T / 2, 0, 1);
-      const e = clamp((T - LO) / (HI - LO), 0, 1);
-      const bg = T <= 0 ? '#E6F1F8' : T >= 100 ? '#FBEFE6' : mix('#EEF5F7', '#FBF1E8', T / 100);
-      ps.set({ solid, energy: .05 + e * .8, gas: T >= 100 ? .75 : T > 0 ? T / 100 * .12 : 0, bg });
-      const b = Math.floor((T - LO) / 10);
-      if (b !== lastB) { if (lastB !== null) note(clamp(b - 1, 0, 10), .08); lastB = b; }
+    if (!K.mount()) return;
+    K.level();
+    const X0 = -5.5, X1 = 5.5, TMIN = -20, TMAX = 120, Z0 = 1.8;
+    const tx = T_ => X0 + (T_ - TMIN) / (TMAX - TMIN) * (X1 - X0), tOf = x => Math.round(TMIN + (x - X0) / (X1 - X0) * (TMAX - TMIN));
+    const rail = K.add(K.box(X1 - X0 + .6, .2, .5, KIT.mat('woodDark')), 0, .1, Z0);
+    // 冷到熱：藍→紅的一條黏土色帶
+    for (let i = 0; i < 7; i++) { const c = new T.Color(0x7FB8E0).lerp(new T.Color(0xF05A3C), i / 6); K.add(K.box((X1 - X0) / 7, .06, .52, K.clay(c.getHex())), X0 + (i + .5) * (X1 - X0) / 7, .22, Z0); }
+    const bead = W(K.ball(.42, K.clay(0xF2A33A), 0, 0, 0)); K.add(bead, tx(20), .62, Z0);
+    const f0 = W(KIT.flag(0x3C9BE0)); K.add(f0, tx(0), .2, Z0 - .5);
+    const f100 = W(KIT.flag(0xF05A3C)); K.add(f100, tx(100), .2, Z0 - .5);
+    const lens = K.add(KIT.lens(1.5), 0, 2.4, -1); const LS = lens.userData.lens;
+    const num = K.tag(bead, '20°C', .9);
+    let T_ = 20, drag = false;
+    const show = () => {
+      bead.position.x = tx(T_); num.el.textContent = T_ + '°C';
+      LS.set(T_ < 0 ? { solid: 1, energy: .05 + (T_ + 20) / 200, gas: 0 } : T_ < 100 ? { solid: 0, energy: .2 + T_ / 250, gas: 0 } : { solid: 0, energy: .8, gas: 1 });
     };
-    apply();
-    const goals = [[0, 'c6.goal0', 'c6.ok0', f0], [100, 'c6.goal100', 'c6.ok100', f100]];
-    for (const [goal, gk, ok, flag] of goals) {
-      say(gk);
-      const stop = guide(flag);
-      let miss = 0, tries = 0;
+    show();
+    K.on((dt, t) => LS.step(dt, t));
+    K.frameTo([V(X0 - .5, 0, Z0 + .6), V(X1 + .5, 0, Z0 + .6), V(0, 4.1, -1), V(-2, 1, -1)], { elev: 22, elevPt: 26 });
+    const bc = K.cap(bead, '←→', 1.5);
+    for (const [goal, aim, ok, flag] of [['c6.goal0', 0, 'c6.ok0', f0], ['c6.goal100', 100, 'c6.ok100', f100]]) {
+      say(goal);
+      const h = K.halo(flag, 1.4);
+      const offC = coach(goal, () => K.hand(bead, 'drag', flag));
+      let tries = 0;
       await new Promise(res => {
-        let kt = 0, done = false;
-        const check = async () => {
-          if (done) return;
-          if (Math.abs(T - goal) <= 4) {
-            done = true; offT(); offK(); offB.forEach(f => f());
-            T = goal; apply(); res(); return;
-          }
-          if (Math.abs(T - goal) <= 12) { tip('c6.near'); return; }
-          // 前兩次只提示（好奇滑滑看不算錯），第三次起才算一次 miss
-          if (++tries <= 2) { tip('c6.wrong'); squash(flag); return; }
-          miss++;
-          shake(flag); sfx('no'); tip('c6.wrong');
-          if (miss >= 2) flag.classList.add('wg-hint');
-          if (miss >= 3) {
-            done = true; offT(); offK(); offB.forEach(f => f());
-            await demo(thumb, 'swipe');
-            await spring(x => { T = x; apply(); }, T, goal, { k: 60, d: 12 });
-            res();
-          }
+        const check = () => {
+          if (Math.abs(T_ - aim) <= 6) { T_ = aim; show(); res(); return; }
+          if (Math.abs(T_ - aim) <= 14) { tip('c6.near'); return; }
+          tries++; K.poke(flag.userData.j, .3); sfx('no'); tip('c6.wrong');
+          if (tries >= 3) { T_ = aim; show(); res(); }
         };
-        const fromX = p => { T = LO + clamp(p.x / p.w, 0, 1) * (HI - LO); apply(); };
-        const offT = track(th, { down(p) { thumb.classList.add('held'); fromX(p); }, move: fromX, up() { thumb.classList.remove('held'); squash(thumb); check(); } });
-        const step = d => { T += d; apply(); clearTimeout(kt); kt = setTimeout(check, 700); };
-        const offK = onKeys(['a', 'd', 'left', 'right'], k => step(k === 'a' || k === 'left' ? -5 : 5));
-        const bA = $('#bA'), bD = $('#bD');
-        const ca = () => step(-5), cd = () => step(5);
-        bA.addEventListener('click', ca); bD.addEventListener('click', cd);
-        const offB = [() => bA.removeEventListener('click', ca), () => bD.removeEventListener('click', cd), () => clearTimeout(kt)];
+        K.inputs({
+          down(p) { if (K.nearest(p, [bead], { max: 90 }) >= 0) { drag = true; K.poke(bead.userData.j, .2); sfx('tap'); } else { const g = K.ground(p, .6); if (g && Math.abs(g.z - Z0) < 1.5) { drag = true; T_ = K.clamp(tOf(g.x), TMIN, TMAX); show(); } } },
+          move(p) { if (!drag) return; const g = K.ground(p, .6); if (g) { const n = K.clamp(tOf(g.x), TMIN, TMAX); if (Math.floor(n / 10) !== Math.floor(T_ / 10)) note(K.clamp(Math.floor((n + 20) / 15), 0, 10), .08); T_ = n; show(); } },
+          up() { if (!drag) return; drag = false; K.poke(bead.userData.j, .35); sfx('bump'); check(); },
+        });
+        let kt = 0;
+        const offK = K.keys((k, dn) => {
+          if (!dn) { if (['a', 'd', 'left', 'right'].includes(k)) { clearTimeout(kt); kt = setTimeout(check, 700); } return false; }
+          if (k === 'a' || k === 'left') { T_ = Math.max(TMIN, T_ - 5); show(); note(K.clamp(Math.floor((T_ + 20) / 15), 0, 10), .08); return true; }
+          if (k === 'd' || k === 'right') { T_ = Math.min(TMAX, T_ + 5); show(); note(K.clamp(Math.floor((T_ + 20) / 15), 0, 10), .08); return true; }
+          if (k === 'enter' || k === 'space') { check(); return true; }
+          return false;
+        });
+        winStep = () => { T_ = aim; show(); res(); };
+        aid = () => ({ kb: [T_ < aim ? 'd' : T_ > aim ? 'a' : 'enter'], ptr: { drag: [scr(bead), scr(V(tx(aim), .6, Z0))] } });
+        const r0 = res; res = () => { clearTimeout(kt); offK(); r0(); };     // eslint-disable-line no-param-reassign
       });
-      stop();
-      flag.classList.remove('wg-hint');
-      flag.classList.add('got');
-      squash(flag); sfx('ok');
+      offC(); K.haloOff(h); K.inputs({});
+      K.poke(flag.userData.j, .45); sfx('ok');
       await say(ok);
     }
-    $('#fy').hidden = false;
-    squash($('#fy'));
+    K.capOff(bc);
     await say('c6.done');
-    await ritual();
-    await endCard(6, A.sun());
+    await ritual([f0, f100]);
+    await endCard(6);
   }
 
-  // ---------- 第七關：畫線擦玻璃（凝結） ----------
+  // ========== 第七關：杯子出汗了（擦冰杯上的霧） ==========
   async function ch7() {
-    show();
-    stage.innerHTML = '<div class="wg-cupw" id="cw">' + A.coldCup() + '<canvas class="wg-fog" id="fog"></canvas><div class="wg-drops" id="drops"></div>' +
-      // 四個鍵帽各放在自己那一條擦拭區的正上方（欄中心 x = 50 + 35×(i+.5)，SVG 寬 240）
-      '<div class="wg-cols">' + 'ASDF'.split('').map((k, i) => '<span id="col' + i + '" style="left:' + ((50 + 35 * (i + .5)) / 240 * 100).toFixed(2) + '%">' + kc(k) + '</span>').join('') + '</div></div>';
-    const cw = $('#cw'), cv = $('#fog'), drops = $('#drops');
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const W = cw.clientWidth, H = cw.clientHeight;
-    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-    const ctx = cv.getContext('2d');
-    const sx = W / 240, sy = H / 260;
-    ctx.setTransform(dpr * sx, 0, 0, dpr * sy, 0, 0);       // 之後都用 SVG 的 240×260 座標
-    // 霧：杯子玻璃的形狀
-    ctx.beginPath();
-    ctx.moveTo(44, 30); ctx.lineTo(196, 30); ctx.lineTo(180, 236);
-    ctx.quadraticCurveTo(178, 250, 164, 250); ctx.lineTo(76, 250); ctx.quadraticCurveTo(62, 250, 60, 236); ctx.closePath();
-    // 霧半透明：底下整杯飲料隱約看得到，擦過的地方才變清楚
-    ctx.fillStyle = 'rgba(246,250,252,.62)'; ctx.fill();
-    // 四條擦拭區之間的淡淡分隔線（也會被擦掉）
-    ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2; ctx.setLineDash([4, 8]);
-    for (let i = 1; i < 4; i++) { const x = 50 + 35 * i; ctx.beginPath(); ctx.moveTo(x, 40); ctx.lineTo(x, 240); ctx.stroke(); }
-    ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(200,222,236,.75)';
-    for (let i = 0; i < 90; i++) {
-      const y = 38 + Math.random() * 205, half = 74 - (y - 30) / 220 * 16, x = 120 + (Math.random() * 2 - 1) * (half - 8);
-      ctx.beginPath(); ctx.arc(x, y, 1.6 + Math.random() * 2.4, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.globalCompositeOperation = 'destination-out';
-    // 擦過的格子（8 欄 × 10 列）
-    const GX = 8, GY = 10, X0 = 50, X1 = 190, Y0 = 32, Y1 = 248;
-    const grid = new Array(GX * GY).fill(0);
-    const R = 15;
-    const mark = (x, y) => {
-      for (let gy = 0; gy < GY; gy++) for (let gx = 0; gx < GX; gx++) {
-        const cx = X0 + (gx + .5) * (X1 - X0) / GX, cy = Y0 + (gy + .5) * (Y1 - Y0) / GY;
-        if (Math.hypot(cx - x, cy - y) < R + 6) grid[gy * GX + gx] = 1;
-      }
-    };
-    const cover = () => grid.reduce((a, b) => a + b, 0) / grid.length;
-    let lastP = null, lastDrop = 0, said = 0;
-    const dropAt = (x, y) => {
-      const now = performance.now();
-      if (now - lastDrop < 140) return;
-      lastDrop = now;
-      const d = document.createElement('i');
-      d.className = 'wg-run';
-      d.style.left = (x / 240 * 100) + '%'; d.style.top = (y / 260 * 100) + '%';
-      d.style.setProperty('--fall', (40 + Math.random() * 70).toFixed(0) + 'px');
-      drops.appendChild(d);
-      setTimeout(() => d.remove(), 1800);
-      sfx('drip', cover());
-    };
-    const wipe = (x, y) => {
-      ctx.lineCap = 'round'; ctx.lineWidth = R * 2;
-      ctx.beginPath();
-      if (lastP) { ctx.moveTo(lastP[0], lastP[1]); ctx.lineTo(x, y); ctx.stroke(); }
-      ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill();
-      if (lastP) { const n = Math.ceil(Math.hypot(x - lastP[0], y - lastP[1]) / 8); for (let i = 1; i <= n; i++) mark(lastP[0] + (x - lastP[0]) * i / n, lastP[1] + (y - lastP[1]) * i / n); }
-      mark(x, y);
-      lastP = [x, y];
-      dropAt(x, y + 6);
-    };
+    if (!K.mount()) return;
+    K.level();
+    const g = W(new T.Group(), 140, 8); K.add(g, 0, 0, .6);
+    const J = g.userData.j;
+    const R = 1.25, H = 3;
+    const cupM = new T.Mesh(new T.CylinderGeometry(R, R * .88, H, 32, 1, true), KIT.iceMat()); cupM.position.y = H / 2; J.add(cupM);
+    J.add(K.cyl(R * .86, R * .86, .08, KIT.mat('ice'), 0, .04, 0, 32));
+    const drink = K.mesh(new T.CylinderGeometry(R * .94, R * .84, H * .75, 32), KIT.mat('amber', { roughness: .5 }), 0, H * .38, 0); J.add(drink);
+    [[-.4, .2], [.35, -.1], [0, .4]].forEach(([x, z], i) => { const c = KIT.iceCube(.55); c.position.set(x, H * .75 + .05, z); c.rotation.y = i; J.add(c); });
+    // 霧：一層白白的貼圖，擦到的地方真的被擦掉
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128;
+    const cx = cv.getContext('2d'); cx.fillStyle = 'rgba(255,255,255,.88)'; cx.fillRect(0, 0, 256, 128);
+    for (let i = 0; i < 90; i++) { cx.fillStyle = 'rgba(235,245,250,.9)'; cx.beginPath(); cx.arc(Math.random() * 256, Math.random() * 128, 1 + Math.random() * 2.5, 0, 7); cx.fill(); }
+    const tex = new T.CanvasTexture(cv);
+    const fog = new T.Mesh(new T.CylinderGeometry(R * 1.02, R * .9, H * .96, 32, 1, true), new T.MeshStandardMaterial({ map: tex, transparent: true, roughness: 1, depthWrite: false }));
+    fog.position.y = H / 2; fog.userData.noShadow = true; J.add(fog);
+    const drops = K.dots(14, .1, KIT.waterMat()); J.add(drops);
+    K.frameTo([V(-2.4, 0, 2), V(2.4, 0, 2), V(-1.8, H + .8, 0), V(1.8, H + .8, 0)], { elev: 12, elevPt: 14 });
     say('c7.goal');
-    const stop = guide(cw, 'wipe');
+    const offC = coach('c7.goal', () => K.hand(g, 'wipe'));
+    // 前半圈（朝鏡頭）：u 在 0.75～1、0～0.25
+    const front = u => (u > .75 ? u - 1 : u);
+    const progress = () => { const d = cx.getImageData(0, 0, 256, 128).data; let n = 0, c = 0; for (let y = 8; y < 120; y += 8) for (let x = 0; x < 256; x += 8) { const u = x / 256; if (Math.abs(front(u)) > .2) continue; n++; if (d[(y * 256 + x) * 4 + 3] < 60) c++; } return c / n; };
+    const rub = (u, v, r = 16) => { cx.save(); cx.globalCompositeOperation = 'destination-out'; [-256, 0, 256].forEach(dx => { cx.beginPath(); cx.arc(u * 256 + dx, (1 - v) * 128, r, 0, 7); cx.fill(); }); cx.restore(); tex.needsUpdate = true; };
+    let said = 0, prog = 0, lastSnd = 0;
+    const D = drops.userData.P;
+    K.on(dt => { D.forEach(q => { if (q.life > 0) { q.p.y -= dt * (.4 + (1 - q.life) * 1.2); q.life -= dt * .4; if (q.p.y < .2) q.life = 0; } }); drops.userData.sync(); });
+    const spawnDrop = (u) => { const q = D.find(x => x.life <= 0); if (!q) return; const a = u * Math.PI * 2; q.life = 1; q.s = 1.3; q.p.set(Math.sin(a) * R * 1.05, H * .8, Math.cos(a) * R * 1.05); };
     await new Promise(res => {
-      let done = false;
-      const progress = () => {
-        const c = cover();
-        if (!said) { said = 1; say('c7.mid'); }
-        else if (said === 1 && c > .3) { said = 2; say('c7.why'); }
-        if (!done && c >= .6) { done = true; offT(); offK(); setTimeout(res, 500); }
+      const after = () => {
+        const now = performance.now(); if (now - lastSnd > 110) { lastSnd = now; sfx('scrub'); }
+        prog = progress();
+        if (!said && prog > .05) { said = 1; say('c7.mid'); spawnDrop(0); }
+        else if (said === 1 && prog > .3) { said = 2; say('c7.why'); }
+        if (Math.random() < .3) spawnDrop(Math.random() * .4 - .2);
+        if (prog > .55) res();
       };
-      const toV = p => [p.x / p.w * 240, p.y / p.h * 260];
-      const offT = track(cw, {
-        down(p) { lastP = null; wipe(...toV(p)); progress(); },
-        move(p) { wipe(...toV(p)); progress(); },
-        up() { lastP = null; },
-      });
-      // 鍵盤：A S D F 各擦一條直線（從上往下）
-      const used = new Set();
-      const offK = onKeys(['a', 's', 'd', 'f'], async k => {
-        const c = 'asdf'.indexOf(k);
-        if (used.has(c)) return;
-        used.add(c);
-        $('#col' + c).classList.add('used');
-        const x = X0 + (c + .5) * (X1 - X0) / 4;
-        lastP = null;
-        for (let y = 40; y <= 244; y += 12) { wipe(x - 9, y); wipe(x + 9, y); await sleep(18); lastP = [x + 9, y]; }
-        lastP = null;
-        progress();
-      });
+      const at = p => { const r = new T.Raycaster(); r.setFromCamera(new T.Vector2(p.x / K.v.w * 2 - 1, -(p.y / K.v.h) * 2 + 1), K.cam); const hit = r.intersectObject(fog)[0]; return hit && hit.uv; };
+      let down = false;
+      K.inputs({ down(p) { down = true; const uv = at(p); if (uv) { rub(uv.x, uv.y); after(); } }, move(p) { if (!down) return; const uv = at(p); if (uv) { rub(uv.x, uv.y); after(); } }, up() { down = false; } });
+      const COL = { a: -.15, s: -.05, d: .05, f: .15 };
+      const offK = K.keys((k, dn) => { if (!dn || !(k in COL)) return false; const u = (COL[k] + 1) % 1; for (let v = .08; v < .96; v += .06) rub(u, v, 14); K.poke(J, .08); after(); return true; });
+      winStep = () => { cx.clearRect(0, 0, 256, 128); tex.needsUpdate = true; after(); };
+      aid = () => ({ kb: ['a', 's', 'd', 'f'], ptr: { wipe: scr(g, 1.6) } });
+      const r0 = res; res = () => { offK(); r0(); };     // eslint-disable-line no-param-reassign
     });
-    stop();
+    offC(); K.inputs({});
+    for (let i = 0; i < 6; i++) spawnDrop(Math.random() * .4 - .2);
     sfx('ok');
-    squash(cw);
     await say('c7.done');
-    await ritual();
-    await endCard(7, A.cupDrops());
+    await ritual([g]);
+    await endCard(7);
   }
 
-  // ---------- 第八關：冰棒慢慢變軟（排順序） ----------
+  // ========== 第八關：冰棒慢慢變軟（照順序點，飛到托盤上） ==========
   async function ch8() {
-    show();
-    let order;
-    do { order = shuffle([0, 1, 2, 3]); } while (order.every((v, i) => v === i));
-    stage.innerHTML = '<div class="wg-sunrow">' + A.sun() + '</div>' +
-      '<div class="wg-slots">' + [0, 1, 2, 3].map(i => '<div class="zone wg-slot"><b>' + (i + 1) + '</b></div>').join('<span class="wg-arrow"></span>') + '</div>' +
-      '<div class="wg-cards">' + order.map((s, i) => '<button class="wg-card wg-touch" data-s="' + s + '">' + kc('ABCD'[i]) + A.popsicle(s) + '</button>').join('') + '</div>';
-    const slots = all('.wg-slot'), cards = all('.wg-card');
+    if (!K.mount()) return;
+    K.level();
+    const tray = K.add(K.box(9.6, .16, 2, KIT.mat('cream')), 0, .08, -.8);
+    const slots = [0, 1, 2, 3].map(i => V((i - 1.5) * 2.4, .16, -.8));
+    slots.forEach((s, i) => { const d = K.add(K.cyl(.5, .5, .04, K.clay(0xE8DCC8), 0, 0, 0, 20), s.x, .18, s.z); void d; void i; });
+    const sun = K.add(KIT.sunBall(.6), -5.6, 3.4, -1.6);
+    let order; do { order = shuffle([0, 1, 2, 3]); } while (order.every((v, i) => v === i));
+    const pops = order.map((s, j) => { const g = W(KIT.popsicle(s)); g.userData.s = s; K.add(g, (j - 1.5) * 2.4, 0, 2); return g; });
+    const caps = pops.map((g, j) => K.cap(g, 'ABCD'[j], 2.3));
+    K.frameTo([V(-6, 0, 3), V(6, 0, 3), V(-6, 3.8, -1.6), V(5.5, 0, -2)], { elev: 34, elevPt: 44 });
     say('c8.goal');
     for (let k = 0; k < 4; k++) {
-      const stop = guide(slots[k]);
-      const right = cards.findIndex(c => c && +c.dataset.s === k);
-      let miss = 0, pick;
-      for (;;) {
-        pick = await waitAction(cards.map((c, i) => c ? { el: c, keys: ['abcd'[i]] } : null));
-        if (pick === right) break;
-        miss++;
-        shake(cards[pick]); sfx('no');
-        tip(miss >= 2 ? 'g.no2' : 'c8.wrong');
-        if (miss >= 2) cards[right].classList.add('wg-hint');
-        if (miss >= 3) { await demo(cards[right]); pick = right; break; }
-      }
-      stop();
-      const c = cards[pick];
-      c.classList.remove('wg-hint');
-      slots[k].insertAdjacentHTML('beforeend', '<span class="wg-sart">' + A.popsicle(k) + '</span>');
-      slots[k].classList.add('done');
-      squash(slots[k]);
-      c.classList.add('gone');
-      cards[pick] = null;
-      sfx('land'); note(7 - k * 2);         // 越融化音越低，像慢慢變軟
+      const right = pops.findIndex(g => g && g.userData.s === k);
+      const h = K.halo(slots[k], 1.3);
+      let miss = 0;
+      const offC = coach('c8.goal', () => K.hand(pops[right], 'tap'));
+      await new Promise(res => {
+        const pick = i => {
+          if (i < 0 || !pops[i]) return;
+          if (i === right) { offK(); res(); return; }
+          miss++; missed(pops[i], miss, 'c8.wrong', pops[right]);
+          if (miss >= 3) { offK(); res(); }
+        };
+        K.inputs({ up(p) { if (!p.cancel) pick(K.nearest(p, pops, { max: 110, at: o => K.pos(o).add(V(0, 1, 0)) })); } });
+        const offK = K.keys((key, dn) => { const i = 'abcd'.indexOf(key); if (dn && i >= 0) { pick(i); return true; } return false; });
+        winStep = () => { offK(); res(); };
+        aid = () => ({ kb: ['abcd'[right]], ptr: { tap: scr(pops[right], 1) } });
+      });
+      offC(); K.haloOff(h); clearHints(); K.inputs({});
+      const g = pops[right]; pops[right] = null; K.capOff(caps[right]);
+      const from = g.position.clone();
+      await K.tween(.5, t => { g.position.lerpVectors(from, slots[k], K.ease(t)); g.position.y = .16 + Math.sin(t * Math.PI) * 1.4; });
+      K.poke(g.userData.j, .4); sfx('bump'); note(7 - k * 2);
     }
+    K.poke(sun.children[0], .3);
     sfx('ok');
     await say('c8.done');
-    await ritual();
-    await endCard(8, A.popsicle(1));
+    await ritual([tray]);
+    await endCard(8);
   }
 
-  // ---------- 第九關：生活裡的變身（連連看） ----------
-  // 連法：點左再點右、點右再點左、從任一邊拖到另一邊（放開時差一點也會吸到最近的卡）、字母鍵 A～E 加 J～L。
-  // 同一張卡再點一次、或點空白處＝取消。多張左卡可以連到同一張右卡。
-  // 手指點一下常會抖幾個像素：移動超過 MOVE 才算拖，否則一律當成「點」。
+  // ========== 第九關：生活裡的變身（3D 連連看） ==========
   async function ch9() {
-    show();
-    const SITS = [['c9.s1', A.clothes(), 0, 'c9.r1'], ['c9.s2', A.cupDrops(), 1, 'c9.r2'], ['c9.s3', A.mirror(), 1, 'c9.r3'],
-      ['c9.s4', A.soupSmoke(), 1, 'c9.r4'], ['c9.s5', A.freezer(), 2, 'c9.r5']];
-    const ANS = [['c9.evap', A.evapIcon()], ['c9.cond', A.condIcon()], ['c9.frz', A.freezeIcon()]];
-    const MOVE = 14, SNAP = 56;
-    const sits = shuffle(SITS);
-    stage.innerHTML = '<div class="wg-match" id="mx"><svg class="wg-lines" id="lines"><g id="perm"></g><line id="tmp" visibility="hidden"/></svg>' +
-      '<div class="wg-left">' + sits.map((s, i) => '<button class="wg-sit wg-touch" data-i="' + i + '">' + kc('ABCDE'[i]) + '<span class="wg-si">' + s[1] + '</span><span class="wg-sl">' + Z(s[0]) + '</span><i class="wg-dot"></i></button>').join('') + '</div>' +
-      '<div class="wg-right">' + ANS.map((a, i) => '<button class="wg-ans wg-touch" data-a="' + i + '"><i class="wg-dot"></i>' + kc('JKL'[i]) + '<span class="wg-ai">' + a[1] + '</span><span class="wg-al">' + Z(a[0]) + '</span></button>').join('') + '</div></div>';
-    const mx = $('#mx'), svgL = $('#lines'), perm = $('#perm'), tmp = $('#tmp');
-    const sEls = all('.wg-sit'), aEls = all('.wg-ans');
-    const EL = { s: sEls, a: aEls };
-    const pairs = [], miss = sits.map(() => 0);
-    const sel = { s: -1, a: -1 };
-    let left = sits.length, busy = false, vTok = 0;
-    const pt = el => {
-      const r = el.querySelector('.wg-dot').getBoundingClientRect(), m = mx.getBoundingClientRect();
-      return [r.left - m.left + r.width / 2, r.top - m.top + r.height / 2];
-    };
-    const redraw = () => {
-      const m = mx.getBoundingClientRect();
-      svgL.setAttribute('viewBox', '0 0 ' + m.width + ' ' + m.height);
-      perm.innerHTML = pairs.map(([i, a]) => { const p = pt(sEls[i]), q = pt(aEls[a]); return '<line x1="' + p[0] + '" y1="' + p[1] + '" x2="' + q[0] + '" y2="' + q[1] + '"/>'; }).join('');
-    };
-    redraw();
-    addEventListener('resize', redraw);
-    const paint = () => { sEls.forEach((e, k) => e.classList.toggle('sel', k === sel.s)); aEls.forEach((e, k) => e.classList.toggle('sel', k === sel.a)); };
-    const clear = () => { sel.s = sel.a = -1; paint(); };
-    const voice = key => { vTok++; G.speak(key); };
+    if (!K.mount()) return;
+    K.level();
+    const SITS = [['c9.s1', () => KIT.clothes(), 0, 'c9.r1'], ['c9.s2', () => { const c = KIT.cup(1.1, .45); c.add(KIT.droplets()).position.set(0, -.2, .5); return c; }, 1, 'c9.r2'], ['c9.s3', () => KIT.mirror(), 1, 'c9.r3'],
+      ['c9.s4', () => KIT.soupBowl(true), 1, 'c9.r4'], ['c9.s5', () => KIT.freezer(), 2, 'c9.r5']];
+    const ANS = [['c9.evap', () => KIT.evap()], ['c9.cond', () => KIT.droplets()], ['c9.frz', () => KIT.snowflake()]];
+    const PT = K.portrait();
+    const left = SITS.map((s, i) => { const g = W(s[1]()); g.userData.j.children[0].scale.setScalar(PT ? .9 : .8); if (PT) K.add(g, i < 3 ? (i - 1) * 3 : (i - 3.5) * 3, 0, i < 3 ? .8 : 2.6); else K.add(g, (i - 2) * 2.5, 0, 2.2); return g; });
+    const right = ANS.map((a, j) => { const g = W(a[1]()); K.add(g, (j - 1) * (PT ? 3 : 3.6), 0, PT ? -2.2 : -1.6); return g; });
+    right.forEach((g, j) => K.tag(g, Z(ANS[j][0]), 2));
+    K.frameTo(PT ? [V(-4.4, 0, 3.4), V(4.4, 0, 3.4), V(-4, 2.4, -2.2), V(4, 2.4, -2.2)] : [V(-6.2, 0, 3.2), V(6.2, 0, 3.2), V(-4.8, 2.4, -1.6), V(4.8, 2.4, -1.6)], { elev: 40, elevPt: 50 });
     say('c9.goal');
-    await new Promise(res => {
-      let stop = guide(sEls[0], 'swipe');
-      const regl = () => { stop(); const f = sEls.find(e => !e.classList.contains('done')); stop = f ? guide(f, 'swipe') : () => {}; };
-      const outside = ev => { if (!busy && !ev.target.closest('.wg-match,#top,#say')) clear(); };   // 點連線區外的空白也取消
-      addEventListener('pointerdown', outside);
-      const finish = () => { stop(); offT(); offK(); removeEventListener('pointerdown', outside); removeEventListener('resize', redraw); res(); };
-      const attempt = async (i, a) => {
-        if (busy || sEls[i].classList.contains('done')) return;
-        tmp.setAttribute('visibility', 'hidden');
-        if (sits[i][2] !== a) {
-          shake(aEls[a]); sfx('no');
-          miss[i]++;
-          sel.s = i; sel.a = -1; paint();        // 左邊那張留著選起來，直接再點別的右卡就好
-          vTok++;
-          tip(miss[i] >= 2 ? 'g.no2' : 'c9.wrong');
-          if (miss[i] >= 2) aEls[sits[i][2]].classList.add('wg-hint');
-          if (miss[i] < 3) return;
-          busy = true;
-          await demo(aEls[sits[i][2]]);
-          busy = false;
-          a = sits[i][2];
-        }
-        aEls.forEach(e => e.classList.remove('wg-hint'));
-        pairs.push([i, a]); redraw();
-        sEls[i].classList.add('done'); squash(sEls[i]); squash(aEls[a]);
-        clear();
-        sfx('ok'); left--;
-        // 先唸右卡的名字（凝結！），再唸為什麼；中途又點了別的卡就不接著唸
-        const tok = ++vTok;
-        const why = (async () => { await G.speak(ANS[a][0]); if (tok === vTok) await say(sits[i][3]); })();
-        if (!left) { busy = true; await why; finish(); return; }
-        regl();
-      };
-      // 點（或按字母）一張卡
-      const pick = (side, k) => {
-        if (busy) return;
-        const el = EL[side][k];
-        if (side === 's' && el.classList.contains('done')) { voice(sits[k][3]); return; }
-        const other = side === 's' ? 'a' : 's';
-        if (sel[other] >= 0) { const i = side === 's' ? k : sel.s, a = side === 'a' ? k : sel.a; attempt(i, a); return; }
-        if (sel[side] === k) { clear(); sfx('tap'); return; }       // 再點一次＝取消
-        sel[side] = k; paint(); sfx('tap');
-        voice(side === 's' ? sits[k][0] : ANS[k][0]);
-      };
-      const cardAt = (x, y) => {
-        const e = document.elementFromPoint(x, y);
-        const s = e && e.closest('.wg-sit'), a = e && e.closest('.wg-ans');
-        return s ? ['s', +s.dataset.i] : a ? ['a', +a.dataset.a] : null;
-      };
-      // 放開時沒剛好在卡上：找對面那一排最近、在 SNAP 像素內的卡
-      const nearest = (side, x, y) => {
-        let best = -1, bd = SNAP;
-        EL[side].forEach((e, k) => {
-          const r = e.getBoundingClientRect();
-          const d = Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
-          if (d < bd) { bd = d; best = k; }
-        });
-        return best;
-      };
-      let start = null, moved = false, x0 = 0, y0 = 0;
-      const offT = track(mx, {
-        down(p, ev) {
-          start = cardAt(ev.clientX, ev.clientY); moved = false; x0 = ev.clientX; y0 = ev.clientY;
-          if (start && start[0] === 's' && sEls[start[1]].classList.contains('done')) start = ['done', start[1]];
-        },
-        move(p, ev) {
-          if (!start || start[0] === 'done' || busy) return;
-          if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < MOVE) return;
-          moved = true;
-          const q = pt(EL[start[0]][start[1]]);
-          tmp.setAttribute('x1', q[0]); tmp.setAttribute('y1', q[1]); tmp.setAttribute('x2', p.x); tmp.setAttribute('y2', p.y);
-          tmp.setAttribute('visibility', 'visible');
-        },
-        up(p, ev) {
-          tmp.setAttribute('visibility', 'hidden');
-          const st = start; start = null;
-          if (ev.type === 'pointercancel') return;
-          if (!st) { if (!moved) clear(); return; }                 // 點空白處＝取消
-          if (st[0] === 'done') { if (!moved) pick('s', st[1]); return; }
-          if (!moved) { pick(st[0], st[1]); return; }
-          const other = st[0] === 's' ? 'a' : 's';
-          const hit = cardAt(ev.clientX, ev.clientY);
-          const k = hit && hit[0] === other ? hit[1] : nearest(other, ev.clientX, ev.clientY);
-          if (k < 0) { if (sel[st[0]] !== st[1]) pick(st[0], st[1]); return; }   // 沒拖到對面：留著選起來
-          sel.s = sel.a = -1; sel[st[0]] = st[1];
-          pick(other, k);
-        },
-      });
-      const offK = onKeys(['a', 'b', 'c', 'd', 'e', 'j', 'k', 'l'], k => {
-        const li = 'abcde'.indexOf(k);
-        if (li >= 0) pick('s', li); else pick('a', 'jkl'.indexOf(k));
-      });
+    const offC = coach('c9.goal', () => { const i = (K.match.cur || { done: [] }).done.findIndex(d => !d); return i >= 0 ? K.hand(left[i], 'drag', right[SITS[i][2]]) : null; });
+    const miss = left.map(() => 0);
+    aid = () => { const m = K.match.cur; const i = m ? m.done.findIndex(d => !d) : -1; if (i < 0) return null; const t = SITS[i][2]; return { kb: ['abcde'[i], 'jkl'[t]], ptr: { drag: [scr(left[i], .8), scr(right[t], .8)] } }; };
+    winStep = () => { const m = K.match.cur; if (m) m.done.forEach((d, i) => { if (!d) m.link(i, SITS[i][2]); }); };
+    await K.match({
+      left, right, truth: SITS.map(s => s[2]), lk: 'abcde', rk: 'jkl', h: 0,
+      at: o => K.pos(o).add(V(0, .8, 0)),
+      onRight: async i => { sfx('ok'); speak(SITS[i][0]); await K.wait(.2); say(SITS[i][3]); },
+      onWrong: async i => { miss[i]++; sfx('no'); tip(miss[i] >= 2 ? 'g.no2' : 'c9.wrong'); },
     });
+    offC(); K.inputs({});
+    while (G.voicePos() !== null) await sleep(150);
     await say('c9.done');
-    await ritual();
-    await endCard(9, A.clothes());
+    await ritual(right);
+    await endCard(9);
   }
 
-  // ---------- 第十關：水循環（節奏敲 S → U → R，三圈） ----------
+  // ========== 第十關：水轉一圈（照亮光點 S U R，轉三圈） ==========
   async function ch10() {
-    show();
-    stage.innerHTML = '<div class="wg-cycle" id="cy">' + A.cycleScene() +
-      '<button class="wg-spot" id="spS" style="left:21.5%;top:26%">' + kc('S') + '</button>' +
-      '<button class="wg-spot" id="spU" style="left:37%;top:56%">' + kc('U') + '</button>' +
-      '<button class="wg-spot" id="spR" style="left:50%;top:22%">' + kc('R') + '</button></div>';
-    const spots = [$('#spS'), $('#spU'), $('#spR')], keys = ['s', 'u', 'r'];
-    const sun = $('#wgSun'), cloud = $('#wgCloud'), vap = $('#wgVapor'), rain = $('#wgRain');
-    // 雲在 game.css 裡先往左移到海的上方（#wgCloud 的 transform）
-    const NS = 'http://www.w3.org/2000/svg';
-    const puff = (g, cls, x, y, r, life) => {
-      const c = document.createElementNS(NS, 'circle');
-      c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', r); c.setAttribute('class', cls);
-      c.style.animationDelay = (Math.random() * .4).toFixed(2) + 's';
-      g.appendChild(c); setTimeout(() => c.remove(), life);
-    };
+    if (!K.mount()) return;
+    K.level();
+    const sea = K.add(K.box(6.4, .3, 4, K.clay(0x5CC3E8, { roughness: .5 })), 1.6, .15, .4);
+    const land = K.add(K.box(3.4, .9, 4, K.clay(0x8FB38A)), -3.3, .45, .4);
+    const mt = K.add(new T.Mesh(new T.ConeGeometry(1.2, 1.8, 16), K.clay(0x6F9A72)), -3.4, 1.8, .2); mt.castShadow = true;
+    const sun = W(KIT.sunBall(.75)); K.add(sun, -3.6, 5.2, -1.2);
+    const cl = W(KIT.cloud(1.2)); K.add(cl, 1.6, 4.6, -.2);
+    const spotU = K.add(new T.Group(), 1.6, .4, .8);
+    const vap = K.dots(24, .12, new T.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: .8 })); K.lv.add(vap);
+    const rain = K.dots(30, .1, KIT.waterMat()); K.lv.add(rain);
+    K.frameTo([V(-5.2, 0, 2.6), V(5, 0, 2.6), V(-4.4, 6, -1.2), V(3.4, 5.6, -.2)], { elev: 14, elevPt: 18 });
+    const spots = [sun, spotU, cl], keys = ['s', 'u', 'r'];
+    const caps = spots.map((o, i) => K.cap(o, 'SUR'[i], i === 1 ? .5 : 1.3));
+    let seaHot = 0, clS = 1;
+    K.on(dt => {
+      seaHot = Math.max(0, seaHot - dt * .5);
+      sea.material.color.setHex(0x5CC3E8).lerp(new T.Color(0xF2C27A), seaHot * .5);
+      cl.scale.setScalar(K.lerp(cl.scale.x, clS, .05));
+      vap.userData.P.forEach(q => { if (q.life > 0) { q.p.y += dt * 1.6; q.p.x += (cl.position.x - q.p.x) * dt * .3; q.life -= dt * .3; if (q.p.y > 4.2) q.life = 0; } }); vap.userData.sync();
+      rain.userData.P.forEach(q => { if (q.life > 0) { q.p.y -= dt * 4.5; if (q.p.y < .35) q.life = 0; } }); rain.userData.sync();
+    });
     const ACT = [
-      () => { sun.classList.add('on'); setTimeout(() => sun.classList.remove('on'), 1400); for (let i = 0; i < 6; i++) puff(vap, 'wg-vsea', 110 + Math.random() * 120, 198, 3, 1600); },
-      () => { for (let i = 0; i < 12; i++) puff(vap, 'wg-vup', 120 + Math.random() * 110, 190, 3 + Math.random() * 2, 2200); cloud.classList.add('grow'); },
-      () => { cloud.classList.remove('grow'); for (let i = 0; i < 16; i++) puff(rain, 'wg-drop', 150 + Math.random() * 110, 96, 2.6, 1800); },
+      () => { K.poke(sun.userData.j, .45); seaHot = 1; },
+      () => { vap.userData.P.forEach((q, i) => { q.life = 1; q.s = .8; q.p.set(.2 + Math.random() * 3, .35 - i * .12, -.6 + Math.random() * 2); }); clS = 1.35; },
+      () => { clS = 1; K.poke(cl.userData.j, .3); rain.userData.P.forEach((q, i) => { q.life = 1; q.s = 1; q.p.set(.4 + Math.random() * 2.6, 4.2 + i * .15, -.6 + Math.random() * 1.2); }); sfx('pour'); },
     ];
     const EXPL = ['c10.s', 'c10.u', 'c10.r'];
     say('c10.goal');
@@ -710,45 +552,54 @@
       if (r === 1) say('c10.again');
       if (r === 2) say('c10.last');
       for (let s = 0; s < 3; s++) {
-        spots.forEach((e, k) => e.classList.toggle('lit', k === s));
-        const stop = guide(spots[s]);
+        const h = K.halo(spots[s], s === 1 ? 3 : 2.4);
         let miss = 0;
-        for (;;) {
-          const k = await waitAction(spots.map((e, j) => ({ el: e, keys: [keys[j]] })));
-          if (k === s) break;
-          miss++;
-          shake(spots[s]); sfx('no');
-          if (miss >= 2) spots[s].classList.add('wg-hint');
-          if (miss >= 3) { await demo(spots[s]); break; }
-        }
-        stop();
-        spots[s].classList.remove('lit', 'wg-hint');
-        squash(spots[s]);
+        const offC = coach('c10.goal', () => K.hand(spots[s], 'tap'));
+        await new Promise(res => {
+          const pick = i => {
+            if (i < 0) return;
+            if (i === s) { offK(); res(); return; }
+            miss++; K.poke(spots[i].userData.j || spots[i], -.3); sfx('no');
+            if (miss >= 3) { offK(); res(); }
+          };
+          K.inputs({ up(p) { if (!p.cancel) pick(K.nearest(p, spots, { max: 120 })); } });
+          const offK = K.keys((key, dn) => { const i = keys.indexOf(key); if (dn && i >= 0) { pick(i); return true; } return false; });
+          winStep = () => { offK(); res(); };
+          aid = () => ({ kb: ['sur'[s]], ptr: { tap: scr(spots[s]) } });
+        });
+        offC(); K.haloOff(h); K.inputs({});
         note(3 + r * 2 + s, .17);
         ACT[s]();
-        if (r === 0) await say(EXPL[s]); else await sleep(FAST ? 30 : 650);
+        if (r === 0) await say(EXPL[s]); else await sleep(FAST ? 30 : 750);
       }
     }
-    spots.forEach(e => e.classList.add('rest'));
+    caps.forEach(K.capOff);
     sfx('ok');
     await sleep(FAST ? 30 : 400);
     await say('c10.done');
-    await ritual();
-    await endCard(10, A.rain());
+    await ritual([sun, cl]);
+    await endCard(10);
   }
 
-  // ---------- 結尾 ----------
+  // ---------- 結尾：流理台上排一排十關的小東西，點了會跳 ----------
   async function finale() {
-    show();
-    stage.innerHTML = '<div class="wg-end"><div class="wg-seal hero">' + A.hero() + '</div><div class="chtitle">' + G.Zs('fin.title') + '</div>' +
-      '<div class="wg-stickers">' + [A.iceCube(), A.drop(), A.soup(true), A.cupDrops(), A.snowflake(), A.rain()].map(s => '<span class="wg-stk wg-touch">' + s + '</span>').join('') + '</div>' +
-      '<div class="wg-pcard"><b class="wg-pl">' + Z('ui.parent') + '</b><div class="wg-pt">' + Z('fin.parent') + '</div></div></div>';
-    all('.wg-stk').forEach((e, i) => e.addEventListener('click', () => { squash(e); note(3 + i); }));
+    if (!K.mount()) { stage.innerHTML = '<div class="chtitle">' + G.Zs('fin.title') + '</div>'; await say('fin.hi'); return; }
+    K.level();
+    const mk = [() => KIT.iceCube(.8), () => KIT.raindrop(), () => KIT.cloud(.6), () => KIT.popsicle(0), () => KIT.snowBall(), () => KIT.soupBowl(true), () => KIT.milkGlass()];
+    const row = mk.map((f, i) => { const g = W(f()); K.add(g, (i - 3) * 1.6, 0, 1); return g; });
+    K.frameTo([V(-5.6, 0, 2), V(5.6, 0, 2), V(0, 2.4, 0)], { elev: 22, elevPt: 26 });
+    K.inputs({ up(p) { const i = K.nearest(p, row, { max: 90 }); if (i >= 0) { K.poke(row[i].userData.j, .5); note(3 + i); } } });
+    row.forEach((g, i) => setTimeout(() => K.poke(g.userData.j, .5), i * 120));
+    const c = document.createElement('div'); c.className = 'k3-card'; c.innerHTML = '<div class="chtitle wg-fint">' + G.Zs('fin.title') + '</div><b>' + Z('ui.parent') + '：</b>' + Z('fin.parent');
+    K.ov.appendChild(c);
     sfx('win');
     await speak('fin.title');
     await say('fin.hi');
     await say('fin.task');
   }
 
-  G.run({ saveKey: 'water-game-v1', stamp: '水', heroArt: A.hero(), chapters: [ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9, ch10], finale });
+  // 每關開始、做完都把測試用的 aid 清掉（等下一步出現才給）
+  const wrapCh = f => async () => { aid = null; winStep = null; await f(); aid = null; winStep = null; };
+  G.run({ saveKey: 'water-game-v1', stamp: '水', heroArt: A.hero(), chapters: [ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9, ch10].map(wrapCh), finale });
+  window.__wg = { win: () => { if (winStep) winStep(); }, aid: () => { try { return aid ? aid() : null; } catch (e) { return null; } } };
 })();

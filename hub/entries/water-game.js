@@ -1,4 +1,5 @@
-/* 首頁入口：小水滴變變變（夜間流水線 2026-10-30 做的，遊戲本體在 lab/water-game/）。 */
+/* 首頁入口：小水滴變變變（遊戲本體在 lab/water-game/）。2026-11-08 3D 化後的場景是廚房流理台：
+   入口小物件＝一小塊木頭流理台，上面一顆大水滴、冰塊、一灘水，旁邊一顆放大鏡玻璃球（金色框），上面一朵小雲。 */
 HUB.register({
   dir: 'lab/water-game', name: '小水滴變變變', zy: ['ㄒㄧㄠˇ', 'ㄕㄨㄟˇ', 'ㄉㄧ', 'ㄅㄧㄢˋ', 'ㄅㄧㄢˋ', 'ㄅㄧㄢˋ'], sub: '冰、水、水蒸氣',
   acc: '#2BB3A3',
@@ -18,6 +19,15 @@ HUB.register({
     [[0, 0, 0, .3], [.3, .04, .04, .24], [-.28, .02, .03, .22]].forEach(([x, y, z, r]) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), white); m.position.set(x, y, z); cloud.add(m); });
     cloud.position.set(.95, 2.0, -.1); g.add(cloud);
     const pool = new THREE.Mesh(new THREE.CylinderGeometry(.55, .55, .08, 28), deep); pool.position.y = .04; pool.scale.set(1.35, 1, 1); g.add(pool);
+    // 木頭流理台一小塊，所有東西放在上面
+    const top = new THREE.Mesh(new THREE.BoxGeometry(2.6, .2, 1.6), mat(0xD9B48A)); top.position.y = -.1; g.add(top);
+    // 放大鏡玻璃球：金色框＋淡淡的玻璃＋裡面三顆小點點
+    const lens = new THREE.Group(); lens.position.set(.95, .62, .35);
+    lens.add(new THREE.Mesh(new THREE.TorusGeometry(.32, .04, 8, 24), mat(0xF2A33A)));
+    lens.add(new THREE.Mesh(new THREE.SphereGeometry(.3, 18, 12), new THREE.MeshPhysicalMaterial({ color: 0xEAF6FB, transparent: true, opacity: .3, roughness: .1 })));
+    [[-.08, .05], [.08, -.04], [0, -.1]].forEach(([x, y]) => { const d = new THREE.Mesh(new THREE.SphereGeometry(.05, 10, 8), deep); d.position.set(x, y, 0); lens.add(d); });
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(.04, .05, .32, 8), mat(0xB98C5E)); stem.position.y = -.46; lens.add(stem);
+    lens.rotation.y = -.5; g.add(lens);
     g.userData.anim = (t, e) => {
       const b = Math.sin(t * 2.4);
       drop.position.y = 1.15 + b * .08 + e * .4; drop.scale.set(1 - b * .03, 1 + b * .05, 1 - b * .03);
