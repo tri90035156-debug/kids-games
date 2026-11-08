@@ -1,4 +1,4 @@
-// 太陽系大探險：十關，每關一種 3D 互動。不配音：用短短的注音句子、圖示、手勢提示和字母鍵帶孩子自己試。
+// 太陽系大探險：十六個任務，每個任務一種 3D 互動。2026-11-08 起配音：旁白（VoAI 預錄）＋同步字幕（注音，點字幕重聽）、圖示、手勢提示和字母鍵。
 // 文字在 content.js（由 tools/build.py 產生）、3D 小工具在 space.js、圖示在 art.js、共用引擎在 engine.js。
 (() => {
   'use strict';
@@ -6,7 +6,7 @@
   const { $, stage, foot, sayBox, sleep, shake, parent, Z, sfx, say, next, waitAction, dragPick, home, holdLoop, track, keyName, clamp } = G;
   const { T, lerp, ease, wrap } = S3;
   const FAST = /[?&]fast=1/.test(location.search);
-  const cap = k => { sayBox.hidden = false; say(k); };      // 只顯示注音句子（沒有配音，不用等）
+  const cap = k => { sayBox.hidden = false; return say(k); };   // 旁白＋字幕（回傳講完的 promise；不 await 就是邊講邊玩）
   const kc = k => '<kbd class="kc">' + k + '</kbd>';
 
   // ---------- 版面：上面 3D 畫面（裡面有一層 ov 放標籤、小卡、手勢提示），下面放按鈕 ----------
@@ -19,12 +19,23 @@
   async function card(keys, { extra = '', note = '' } = {}) {
     const c = document.createElement('div');
     c.className = 'card3';
-    c.innerHTML = keys.map(k => '<p>' + Z(k) + '</p>').join('') + extra;
+    c.innerHTML = keys.map(k => '<p data-k="' + k + '">' + Z(k) + '</p>').join('') + extra;
     $('#ov').appendChild(c);
     sayBox.hidden = true;
     sfx('pop');
     if (note) parent(note);
+    // 配音：一段一段唸，唸到的那段亮起來（同步字幕）；點一段可以重聽那段
+    const ps = [...c.querySelectorAll('p[data-k]')];
+    let alive = true;
+    const mark = el => ps.forEach(q => q.classList.toggle('cur', q === el));
+    ps.forEach(el => el.addEventListener('click', () => { if (!alive) return; mark(el); G.speak(el.dataset.k).then(() => { if (alive) mark(null); }); }));
+    (async () => {
+      await sleep(FAST ? 0 : 250);
+      for (const el of ps) { if (!alive) return; mark(el); await G.speak(el.dataset.k); }
+      if (alive) mark(null);
+    })();
     await next();
+    alive = false; G.stopVoice();
   }
   // 手勢提示：一隻手示範怎麼做；孩子一動手就消失
   function hint(host, kind, x, y) {
@@ -233,12 +244,10 @@
     hint($('#ov'), 'swipeH', '50%', '55%');
     const dwell = (want) => { let k = 0; return until(v, dt => { k = (want() ? k + dt : 0); return k > .35; }); };
     await dwell(() => light > .55);
-    sfx('ok'); cap('c3.dayok');
-    await sleep(FAST ? 50 : 1600);
+    sfx('ok'); await Promise.all([cap('c3.dayok'), sleep(FAST ? 50 : 1600)]);
     cap('c3.goal2');
     await dwell(() => light < -.55);
-    sfx('ok'); cap('c3.nightok');
-    await sleep(FAST ? 50 : 1600);
+    sfx('ok'); await Promise.all([cap('c3.nightok'), sleep(FAST ? 50 : 1600)]);
     untrack(); keys.off();
     $('#ka').remove(); $('#kd').remove();
     auto = .9;                                       // 讓地球自己轉，看白天晚上輪流
@@ -309,14 +318,13 @@
         k = ok ? k + dt : 0;
         return k > .3;
       });
-      want.classList.add('ok'); sfx('ok'); cap('c4.ok');
-      await sleep(FAST ? 50 : 1300);
-      cap('c4.goal');
+      want.classList.add('ok'); sfx('ok'); await Promise.all([cap('c4.ok'), sleep(FAST ? 50 : 1300)]);
+      if (shape !== 'new') cap('c4.next');
     }
     untrack(); keys.off(); offH();
     $('#ka').remove(); $('#kd').remove(); want.remove();
     v.on(dt => { a += dt * .5; });
-    await card(['c4.f1', 'c4.f2'], {
+    await card(['c4.f1', 'c4.f2', 'c4.f3'], {
       note: '月亮繞地球一圈約 27 天，月相從新月到下一次新月約 29.5 天。新月時月亮在太陽和地球之間，和太陽一起升落，所以看不到。月相不是地球的影子造成的（那叫月食）；月亮的軌道有點傾斜，所以不會每次滿月都月食。畫面上的「半個月亮」是上弦月（右半邊亮），黃昏時在南方天空。',
     });
   }
@@ -411,7 +419,11 @@
     sayBox.hidden = true;
     $('#ov').insertAdjacentHTML('beforeend', '<div class="ptag" id="ptag"><div class="pn">' + Z('n.' + k) + '</div><div class="pf">' + Z('p.' + k) + '</div></div>');
     sfx('pop');
+    let talk = true;
+    (async () => { await G.speak('n.' + k); if (talk) await G.speak('p.' + k); })();
+    $('#ptag').addEventListener('click', () => { G.speak('p.' + k); });
     await next();
+    talk = false; G.stopVoice();
     $('#ptag').remove();
     $('.ctl').hidden = false;
     cap('v.land');
@@ -434,6 +446,7 @@
       return q >= 1;
     });
     lander.flame.visible = false;
+    let landSay = null;
     if (rock) {
       S3.jelly(lander.g); S3.jelly(pl); S3.poke(lander.g, 3.2); S3.poke(pl, .8);      // 落地：壓扁再彈回來
       v.on(dt => { S3.wobble(lander.g, dt); S3.wobble(pl, dt); });
@@ -443,9 +456,9 @@
         s.position.set((Math.random() - .5) * .5, top + .1, (Math.random() - .5) * .3); s.userData = { t: 0, dx: (Math.random() - .5) * 1.2 };
         v.scene.add(s); puffs.push(s);
       }
-      cap('c7.land');
-    } else { sfx('no'); cap('c7.sink'); }
-    await sleep(FAST ? 50 : 1600);
+      landSay = cap('c7.land');
+    } else { sfx('no'); landSay = cap('c7.sink'); }
+    await Promise.all([landSay, sleep(FAST ? 50 : 1600)]);
     $('.ctl').remove();
     await card([rock ? 'v.rock' : 'v.gas'], {
       note: rock ? '水星、金星、地球、火星是「岩石行星」，有固體的地面。金星的大氣很厚又很熱，真的探測器在那裡只撐了大約兩小時。'
@@ -513,8 +526,7 @@
     const off1 = hint(ov, 'swipeUp', '50%', '60%');
     await until(v, () => p >= .97);
     off1();
-    sfx('ok'); cap('c8.near');
-    await sleep(FAST ? 50 : 2200);
+    sfx('ok'); await Promise.all([cap('c8.near'), sleep(FAST ? 50 : 2200)]);
     await card(['c8.f1']);
     $('#ov .card3').remove();
     phase = 0;
@@ -590,12 +602,10 @@
     const offH = hint3(v, 'swipeL', () => earth.position);
     await until(v, () => heat > .95);
     offH();
-    sfx('steam'); cap('c9.hotok');
-    await sleep(FAST ? 50 : 1800);
+    sfx('steam'); await Promise.all([cap('c9.hotok'), sleep(FAST ? 50 : 1800)]);
     cap('c9.goal2');
     await until(v, () => cold > .95);
-    sfx('crack'); cap('c9.coldok');
-    await sleep(FAST ? 50 : 1800);
+    sfx('crack'); await Promise.all([cap('c9.coldok'), sleep(FAST ? 50 : 1800)]);
     cap('c9.goal3');
     let k = 0;
     await until(v, dt => { k = good() && !drag && !keys.on('a', 'd', 'left', 'right') ? k + dt : 0; return k > .5; });
@@ -680,8 +690,7 @@
       sfx('whoosh'); cap('c10.fly');
       await until(v, () => fly.done);
       if (fly.fix) break;
-      sfx('no'); cap('c10.miss');
-      await sleep(FAST ? 50 : 1500);
+      sfx('no'); await Promise.all([cap('c10.miss'), sleep(FAST ? 50 : 1500)]);
       rocket.visible = false; trailG.setDrawRange(0, 0);
       aM = aE + LEAD + 1.1 + Math.random() * .4;       // 讓火星回到框框前面一點，不用等太久
       fly = null;
@@ -704,7 +713,7 @@
       '<div class="ftxt">' + Z('fin.task') + '</div>' +
       '<div class="parent"><b>給家長：</b>可以接著聊：①今晚的月亮是什麼形狀？過幾天再看一次，變大還是變小？②清晨或傍晚，最亮的那顆「星」常常是金星。③如果可以去一顆行星旅行，你想去哪裡？要帶什麼？</div></div>';
     sfx('win');
-    cap('fin.hi');
+    (async () => { await cap('fin.hi'); await G.speak('fin.task'); })();
   }
 
   // ---------- 流程：開場 → 開火箭自由探索 → 飛到星球旁邊做任務 → 全部完成看結尾 ----------
@@ -724,7 +733,7 @@
     S3.stop();
     sayBox.hidden = true; foot.innerHTML = '';
     stage.innerHTML = '<div class="center"><div class="chtitle">' + G.Zs(key) + '</div></div>';
-    await sleep(FAST ? 50 : 1400);
+    await Promise.all([G.speak(key), sleep(FAST ? 50 : 1400)]);
   }
   async function runAct(k, a) {
     // 重來：這個任務從頭再做一次（重新載入 ?act=星球.任務），做完火箭停在這顆星球旁邊，進度不丟
@@ -747,8 +756,10 @@
     } else {
       done.clear(); save();
       foot.innerHTML = '<button class="big" id="go">' + kc('S') + ' ' + Z('ui.go') + '</button>';
-      cap('intro.found');
+      let go = false;
+      (async () => { for (const k of ['intro.hi', 'intro.found', 'intro.press']) { if (go) return; await cap(k); } })();
       await waitAction([{ el: $('#go'), keys: ['s'] }]);
+      go = true; G.stopVoice();
       sfx('ok');
     }
     foot.innerHTML = '';

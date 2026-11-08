@@ -22,6 +22,7 @@ const CASES = [
   { g: 'ai-game', q: '?ch=3&fast=1', save: 'ai-game-v1', where: dotsWhere, want: 2 },
   { g: 'bowl-game', q: '?ch=3&fast=1', save: 'bowl-game-v1', where: dotsWhere, want: 2 },
   { g: 'lab/water-game', q: '?ch=3&fast=1', save: 'water-game-v1', where: dotsWhere, want: 2 },
+  { g: 'lab/typhoon-game', q: '?ch=3&fast=1', save: 'typhoon-game-v1', where: dotsWhere, want: 2 },
   { g: 'lab/toy-factory', q: '?l=3&fast=1', save: 'toy-factory-v1', where: () => ({ lv: __tf.state().lv, line: document.querySelector('#cap .bt').textContent }), want: 2 },
   { g: 'space-game', q: '?act=earth.c2&fast=1', save: 'space-world-v1', where: () => ({ lv: document.querySelector('.view3d') ? 'earth.c2' : '?', line: (document.querySelector('#bubble .bt') || {}).textContent || '' }), want: 'earth.c2' },
   { g: 'lab/robot-town', q: '?m=3&fast=1', save: 'robot-town-v1', wait: 3500, where: () => { const s = __town.state(); return { lv: s.mission ? s.mission.n : 0, sub: s.mission ? s.mission.sub : -1, done: s.done.join(',') }; }, want: 3 },

@@ -39,6 +39,8 @@ const GAMES = {
     { label: 'end', q: '?world', ls: { 'space-world-v1': SPACE_TASKS } }],
   'lab/robot-town': [{ label: 'cover', q: '' }, ...range(1, 10).map(n => ({ label: 'M' + String(n).padStart(2, '0'), q: '?m=' + n, wait: 6000 })), { label: 'end', q: '?end=1', wait: 9000 }],
   'lab/science-lab': [{ label: 'cover', q: '' }, ...range(1, 10).map(n => ({ label: 'E' + String(n).padStart(2, '0'), q: '?e=' + n, wait: 6000 })), { label: 'end', q: '?end=1', wait: 9000 }],
+  'lab/typhoon-game': [{ label: 'cover', q: '' }, { label: 'cover-cont', q: '', ls: { 'typhoon-game-v1': { done: 3, sound: true } } },
+    ...range(1, 10).map(n => lvl(n, '?ch=' + n)), { label: 'end', q: '?fin=1' }],
   'lab/robot-game': [{ label: 'cover', q: '' }, ...range(1, 4).map(n => ({ label: 'step' + n, q: '?step=' + n })), ...range(1, 4).map(n => ({ label: 'play' + n, q: '?play=' + n + '&lv=0', wait: 6000 })), { label: 'end', q: '?end=1', wait: 9000 }],
 };
 

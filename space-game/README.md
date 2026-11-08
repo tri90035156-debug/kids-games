@@ -1,7 +1,7 @@
 # 太陽系大探險
 
 給 6 歲小朋友的 3D 互動遊戲（three.js）。夜空裡的一座黏土太陽系模型：孩子開一台小火箭自由飛，飛到星球旁邊就能進去做任務。
-**不配音**：幾乎沒有字，用形狀、顏色、光暈和字母鍵帽帶孩子自己試；需要的字一律標注音。
+2026-11-08 起**配音**：開場、16 個任務、結尾共 81 句旁白（VoAI 雅琪／聊天／0.9，848 點），同步字幕有注音、點字幕（或小卡上的一段）重聽；字少，用形狀、顏色、光暈和字母鍵帽帶孩子自己試。
 
 ## 怎麼玩
 
@@ -38,7 +38,7 @@
 
 ## 改文字
 
-改 `tools/content.py` → `python3 tools/build.py`（需 `pip install pypinyin`）。所有句子都在 `UI`（只顯示、不配音）；以後想配音，搬到 `SAY` 再跑 `tools/make_voice.py`。
+改 `tools/content.py` → `python3 tools/build.py`（需 `pip install pypinyin`）→ `KIDS_KEYS_FILE=seed-game/.env python3 -I pipeline/record_voice.py --games space-game --max-voai 點數`（已錄的跳過）。`SAY` 是旁白（每句 ≤ 20 字，有字母鍵的寫成 `(顯示, 唸的)`），`UI` 只顯示（按鈕標籤）。
 
 ## 檔案
 
