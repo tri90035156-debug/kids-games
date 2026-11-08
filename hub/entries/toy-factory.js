@@ -1,4 +1,4 @@
-/* 首頁入口：玩偶怎麼來？（2026-11-07 做的，遊戲本體在 lab/toy-factory/）。3D 小物件＝一隻黏土小熊坐在紙箱上。 */
+/* 首頁入口：玩偶怎麼來？（2026-11-07 做的，遊戲本體在 lab/toy-factory/）。3D 小物件＝一隻黏土小熊坐在紙箱上，紙箱放在一小段旅程路上（2026-11-08 3D 化後的場景是一條旅程路）。 */
 HUB.register({
   dir: 'lab/toy-factory', name: '玩偶怎麼來？', zy: ['ㄨㄢˊ', 'ㄡˇ', 'ㄗㄣˇ', '˙ㄇㄜ', 'ㄌㄞˊ', ''], sub: '原料、工廠、貿易，到你手上',
   acc: '#C98A4B',
@@ -6,6 +6,7 @@ HUB.register({
   build({ THREE, mat }) {
     const g = new THREE.Group();
     const fur = mat(0xD9A66B, { roughness: .95 }), dark = mat(0x4A3328, { roughness: .8 }), card = mat(0xC9A478, { roughness: .9 }), tape = mat(0xEADFD3, { roughness: .9 });
+    const road = new THREE.Mesh(new THREE.BoxGeometry(2.8, .06, .9), mat(0xE8D7B8)); road.position.set(0, .03, .2); g.add(road);
     const box = new THREE.Mesh(new THREE.BoxGeometry(1.5, .7, 1.1), card); box.position.y = .35; g.add(box);
     const tp = new THREE.Mesh(new THREE.BoxGeometry(.3, .72, 1.12), tape); tp.position.y = .35; g.add(tp);
     const bear = new THREE.Group(); bear.position.set(0, .7, .1); g.add(bear);

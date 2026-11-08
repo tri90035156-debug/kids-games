@@ -45,6 +45,71 @@
   "text": "它走了好長的一段路，才到你的手上。我們一站一站去看。"
  },
  {
+  "key": "intro.hi",
+  "id": "4fb982d8998c",
+  "text": "你抱著的小熊玩偶，軟軟的，是從哪裡來的呢？"
+ },
+ {
+  "key": "intro.found",
+  "id": "8be0b02b842e",
+  "text": "它走了好長的一段路，才到你的手上。我們一站一站去看。"
+ },
+ {
+  "key": "intro.press",
+  "id": "be488d3f23d2",
+  "text": "按出發，我們走吧！"
+ },
+ {
+  "key": "c1.title",
+  "id": "a2518fd2d439",
+  "text": "原料從哪裡來"
+ },
+ {
+  "key": "c2.title",
+  "id": "28bfb1f47285",
+  "text": "石油變絨布"
+ },
+ {
+  "key": "c3.title",
+  "id": "da819d29fd47",
+  "text": "小熊是什麼做的"
+ },
+ {
+  "key": "c4.title",
+  "id": "8c4d1f7f2aa9",
+  "text": "先做什麼"
+ },
+ {
+  "key": "c5.title",
+  "id": "305c46ffb9d1",
+  "text": "工廠的每一步"
+ },
+ {
+  "key": "c6.title",
+  "id": "c36825df4e98",
+  "text": "塞棉花"
+ },
+ {
+  "key": "c7.title",
+  "id": "b0fe89c5f955",
+  "text": "金屬探測器"
+ },
+ {
+  "key": "c8.title",
+  "id": "9b40b1e72847",
+  "text": "小熊坐什麼來"
+ },
+ {
+  "key": "c9.title",
+  "id": "06634f191ec5",
+  "text": "誰做了什麼"
+ },
+ {
+  "key": "c10.title",
+  "id": "5888fb14252f",
+  "text": "小熊的旅行"
+ },
+ {
   "key": "ch1",
   "id": "40e7e5c2accb",
   "text": "第一站，原料哪裡來？"
