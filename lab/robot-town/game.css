@@ -110,3 +110,6 @@ body.rt-body{font-size:16px;-webkit-text-size-adjust:100%}
 /* 拍照時畫面閃一下白（第 4 關） */
 .rt-flash{position:absolute;inset:0;z-index:7;background:#fff;pointer-events:none;animation:rt-flash .6s ease-out forwards}
 @keyframes rt-flash{from{opacity:.85}to{opacity:0}}
+
+/* 重來鈕（restart.js 自動放在聲音鈕旁邊、套同樣的圓鈕樣式）：聲音鈕左邊一格 */
+#rstBtn{right:calc(max(12px,env(safe-area-inset-right,0px)) + 58px);top:max(12px,env(safe-area-inset-top,0px))}

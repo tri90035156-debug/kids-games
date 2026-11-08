@@ -336,7 +336,7 @@
         if (key) talk(key);
         if (c.fails >= 3 && M.demo) { setTimeout(() => { if (ctx === c) playDemo(M.demo(c)); }, FAST ? 10 : 900); if (M.assist) M.assist(c); }
       },
-      win() { const r = winRes; winRes = null; if (r) r(); },
+      win() { const r = winRes; winRes = null; if (r) { RESTART.progress(); r(); } },
       _wait() { return new Promise(res => { winRes = res; }); },
     };
     Object.defineProperty(c, 'strong', { get: () => c.fails >= 2 });
@@ -542,10 +542,24 @@
   infoBtn.addEventListener('click', () => setInfo(info.hidden));
   $('#infoClose').addEventListener('click', () => setInfo(false));
 
+  // ---------- 重來鈕（右上角，聲音鈕旁邊） ----------
+  // 任務裡：這一小關重來——重新載入，從存檔的 S.cur／S.sub 接著玩（道具重設、主角在這一站）；進度不丟。
+  // 在小鎮開車：主角回到起點（?town=1&home=1）。結尾動畫時藏起來。
+  let rstMode = '';
+  function rstSync() {
+    const m = mode === 'mission' || (mode === 'busy' && ctx) ? 'mission' : mode;
+    if (m === rstMode) return;
+    rstMode = m;
+    if (m === 'mission') RESTART.set(() => { save(); RESTART.reload({}); });
+    else if (m === 'town') RESTART.set(() => RESTART.reload({ town: 1, home: 1 }), { hint: false });
+    else if (m === 'ending') RESTART.set(null);
+  }
+
   // ---------- 每一畫面 ----------
   let lastW = 0, lastH = 0;
   const tmp = new T.Vector3();
   v.on((dt, t) => {
+    rstSync();
     if (v.w !== lastW || v.h !== lastH) {
       lastW = v.w; lastH = v.h;
       if (follow) camFollow(true);
@@ -618,7 +632,8 @@
     free = false; S.free = false; save();
   }
   dressBot();
-  town.parkBot(QS.has('m') ? null : (S.done.length && S.done.length < 10 ? S.done[S.done.length - 1] : null));
+  // ?home=1（小鎮裡按重來）：主角回到起點
+  town.parkBot(QS.has('m') || QS.has('home') ? null : (S.done.length && S.done.length < 10 ? S.done[S.done.length - 1] : null));
   camFollow(true);
   if (QS.has('end')) { S.done = [1, 2, 3, 4, 5, 6, 7, 8, 9]; save(); setTimeout(runEnding, 300); }
   else if (QS.has('m')) {

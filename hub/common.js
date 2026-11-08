@@ -145,9 +145,10 @@ function toScreen(obj, camera, offY = 0) {
   return { x: (_v.x + 1) / 2 * innerWidth, y: (1 - _v.y) / 2 * innerHeight, z: _v.z };
 }
 
-// 數字鍵 1–4 直接進去（用 ev.code，注音輸入法開著也能用）
+// 數字鍵直接進去（用 ev.code，注音輸入法開著也能用）
 function numberKeys(enter) {
-  addEventListener('keydown', ev => { const m = /^(?:Digit|Numpad)([1-9])$/.exec(ev.code); if (m && GAMES[+m[1] - 1]) { ac(); enter(+m[1] - 1); } });
+  // 1～9 是第 1～9 個入口，0 是第 10 個
+  addEventListener('keydown', ev => { const m = /^(?:Digit|Numpad)([0-9])$/.exec(ev.code); const i = m ? (m[1] === '0' ? 9 : +m[1] - 1) : -1; if (i >= 0 && GAMES[i]) { ac(); enter(i); } });
 }
 function goTo(i, delay = 350) { SFX.go(); setTimeout(() => { location.href = href(GAMES[i]); }, delay); }
 

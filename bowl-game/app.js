@@ -460,7 +460,7 @@
   // ---------- 結尾 ----------
   async function finale() {
     show();
-    stage.innerHTML = '<div class="center"><div class="stamp">頌缽<br>師傅</div><div class="chtitle">' + Z('fin.title') + '</div>' +
+    stage.innerHTML = '<div class="center"><div class="stamp">頌缽<br>師傅</div><div class="chtitle">' + G.Zs('fin.title') + '</div>' +
       '<div class="stickers">' + [A.oreCu(), A.copper(), A.tin(), A.flames(1), A.hammer(), A.bowlSide()].map(s => ring(s, 'md')).join('') + '</div>' +
       '<div class="parent"><b>給家長：</b>回家可以做「水杯樂器」：幾個玻璃杯裝不同高度的水，用筷子輕敲——水越多，聲音越低，和頌缽加水是同一個道理。也可以找找家裡的鍋子、湯匙，比比看哪個聲音最長。</div></div>';
     sfx('win');

@@ -32,3 +32,7 @@
 `tools/content.py` → `python3 tools/build.py` → `content.js`、`tools/narration.json`。129 句、1748 字。
 錄音：`KIDS_KEYS_FILE=seed-game/.env python3 -I pipeline/record_voice.py --games lab/toy-factory --max-voai 1800`（VoAI 雅琪／聊天／0.9）。
 手動注音：縫（ㄈㄥˊ）、塞（ㄙㄞ）、載（ㄗㄞˋ）、和（ㄏㄢˋ）、紙型（ㄒㄧㄥˊ）、長得（ㄓㄤˇ ˙ㄉㄜ）、好長（ㄔㄤˊ）、重（ㄓㄨㄥˋ）、什麼（ㄕㄜˊ）、東西（˙ㄒㄧ）、三種（ㄓㄨㄥˇ）。
+
+## 重來鈕（2026-11-08）
+
+- 右上角聲音鈕旁邊的圓箭頭「↻」（`restart.js`，九個遊戲共用、檔案一模一樣）：按下去木魚一聲、旁白停下，重新載入到這一關（`?l=N`，網址參數自動清掉），第 N 關重來還是第 N 關，進度不丟。開場、總結不出現。同一關 90 秒沒有答對，鈕會輕輕呼吸提醒；孩子一碰畫面就停。

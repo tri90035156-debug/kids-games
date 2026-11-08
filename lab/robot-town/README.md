@@ -124,3 +124,7 @@
 - **8 倉庫搬架子・倉庫機器人**：Kiva Systems 的小機器人會鑽到貨架底下，把整個架子抬起來送到揀貨員面前，靠地上的條碼記號認路；Amazon 2012 年以約 7.75 億美元買下這家公司（後來叫 Amazon Robotics）。〔[Wikipedia: Amazon Robotics](https://en.wikipedia.org/wiki/Amazon_Robotics)、[TechCrunch 2012](https://techcrunch.com/2012/03/19/amazon-acquires-online-fulfillment-company-kiva-systems-for-775-million-in-cash/)〕
 - **9 修小東西・精密機器手**：達文西手術系統（da Vinci）2000 年獲美國 FDA 核准用於腹腔鏡手術：醫生坐在旁邊的操作台控制，系統會濾掉手的抖動、把動作縮小，傷口可以更小。遊戲改成「修音樂盒」，不出現手術畫面。〔[Wikipedia: Da Vinci Surgical System](https://en.wikipedia.org/wiki/Da_Vinci_Surgical_System)、[IEEE Milestone（SRI 遙控手術）](https://ieeemilestones.ethw.org/Milestone-Proposal:Robotic_Telepresence_Surgery_System,_SRI_International,_1987%E2%80%931995)〕
 - **10 自己選裝備**：沒有一台機器人什麼都會：輪子、腿、螺旋槳、纜線，都是照它要做的工作選的。
+
+## 重來鈕（2026-11-08）
+
+- 右上角聲音鈕旁邊的圓箭頭「↻」（`restart.js`，九個遊戲共用、檔案一模一樣）：按下去木魚一聲、旁白停下，任務裡＝這一小關重來（重新載入，從存檔的 `S.cur`／`S.sub` 接著玩：道具重設、主角在這一站）；在小鎮開車＝主角回到起點（`?town=1&home=1`）。已完成的任務、裝備都留著。結尾動畫時不出現。任務裡 90 秒沒完成一步，鈕會輕輕呼吸提醒（開車逛小鎮時不提醒）。

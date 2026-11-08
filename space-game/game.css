@@ -73,6 +73,7 @@ body{color:var(--ink2)}
 
 /* 第四關：從地球看月亮的小視窗、左邊的太陽 */
 .inset{position:absolute;right:16px;top:50%;transform:translateY(-50%);border:4px solid var(--cream);border-radius:50%;box-shadow:0 6px 0 rgba(0,0,0,.3)}
+.inset:not(.sized){visibility:hidden}   /* 還沒算好大小前先藏起來：不然字擠在 0 寬的框裡跑出畫面 */
 .inset .il{position:absolute;top:100%;left:0;right:0;margin-top:10px;text-align:center;color:#FFF4DE;font-size:18px}
 .suntag{position:absolute;left:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;color:#FFF4DE;font-size:20px}
 .suntag svg{width:46px;height:46px}

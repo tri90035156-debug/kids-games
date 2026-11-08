@@ -92,3 +92,7 @@ robot 的五個字母，對到機器人一步一步被做出來的順序。年�
 - **robot 這個字**：出自捷克作家 Karel Čapek 1920 年的劇本《R.U.R.》，是哥哥 Josef 建議的，來自捷克語 robota（苦工、勞役）。劇裡的 robot 是人造的人，不是金屬做的。〔[Britannica](https://www.britannica.com/print/article/512953)、[Linda Hall Library](https://www.lindahall.org/about/news/scientist-of-the-day/karel-capek-2/)〕
 
 （b 那一行的標題是「有力氣的手臂」，故意不寫「馬達手臂」，免得跟括號裡的液壓說明打架。遊戲裡的零件照樣做成馬達。）
+
+## 重來鈕（2026-11-08）
+
+- 右上角聲音鈕旁邊的圓箭頭「↻」（`restart.js`，九個遊戲共用、檔案一模一樣）：按下去木魚一聲、旁白停下，小挑戰裡＝這一小關重來（`?play=N&lv=L`）；正在裝零件＝這個零件回架子、這一步重來（`?step=前面裝好的數目`）；等下一個零件時＝同一步重新開始。結尾、自由玩時不出現（右下角本來就有「拆掉重做」）。2026-11-08 起已從首頁拿掉（被機器人出任務取代），資料夾留著。

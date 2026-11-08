@@ -1,0 +1,69 @@
+/* 種子小偵探自己的版面（2026-11-08 從 style.css 搬出來，讓九個遊戲的 style.css 一模一樣） */
+/* ---------- 第一關：點開看看 ---------- */
+.reveal{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;width:100%}
+.rv{width:min(30vw,260px);background:var(--paper);border:1.5px solid var(--line);border-radius:24px;padding:18px 10px 12px;display:flex;flex-direction:column;align-items:center;gap:12px;font-size:26px}
+.rv:hover{border-color:var(--gold)}
+.rv.todo{border-color:var(--gold);box-shadow:0 0 0 6px var(--goldsoft)}
+.rv.open{border-color:var(--good);background:var(--good-bg);box-shadow:none}
+
+/* ---------- 第三關：種樹 ---------- */
+.grow{position:relative;width:min(100%,min(56vh,520px));aspect-ratio:1;border-radius:24px;overflow:hidden;border:1.5px solid var(--line);background:var(--paper);cursor:pointer}
+.grow.todo{border-color:var(--gold);box-shadow:0 0 0 6px var(--goldsoft)}
+.grow>svg{width:100%;height:100%;display:block}
+.grow svg g[data-from]{transition:opacity .7s ease;opacity:0}
+.grow .fx{position:absolute;width:34px;height:34px;pointer-events:none;animation:fall 1.4s ease-in forwards}
+.grow .fx svg{width:100%;height:100%}
+.grow .sun{position:absolute;right:12px;top:10px;width:72px;height:72px;opacity:0;transition:opacity .5s}
+.grow .sun svg{width:100%;height:100%}
+.grow .sun.on{opacity:1}
+.keys{display:flex;gap:14px;justify-content:center;width:100%;max-width:460px}
+.keybtn{flex:1;display:flex;align-items:center;justify-content:center;gap:12px;background:var(--paper2);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:40px}
+.keybtn svg{width:48px;height:48px}
+.keybtn.want{border-color:var(--gold);box-shadow:0 0 0 6px var(--goldsoft)}
+.keybtn:not(.want){opacity:.5}
+.keybtn.wrong{animation:shake .35s;border-color:var(--red)}
+
+/* ---------- 第四關：種子圖鑑 ---------- */
+.focus{display:flex;align-items:center;gap:24px;width:100%;max-width:760px;background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:16px 28px;min-height:150px}
+.focus.empty{justify-content:center;color:var(--muted);font-size:26px;text-align:center}
+.focus .nm{font:900 38px/1.3 var(--serif)}
+.focus .tr{font-size:28px;color:var(--maroon)}
+.grid6{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;max-width:760px}
+.sd{position:relative;background:var(--paper);border:1.5px solid var(--line);border-radius:22px;padding:14px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:24px}
+.sd:hover{border-color:var(--gold)}
+.sd.seen{border-color:var(--good);background:var(--good-bg)}
+.sd.seen:after{content:"✓";position:absolute;right:12px;top:6px;font:900 24px/1 var(--f);color:var(--good)}
+.sd.sel{box-shadow:0 0 0 5px var(--goldsoft);border-color:var(--gold)}
+.sd .num{position:absolute;left:12px;top:8px;font:700 15px/1 var(--f);color:var(--muted)}
+
+/* ---------- 第六關：旅行 ---------- */
+.travel{position:relative;width:100%;max-width:760px;height:min(34vh,240px);border-radius:24px;border:1.5px solid var(--line);background:linear-gradient(#eef5f7 0,#eef5f7 62%,var(--goldsoft) 62%);overflow:hidden;display:block}
+.travel.water{background:linear-gradient(#eef5f7 0,#eef5f7 45%,var(--sea) 45%)}
+.travel .tseed{position:absolute;left:6%;bottom:12%;width:116px;height:116px;transition:left 2.4s ease-in-out,bottom 2.4s ease-in-out}
+.travel .tseed svg,.travel .twho svg{width:100%;height:100%;display:block}
+.travel .twho{position:absolute;width:88px;height:88px;left:4%;top:16%}
+
+
+/* 手機：要排在上面這些規則之後才蓋得過（原本寫在 style.css 的 560px 區塊裡） */
+@media(max-width:560px){
+  .sd{font-size:20px}
+  .focus{gap:14px;padding:12px 16px}
+  .focus .nm{font-size:30px}
+}
+
+/* 手機直式不要超出（2026-11-08）：卡片裡的紅圈跟著卡片寬度縮；三欄平分；說明句可以換行 */
+.rv .ring.lg{width:min(24vw,32vh,250px);height:min(24vw,32vh,250px)}
+.grid6{grid-template-columns:repeat(3,minmax(0,1fr))}
+.sd .ring.md{width:min(22vw,19vh,136px);height:min(22vw,19vh,136px)}
+.sd>span{max-width:100%}
+.focus{flex-wrap:wrap}
+.focus>*{min-width:0}
+@media(max-width:560px){
+  .reveal{gap:10px}
+  .rv{width:calc((100% - 20px) / 3);padding:12px 4px 10px;font-size:22px}
+  .grid6{gap:8px}
+  .sd{font-size:18px;padding:12px 2px 8px}
+  .focus{padding:12px 14px;gap:12px}
+  .focus .ring.md{width:84px;height:84px}
+  .focus .tr{font-size:22px}
+}

@@ -37,8 +37,22 @@
     return h + '</span>';
   }
   function Z(key) {
+    const cells = zcells(key);
+    if (!cells) return esc(String(key));
+    return cells.map(c => c.sp ? ' ' : '<span class="nb">' + c.h + '</span>').join('');
+  }
+  // 標題用：在逗號後面分段，手機放不下時從逗號那裡換行（和共用 engine.js 的 Zs 一樣）
+  function Zs(key) {
+    const cells = zcells(key);
+    if (!cells) return esc(String(key));
+    const segs = [[]];
+    cells.forEach(c => { segs[segs.length - 1].push(c.sp ? ' ' : '<span class="nb">' + c.h + '</span>'); if (c.brk) segs.push([]); });
+    const out = segs.filter(g => g.length);
+    return out.length < 2 ? out.map(g => g.join('')).join('') : out.map(g => '<span class="seg">' + g.join('') + '</span>').join('');
+  }
+  function zcells(key) {
     const e = TX[key];
-    if (!e) return esc(String(key));
+    if (!e) return null;
     const cells = [];
     let pend = '';
     for (const it of e.z) {
@@ -46,7 +60,12 @@
       if (typeof it === 'string') {
         if (it === ' ') { cells.push({ sp: 1 }); continue; }
         h = cell(it, '');
-        if (CLOSE.includes(it) && cells.length && !cells[cells.length - 1].sp) { cells[cells.length - 1].h += h; continue; }
+        if (CLOSE.includes(it) && cells.length && !cells[cells.length - 1].sp) {
+          const last = cells[cells.length - 1];
+          last.h += h;
+          if ('，、：；！？'.includes(it)) last.brk = 1;
+          continue;
+        }
         if (OPEN.includes(it)) { pend = h; continue; }
       } else if (Array.isArray(it)) {
         h = cell(it[0], it[1]);
@@ -56,7 +75,7 @@
       if (pend) { h = pend + h; pend = ''; }
       cells.push({ h });
     }
-    return cells.map(c => c.sp ? ' ' : '<span class="nb">' + c.h + '</span>').join('');
+    return cells;
   }
 
   // ---------- 音效 ----------
@@ -70,6 +89,7 @@
     o.connect(g).connect(AC.destination); o.start(AC.currentTime + t0); o.stop(AC.currentTime + t0 + dur + .05);
   }
   function sfx(name) {
+    if ((name === 'ok' || name === 'win') && window.RESTART) RESTART.progress();   // 答對、過關＝有進展
     if (!S.sound) return;
     try {
       AC = AC || new (window.AudioContext || window.webkitAudioContext)();
@@ -155,6 +175,7 @@
     foot.innerHTML = '<button class="big" id="nx">' + Z(label) + ' ▶</button>';
     await waitAction([{ el: $('#nx'), keys: ['enter', 'space'] }]);
     sfx('tap');
+    if (window.RESTART) RESTART.progress();
     foot.innerHTML = '';
   }
 
@@ -241,7 +262,7 @@
   async function intro() {
     setDots(-1);
     sayBox.hidden = true;
-    stage.innerHTML = '<div class="hero"><div class="stamp">種子</div><div class="t"><div class="logo">' + Z('ui.title') + '</div><div class="sub">' + Z('ui.sub') + '</div></div></div>';
+    stage.innerHTML = '<div class="hero"><div class="stamp">種子</div><div class="t"><div class="logo">' + Zs('ui.title') + '</div><div class="sub">' + Zs('ui.sub') + '</div></div></div>';
     if (S.done > 0 && S.done < N_CH) {
       foot.innerHTML = '<button class="big" id="b1">' + Z('ui.cont') + '</button><button class="big alt" id="b2" style="margin-left:14px">' + Z('ui.restart') + '</button>';
       const i = await waitAction([{ el: $('#b1'), keys: ['enter', 'space'] }, { el: $('#b2'), keys: [] }]);
@@ -267,7 +288,7 @@
   async function titleCard(i) {
     sayBox.hidden = true;
     foot.innerHTML = '';
-    stage.innerHTML = '<div class="center"><div class="chnum">' + (i + 1) + '</div><div class="chtitle">' + Z('c' + (i + 1) + '.title') + '</div></div>';
+    stage.innerHTML = '<div class="center"><div class="chnum">' + (i + 1) + '</div><div class="chtitle">' + Zs('c' + (i + 1) + '.title') + '</div></div>';
     await Promise.all([speak('c' + (i + 1) + '.title'), sleep(1600)]);
   }
 
@@ -489,7 +510,7 @@
     S.done = N_CH; save();
     setDots(N_CH);
     sayBox.hidden = false;
-    stage.innerHTML = '<div class="center"><div class="stamp">種子<br>博士</div><div class="chtitle">' + Z('fin.title') + '</div>' +
+    stage.innerHTML = '<div class="center"><div class="stamp">種子<br>博士</div><div class="chtitle">' + Zs('fin.title') + '</div>' +
       '<div class="stickers">' + IDS.map(id => ring(A.SEED_ART[id](), 'md')).join('') + '</div>' +
       '<div style="font-size:24px">' + Z('fin.got') + '</div>' +
       '<div class="parent"><b>給家長：</b>回家後可以一起做兩件事 —— ①把一顆綠豆或黃豆放在濕紙巾上，每天看牠怎麼長根、長芽；②散步時撿橡實、松果、楓香果，比一比哪些種子長得像今天認識的。</div></div>';
@@ -506,23 +527,30 @@
   async function main() {
     const qs = new URLSearchParams(location.search);
     let from;
-    if (qs.has('ch')) from = Math.max(0, Math.min(N_CH - 1, (+qs.get('ch') || 1) - 1));   // 測試用：?ch=3 直接跳到第三關
-    else from = await intro();
+    if (qs.has('fin')) from = N_CH;                                                         // 測試用：?fin=1 直接看結尾
+    else if (qs.has('ch')) from = Math.max(0, Math.min(N_CH - 1, (+qs.get('ch') || 1) - 1));   // ?ch=3 直接跳到第三關（重來鈕也是用它）
+    else { RESTART.set(null); from = await intro(); }
     for (let i = from; i < N_CH; i++) {
       setDots(i);
+      RESTART.set(() => RESTART.reload({ ch: i + 1 }));      // 重來：重新載入到這一關，進度不丟
       await titleCard(i);
       await CH[i]();
       S.done = i + 1; save();
     }
+    RESTART.set(null);
     await finale();
   }
 
   // ---------- 上方按鈕 ----------
   $('#homeBtn').addEventListener('click', () => { stopVoice(); location.href = location.pathname; });
   const sndBtn = $('#sndBtn');
-  const paintSnd = () => { sndBtn.innerHTML = A.speaker() + '聲音 ' + (S.sound ? '開' : '關'); };
+  // 聲音開關：只有圖示（喇叭＋聲波／喇叭＋斜線），不寫字（和共用引擎一樣）
+  const muteIcon = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M10 38 H28 L50 18 V82 L28 62 H10Z" fill="currentColor"/>' +
+    '<g fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"><path d="M64 38 L88 62"/><path d="M88 38 L64 62"/></g></svg>';
+  const paintSnd = () => { sndBtn.innerHTML = S.sound ? A.speaker() : muteIcon; sndBtn.classList.toggle('off', !S.sound); sndBtn.setAttribute('aria-pressed', S.sound ? 'true' : 'false'); };
   sndBtn.addEventListener('click', () => { S.sound = !S.sound; save(); paintSnd(); if (!S.sound) stopVoice(); });
   paintSnd();
+  RESTART.init({ sound: () => S.sound, stop: () => stopVoice() });
 
   main();
 })();

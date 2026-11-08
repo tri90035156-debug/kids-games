@@ -276,7 +276,7 @@
       cam: icam,
       rect(w, h) {
         const s = Math.round(Math.min(w, h) * .32);
-        if (s !== side) { side = s; ins.style.width = ins.style.height = (s + 8) + 'px'; }
+        if (s !== side) { side = s; ins.style.width = ins.style.height = (s + 8) + 'px'; ins.classList.add('sized'); }
         return [w - s - 20, Math.round((h - s) / 2), s, s];
       },
     });
@@ -699,7 +699,7 @@
   async function finale() {
     S3.stop();
     sayBox.hidden = false;
-    stage.innerHTML = '<div class="center"><div class="stamp">太空<br>探險</div><div class="chtitle">' + Z('fin.title') + '</div>' +
+    stage.innerHTML = '<div class="center"><div class="stamp">太空<br>探險</div><div class="chtitle">' + G.Zs('fin.title') + '</div>' +
       '<div class="stickers">' + ['sun', 'mercury', 'venus', 'earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'].map(k => G.ring(S3.img(k), 'sm')).join('') + '</div>' +
       '<div class="ftxt">' + Z('fin.task') + '</div>' +
       '<div class="parent"><b>給家長：</b>可以接著聊：①今晚的月亮是什麼形狀？過幾天再看一次，變大還是變小？②清晨或傍晚，最亮的那顆「星」常常是金星。③如果可以去一顆行星旅行，你想去哪裡？要帶什麼？</div></div>';
@@ -723,19 +723,22 @@
   async function titleCard(key) {
     S3.stop();
     sayBox.hidden = true; foot.innerHTML = '';
-    stage.innerHTML = '<div class="center"><div class="chtitle">' + Z(key) + '</div></div>';
+    stage.innerHTML = '<div class="center"><div class="chtitle">' + G.Zs(key) + '</div></div>';
     await sleep(FAST ? 50 : 1400);
   }
   async function runAct(k, a) {
+    // 重來：這個任務從頭再做一次（重新載入 ?act=星球.任務），做完火箭停在這顆星球旁邊，進度不丟
+    RESTART.set(() => RESTART.reload({ act: k + '.' + a }));
     await titleCard(a === 'visit' ? 'n.' + k : a + '.title');
     stage.innerHTML = ''; foot.innerHTML = '';
     await ACT[a](k);
     G.stopVoice();
   }
   async function intro() {
+    RESTART.set(null);
     sayBox.hidden = true;
     stage.innerHTML = '<div class="hero">' + G.ring(S3.img('saturn', 'hero'), 'lg') +
-      '<div class="t"><div class="logo">' + Z('ui.title') + '</div><div class="sub">' + Z('ui.sub') + '</div></div></div>';
+      '<div class="t"><div class="logo">' + G.Zs('ui.title') + '</div><div class="sub">' + G.Zs('ui.sub') + '</div></div></div>';
     if (done.size && done.size < TOTAL) {
       foot.innerHTML = '<button class="big" id="b1">' + Z('ui.cont') + '</button><button class="big alt" id="b2">' + Z('ui.restart') + '</button>';
       const i = await waitAction([{ el: $('#b1'), keys: ['enter', 'space', 's'] }, { el: $('#b2'), keys: [] }]);
@@ -752,21 +755,26 @@
   }
   async function main() {
     const qs = new URLSearchParams(location.search);
-    if (qs.has('act')) {                               // 測試用：?act=earth.c3 直接做那個任務
+    let from = null;
+    if (qs.has('act')) {                               // 測試用：?act=earth.c3 直接做那個任務（重來鈕也是用它）
       const [k, a] = qs.get('act').split('.');
       await runAct(k, a);
+      // 從重來鈕來的：這個任務算做完，火箭停在這顆星球旁邊（不是起點）
+      if (RESTART.fromRestart && TASKS[k] && TASKS[k].includes(a)) { done.add(k + '.' + a); save(); from = k; }
     } else if (!qs.has('world')) await intro();       // ?world 直接進太陽系
-    let from = null;
     for (;;) {
       const remain = {};
       for (const k in TASKS) remain[k] = TASKS[k].filter(a => !done.has(k + '.' + a)).length;
       if (done.size >= TOTAL) break;
+      // 在太陽系裡飛的時候按重來：回到起點（進度不丟）
+      RESTART.set(() => RESTART.reload({ world: 1 }));
       const k = await WORLD.go(remain, { doneN: done.size, total: TOTAL, from });
       const a = TASKS[k].find(x => !done.has(k + '.' + x));
       await runAct(k, a);
       done.add(k + '.' + a); save();
       from = k;
     }
+    RESTART.set(null);
     await finale();
     foot.innerHTML = '<button class="big" id="again">' + Z('ui.again') + '</button>';
     await waitAction([{ el: $('#again'), keys: ['enter', 'space'] }]);

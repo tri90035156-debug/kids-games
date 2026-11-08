@@ -239,3 +239,6 @@ body.sl-body{font-size:16px;-webkit-text-size-adjust:100%}
 .sl-strip i svg{width:100%;height:100%;display:block}
 @media (max-width:480px){.sl-strip i{width:40px;height:40px}.sl-strip{gap:4px;padding:4px}}
 .sl-mn-n{font:700 26px/1 "Avenir Next","Helvetica Neue",system-ui,sans-serif;color:var(--sl-ink);margin-left:4px}
+
+/* 重來鈕（restart.js 自動放在聲音鈕旁邊、套同樣的圓鈕樣式）：聲音鈕左邊一格 */
+#rstBtn{right:calc(max(12px,env(safe-area-inset-right,0px)) + 58px);top:max(12px,env(safe-area-inset-top,0px))}

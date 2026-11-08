@@ -92,51 +92,6 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;paddin
 .card.gone{visibility:hidden}
 .card.wrong{border-color:var(--red);animation:shake .35s}
 .card.hint{border-color:var(--gold);box-shadow:0 0 0 6px var(--goldsoft)}
-
-/* ---------- 第一關：點開看看 ---------- */
-.reveal{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;width:100%}
-.rv{width:min(30vw,260px);background:var(--paper);border:1.5px solid var(--line);border-radius:24px;padding:18px 10px 12px;display:flex;flex-direction:column;align-items:center;gap:12px;font-size:26px}
-.rv:hover{border-color:var(--gold)}
-.rv.todo{border-color:var(--gold);box-shadow:0 0 0 6px var(--goldsoft)}
-.rv.open{border-color:var(--good);background:var(--good-bg);box-shadow:none}
-
-/* ---------- 第三關：種樹 ---------- */
-.grow{position:relative;width:min(100%,min(56vh,520px));aspect-ratio:1;border-radius:24px;overflow:hidden;border:1.5px solid var(--line);background:var(--paper);cursor:pointer}
-.grow.todo{border-color:var(--gold);box-shadow:0 0 0 6px var(--goldsoft)}
-.grow>svg{width:100%;height:100%;display:block}
-.grow svg g[data-from]{transition:opacity .7s ease;opacity:0}
-.grow .fx{position:absolute;width:34px;height:34px;pointer-events:none;animation:fall 1.4s ease-in forwards}
-.grow .fx svg{width:100%;height:100%}
-.grow .sun{position:absolute;right:12px;top:10px;width:72px;height:72px;opacity:0;transition:opacity .5s}
-.grow .sun svg{width:100%;height:100%}
-.grow .sun.on{opacity:1}
-.keys{display:flex;gap:14px;justify-content:center;width:100%;max-width:460px}
-.keybtn{flex:1;display:flex;align-items:center;justify-content:center;gap:12px;background:var(--paper2);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:40px}
-.keybtn svg{width:48px;height:48px}
-.keybtn.want{border-color:var(--gold);box-shadow:0 0 0 6px var(--goldsoft)}
-.keybtn:not(.want){opacity:.5}
-.keybtn.wrong{animation:shake .35s;border-color:var(--red)}
-
-/* ---------- 第四關：種子圖鑑 ---------- */
-.focus{display:flex;align-items:center;gap:24px;width:100%;max-width:760px;background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:16px 28px;min-height:150px}
-.focus.empty{justify-content:center;color:var(--muted);font-size:26px;text-align:center}
-.focus .nm{font:900 38px/1.3 var(--serif)}
-.focus .tr{font-size:28px;color:var(--maroon)}
-.grid6{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;max-width:760px}
-.sd{position:relative;background:var(--paper);border:1.5px solid var(--line);border-radius:22px;padding:14px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:24px}
-.sd:hover{border-color:var(--gold)}
-.sd.seen{border-color:var(--good);background:var(--good-bg)}
-.sd.seen:after{content:"✓";position:absolute;right:12px;top:6px;font:900 24px/1 var(--f);color:var(--good)}
-.sd.sel{box-shadow:0 0 0 5px var(--goldsoft);border-color:var(--gold)}
-.sd .num{position:absolute;left:12px;top:8px;font:700 15px/1 var(--f);color:var(--muted)}
-
-/* ---------- 第六關：旅行 ---------- */
-.travel{position:relative;width:100%;max-width:760px;height:min(34vh,240px);border-radius:24px;border:1.5px solid var(--line);background:linear-gradient(#eef5f7 0,#eef5f7 62%,var(--goldsoft) 62%);overflow:hidden;display:block}
-.travel.water{background:linear-gradient(#eef5f7 0,#eef5f7 45%,var(--sea) 45%)}
-.travel .tseed{position:absolute;left:6%;bottom:12%;width:116px;height:116px;transition:left 2.4s ease-in-out,bottom 2.4s ease-in-out}
-.travel .tseed svg,.travel .twho svg{width:100%;height:100%;display:block}
-.travel .twho{position:absolute;width:88px;height:88px;left:4%;top:16%}
-
 /* ---------- 開場、章節標題、結尾 ---------- */
 .center{display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
 .stamp{position:relative;width:132px;height:132px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 7px var(--goldsoft);font:900 36px/1.15 var(--serif)}
@@ -172,3 +127,71 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;paddin
   .focus .nm{font-size:30px}
 }
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+
+/* ======== 共用互動元件（九個遊戲的 style.css 一模一樣，改了要全部同步，用 diff 檢查） ======== */
+#foot .big + .big{margin-left:0}
+.wrong{animation:shake .35s}
+.tip{font-size:18px;color:var(--muted);text-align:center}
+.scene{position:relative;width:100%;max-width:760px;border-radius:24px;border:1.5px solid var(--line);background:var(--paper);overflow:hidden}
+.scene>svg{display:block;width:100%;height:100%}
+
+/* 拖拉 */
+.drag{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;position:relative;z-index:2}
+.drag.dragging{z-index:60;cursor:grabbing;filter:drop-shadow(0 10px 14px rgba(42,32,32,.22))}
+.drag.picked{outline:3px solid var(--gold);outline-offset:4px;border-radius:22px}
+.zone{transition:border-color .15s,background-color .15s,box-shadow .15s}
+.zone.ready{border-color:var(--gold)!important;border-style:dashed!important}
+.zone.over{border-color:var(--gold)!important;background-color:var(--goldsoft)!important;box-shadow:0 0 0 6px var(--goldsoft)}
+.chip{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--paper);border:1.5px solid var(--line);border-radius:22px;padding:12px 10px 8px;font-size:24px}
+.chip .ring{pointer-events:none}
+.chip .kc{font-size:20px}
+.chip.gone{visibility:hidden}
+
+/* 量表、按住的大按鈕 */
+.meter{position:relative;width:100%;max-width:520px;height:26px;border-radius:13px;background:var(--paper2);border:1.5px solid var(--line);overflow:hidden}
+.meter>i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--good);border-radius:13px;transition:width .3s ease}
+.meter.gold>i{background:var(--gold)}
+.mlabel{display:flex;align-items:center;gap:12px;font-size:22px;color:var(--maroon);justify-content:center}
+.holdbtn{touch-action:none;user-select:none;-webkit-user-select:none;display:inline-flex;align-items:center;justify-content:center;gap:12px;min-width:260px;padding:14px 34px;border-radius:999px;background:var(--maroon);color:#fff;font-size:30px;font-weight:700;box-shadow:0 0 0 5px var(--goldsoft)}
+.holdbtn .zy{color:#fff}.holdbtn .kc{color:var(--maroon)}
+.holdbtn.down{background:var(--red);box-shadow:0 0 0 9px var(--goldsoft)}
+.circlebtn{display:inline-grid;place-items:center;width:110px;height:110px;border-radius:50%;background:var(--paper);border:3px solid var(--line);font:900 54px/1 var(--serif);color:var(--maroon);position:relative}
+.circlebtn .kc{position:absolute;left:-6px;top:-6px;font-size:20px}
+.circlebtn:hover{border-color:var(--gold)}
+.circlebtn.want{border-color:var(--gold);box-shadow:0 0 0 6px var(--goldsoft)}
+.cl{display:block;text-align:center}
+/* 十關的進度條在手機上要能縮 */
+.pill{flex:none;white-space:nowrap}
+#dots{min-width:0;gap:6px}
+#dots i{flex:0 1 30px;min-width:6px}
+
+/* ---------- 上方的圖示鈕：聲音、重來（只有圖示，不寫字） ---------- */
+#top #sndBtn,#top #rstBtn{width:48px;height:40px;padding:0;justify-content:center;gap:0}
+#top #sndBtn svg,#top #rstBtn svg{width:22px;height:22px}
+#top #sndBtn.off{color:#c2b4a6}
+/* 重來鈕：按下去轉一圈；90 秒沒進展時輕輕呼吸 */
+#rstBtn.spin svg{animation:rstSpin .45s ease-in-out}
+#rstBtn.breathe{animation:rstBreathe 2.6s ease-in-out infinite}
+@keyframes rstSpin{from{transform:rotate(0)}to{transform:rotate(-360deg)}}
+@keyframes rstBreathe{0%,100%{transform:scale(1);box-shadow:0 0 0 4px var(--goldsoft,#F3E8D6)}50%{transform:scale(1.12);box-shadow:0 0 0 10px var(--goldsoft,#F3E8D6)}}
+
+/* ---------- 手機直式：字不要跑出畫面（2026-11-08，iPhone 375 寬） ---------- */
+.seg{display:inline-block;max-width:100%}
+.center>*,.hero>*{max-width:100%}
+.hero .t{min-width:0}
+.chtitle,.logo,.sub{overflow-wrap:anywhere}
+.opt .ot,.opt .oa{min-width:0}
+.big{max-width:100%;flex-wrap:wrap}
+#foot{flex-wrap:wrap}
+@media(max-width:560px){
+  .chtitle{font-size:30px}
+  .chnum{width:110px;height:110px;font-size:60px}
+  .logo{font-size:40px}
+  .sub{font-size:22px}
+  .big{min-width:0;padding:12px 26px}
+  #foot{gap:12px}
+  #foot .big{flex:1 1 240px}
+  #top{gap:8px}
+  #top .pill{padding:8px 12px}
+  #top #sndBtn,#top #rstBtn{width:44px;padding:0}
+}

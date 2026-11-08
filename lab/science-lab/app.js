@@ -303,7 +303,7 @@
       clearButtons() { ctl.innerHTML = ''; c.ctlH = 0; },
       // 等一個手勢做完：實驗程式呼叫 c.win()
       until(hint) { c.fails = 0; if (hint) c.hint = hint; lastHint = performance.now(); act(); return new Promise(res => { winRes = res; }); },
-      win() { const r = winRes; winRes = null; if (r) r(); },
+      win() { const r = winRes; winRes = null; if (r) { RESTART.progress(); r(); } },
       get waiting() { return !!winRes; },
       fail(key) {
         c.fails++; SFX.no();
@@ -556,10 +556,24 @@
   infoBtn.addEventListener('click', () => setInfo(info.hidden));
   $('#infoClose').addEventListener('click', () => setInfo(false));
 
+  // ---------- 重來鈕（右上角，聲音鈕旁邊） ----------
+  // 實驗裡：這一圈重來——重新載入，從存檔的 S.cur／S.round 接著做（道具重設）；進度不丟。
+  // 在實驗桌前：回到桌子的起點（?desk=1）。總結時藏起來。
+  let rstMode = '';
+  function rstSync() {
+    const m = mode === 'exp' || (mode === 'busy' && ctx) ? 'exp' : mode;
+    if (m === rstMode) return;
+    rstMode = m;
+    if (m === 'exp') RESTART.set(() => { save(); RESTART.reload({}); });
+    else if (m === 'desk') RESTART.set(() => RESTART.reload({ desk: 1 }), { hint: false });
+    else if (m === 'end') RESTART.set(null);
+  }
+
   // ---------- 每一畫面 ----------
   let lastW = 0, lastH = 0;
   const tmp = new T.Vector3();
   v.on((dt, t) => {
+    rstSync();
     if (v.w !== lastW || v.h !== lastH) {
       lastW = v.w; lastH = v.h;
       if (ctx && ctx._view) ctx.view(ctx._view[0], Object.assign({}, ctx._view[1], { snap: true }));

@@ -740,7 +740,7 @@
   // ---------- 結尾 ----------
   async function finale() {
     show();
-    stage.innerHTML = '<div class="wg-end"><div class="wg-seal hero">' + A.hero() + '</div><div class="chtitle">' + Z('fin.title') + '</div>' +
+    stage.innerHTML = '<div class="wg-end"><div class="wg-seal hero">' + A.hero() + '</div><div class="chtitle">' + G.Zs('fin.title') + '</div>' +
       '<div class="wg-stickers">' + [A.iceCube(), A.drop(), A.soup(true), A.cupDrops(), A.snowflake(), A.rain()].map(s => '<span class="wg-stk wg-touch">' + s + '</span>').join('') + '</div>' +
       '<div class="wg-pcard"><b class="wg-pl">' + Z('ui.parent') + '</b><div class="wg-pt">' + Z('fin.parent') + '</div></div></div>';
     all('.wg-stk').forEach((e, i) => e.addEventListener('click', () => { squash(e); note(3 + i); }));

@@ -34,12 +34,13 @@
     g.gain.setValueAtTime(0, a.currentTime + t0); g.gain.linearRampToValueAtTime(vol, a.currentTime + t0 + .01); g.gain.exponentialRampToValueAtTime(.001, a.currentTime + t0 + len);
     o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + len + .05);
   }
+  const prog = () => { if (window.RESTART) RESTART.progress(); };   // 答對、過關＝有進展（重來鈕的 90 秒提醒重新計時）
   const SFX = {
     tap: () => tone(660, 0, .08, 'triangle', .12),
-    ok: () => { tone(523, 0, .12, 'triangle'); tone(659, .1, .12, 'triangle'); tone(784, .2, .25, 'triangle'); },
+    ok: () => { prog(); tone(523, 0, .12, 'triangle'); tone(659, .1, .12, 'triangle'); tone(784, .2, .25, 'triangle'); },
     no: () => tone(180, 0, .25, 'sine', .15, 120),
     fly: () => tone(400, 0, .25, 'sine', .1, 900),
-    done: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .09, .5, 'triangle', .14)),
+    done: () => prog() || [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .09, .5, 'triangle', .14)),
     blow: () => tone(120, 0, .12, 'sawtooth', .04, 160),
   };
   const sndBtn = $('#sndBtn');
@@ -276,6 +277,7 @@
 
   // ---------- 總結 ----------
   function ending() {
+    RESTART.set(null);
     state.ended = true; save(); stage.innerHTML = ''; keyHandler = null; paintMap();
     const box = document.createElement('div'); box.className = 'ending';
     const trip = document.createElement('div'); trip.className = 'trip';
@@ -290,14 +292,18 @@
     stage.innerHTML = ''; keyHandler = null; wrong = 0; nextBtn.hidden = true;
     if (state.lv >= LV.length) return ending();
     const lv = LV[state.lv]; paintMap();
+    const here = state.lv + 1;
+    RESTART.set(() => RESTART.reload({ l: here }));      // 重來：重新載入到這一關（?l=N），進度不丟
     const run = { match, order, pick: pickOne, hold }[lv.type];
     if (lv.intro && !FAST) { say(lv.intro).then(() => run(lv)); } else run(lv);
   }
   function intro() {
+    RESTART.set(null);
     paintMap(); const box = document.createElement('div'); box.className = 'ending';
     box.innerHTML = '<div class="ring lg" style="color:var(--maroon)">' + I.bear + '</div>'; stage.appendChild(box);
     say('intro.1', 'intro.2').then(() => showNext(start, T('start')));
   }
+  RESTART.init({ sound: () => !muted, stop: () => stopVoice() });
   if (state.lv === 0 && !state.ended && !qs.get('l')) intro(); else start();
   window.__tf = { LV, state: () => state, go: n => { state.lv = n - 1; start(); } };
 })();

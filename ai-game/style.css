@@ -128,7 +128,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;paddin
 }
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
 
-/* ======== 共用互動元件（兩個遊戲共用；ai-game 與 bowl-game 的 style.css 相同） ======== */
+/* ======== 共用互動元件（九個遊戲的 style.css 一模一樣，改了要全部同步，用 diff 檢查） ======== */
 #foot .big + .big{margin-left:0}
 .wrong{animation:shake .35s}
 .tip{font-size:18px;color:var(--muted);text-align:center}
@@ -164,3 +164,34 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;paddin
 .pill{flex:none;white-space:nowrap}
 #dots{min-width:0;gap:6px}
 #dots i{flex:0 1 30px;min-width:6px}
+
+/* ---------- 上方的圖示鈕：聲音、重來（只有圖示，不寫字） ---------- */
+#top #sndBtn,#top #rstBtn{width:48px;height:40px;padding:0;justify-content:center;gap:0}
+#top #sndBtn svg,#top #rstBtn svg{width:22px;height:22px}
+#top #sndBtn.off{color:#c2b4a6}
+/* 重來鈕：按下去轉一圈；90 秒沒進展時輕輕呼吸 */
+#rstBtn.spin svg{animation:rstSpin .45s ease-in-out}
+#rstBtn.breathe{animation:rstBreathe 2.6s ease-in-out infinite}
+@keyframes rstSpin{from{transform:rotate(0)}to{transform:rotate(-360deg)}}
+@keyframes rstBreathe{0%,100%{transform:scale(1);box-shadow:0 0 0 4px var(--goldsoft,#F3E8D6)}50%{transform:scale(1.12);box-shadow:0 0 0 10px var(--goldsoft,#F3E8D6)}}
+
+/* ---------- 手機直式：字不要跑出畫面（2026-11-08，iPhone 375 寬） ---------- */
+.seg{display:inline-block;max-width:100%}
+.center>*,.hero>*{max-width:100%}
+.hero .t{min-width:0}
+.chtitle,.logo,.sub{overflow-wrap:anywhere}
+.opt .ot,.opt .oa{min-width:0}
+.big{max-width:100%;flex-wrap:wrap}
+#foot{flex-wrap:wrap}
+@media(max-width:560px){
+  .chtitle{font-size:30px}
+  .chnum{width:110px;height:110px;font-size:60px}
+  .logo{font-size:40px}
+  .sub{font-size:22px}
+  .big{min-width:0;padding:12px 26px}
+  #foot{gap:12px}
+  #foot .big{flex:1 1 240px}
+  #top{gap:8px}
+  #top .pill{padding:8px 12px}
+  #top #sndBtn,#top #rstBtn{width:44px;padding:0}
+}

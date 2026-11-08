@@ -12,6 +12,8 @@
 <style>
 /* 風格 E：黏土玩具世界。暖陽光、米白＋鼠尾草綠＋木頭色、圓圓的大頭小人、軟軟的影子。
    小車用方向鍵／手指拖著開，撞到東西會倒、會響；每個遊戲是一個放在彩色黏土底座上的 3D 小物件（種子、機器人、缽、土星、水滴），開到它旁邊就進去；入口清單在 hub/entries.json，一個遊戲一個檔。
+   入口排成一圈、相鄰兩個中心至少隔 18（GAP），圈的半徑 GATE_R 由入口數算出來、桌子 WORLD＝GATE_R＋10，入口多了桌子自己撐大（?n=16 用假清單試）。
+   數字鍵照 hub/entries.json 的順序（2026-11-08 起：1 種子、2 AI、3 頌缽、4 太陽系、5 小水滴、6 機器人出任務、7 實驗室、8 玩偶；0＝第 10 個；「做一台機器人」已下架）。
    刻意拿掉：黑描邊、金色小點、路上的虛線、旗子——畫面只留需要的。 */
 :root{ --sage:#6F9A72; --sage2:#A9C4A3; --wood:#D9B27A; --cream:#FFF8EE; --zy:#5D7B58; --maroon:#4F6B4A; --gold:#B9A684; --goldsoft:#EEF0DF; --line:#E6E2D6; --bg:#F7F0E4; --paper2:#FFFBF3 }
 body{background:var(--bg)}
@@ -71,7 +73,7 @@ h1 .en{font-family:ui-rounded,"Nunito","Avenir Next",system-ui,sans-serif;font-w
   <svg viewBox="0 0 48 32" aria-hidden="true"><path d="M20 26c-5-3-9-7-9-12 0-2 2-3 3-1l3 5V6c0-2 3-2 3 0v9c0-2 3-2 3 0v2c0-2 3-2 3 0v2c0-2 3-2 3 0v6c0 4-3 6-6 6h-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M34 8h8m0 0-3-3m3 3-3 3M14 8H6m0 0 3-3M6 8l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
 </div>
 <script src="vendor/three.min.js"></script>
-<script src="hub/common.js?v=20261030b"></script>
+<script src="hub/common.js?v=20261108"></script>
 <script>
 (async () => {
 'use strict';
@@ -88,6 +90,8 @@ async function loadEntries() {
 }
 await loadEntries();
 if (!GAMES.length) console.error('沒有任何入口可以顯示');
+// 測試用：?n=16 用假清單把入口補到 16 個（重複現有的入口），看入口多了擠不擠
+{ const n = +new URLSearchParams(location.search).get('n') || 0; for (let i = 0; GAMES.length && GAMES.length < Math.min(n, 30); i++) GAMES.push(Object.assign({}, GAMES[i])); }
 
 // ---------- 色票：照參考圖（米白、鼠尾草綠、木頭、暖白） ----------
 const ACC_CSS = GAMES.map(g => g.acc);                    // 每個入口自己的重點色（hub/entries/*.js）
@@ -103,7 +107,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.18;
-const scene = new THREE.Scene(); scene.background = new THREE.Color(P.bg); scene.fog = new THREE.Fog(P.bg, 34, 70);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(P.bg); scene.fog = new THREE.Fog(P.bg, 34, 70);   // 遠近在下面照相機距離調
 const camera = new THREE.PerspectiveCamera(36, 1, .1, 120);
 const hemi = new THREE.HemisphereLight(0xFFF6E6, 0xD9DCC4, 1.9); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xFFE7C6, 2.6); sun.position.set(-18, 28, 14); sun.castShadow = true; scene.add(sun.target);
@@ -111,15 +115,21 @@ sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 6; sun.shadow.bias = -.0
 Object.assign(sun.shadow.camera, { left: -34, right: 34, top: 34, bottom: -34, near: 1, far: 90 }); scene.add(sun);
 const shadowed = root => root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
 
+// ---------- 大小：入口數決定圓桌多大（2026-11-08） ----------
+// 入口排在一圈上，相鄰兩個入口的中心至少隔 GAP；入口越多圈越大（最小維持原本的 16），桌子邊緣再往外 10。
+// SC：原本 9 個入口時的版面是照半徑 16 擺的，樹、路、相機都照比例跟著放大。
+const GAP = 18;
+const GATE_R = Math.max(16, GAP / (2 * Math.sin(Math.PI / Math.max(3, GAMES.length))));
+const WORLD = GATE_R + 10;
+const SC = GATE_R / 16;
+
 // ---------- 地面：一大塊米白圓桌＋一圈淺色的路 ----------
-const WORLD = 26;
 const MT = { canopy1: clay(P.leaf), canopy2: clay(P.sage2), bush: clay(P.sage2), snow: clay(0xFFFFFF), ground: clay(P.ground), road: clay(P.road) };
 const ground = new THREE.Mesh(new THREE.CircleGeometry(WORLD, 80), MT.ground); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
 const edge = new THREE.Mesh(new THREE.CylinderGeometry(WORLD, WORLD, 1.2, 80, 1, true), T.wood); edge.position.y = -.6; scene.add(edge);   // 桌子的側邊：木頭
-const road = new THREE.Mesh(new THREE.RingGeometry(9.0, 11.6, 96), MT.road); road.rotation.x = -Math.PI / 2; road.position.y = .01; road.receiveShadow = true; scene.add(road);
+const road = new THREE.Mesh(new THREE.RingGeometry(GATE_R - 7, GATE_R - 4.4, 128), MT.road);   // 路在入口內側約 5 單位（原本 9～11.6，入口在 16） road.rotation.x = -Math.PI / 2; road.position.y = .01; road.receiveShadow = true; scene.add(road);
 
 // ---------- 入口：沒有門。每個遊戲是一個放大的 3D 黏土小物件，站在那個遊戲顏色的圓底座上，車子開到旁邊就進去 ----------
-const GATE_R = 16;
 const CTX = { THREE, M: HUB.M, C: HUB.C, mat: HUB.mat };
 const gates = GAMES.map((g, i) => {
   const a = i / GAMES.length * Math.PI * 2 - Math.PI / 2;
@@ -145,8 +155,14 @@ function tree(x, z, s = 1) { const g = new THREE.Group(); const t = new THREE.Me
 function bush(x, z) { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.SphereGeometry(.7, 16, 12), MT.bush); b.position.y = .5; b.scale.y = .8; g.add(b); addProp(g, x, z, .6, 'bush', 1); }
 [[0, 0], [-.65, 1], [.65, 1], [-1.3, 2], [0, 2], [1.3, 2]].forEach(([dx, dz]) => pin(6 + dx, -4 + dz));
 [[-7, 5, ACCM[1]], [-8.05, 5, T.yellow], [-7.5, 6.05, ACCM[0]], [-6.45, 6.05, T.cream]].forEach(([x, z, m]) => block(x, z, m));
-[[3, 5.5, 1.1], [-4, -5, 1], [14, 8, 1.2], [-15, -7, 1], [12, -13, .9], [-13, 12, 1.1], [20, -3, 1], [-20, 2, 1.1]].forEach(([x, z, s]) => tree(x, z, s));
-[[-2, 7], [8, 2], [-9, -2], [18, 10], [-17, -13]].forEach(([x, z]) => bush(x, z));
+// 樹、灌木：中間幾棵照原位，外圈的照比例 SC 放大；離入口太近的（底座 2.9＋留路）不擺
+const awayFromGates = (x, z, d = 5.5) => gates.every(g => Math.hypot(g.x - x, g.z - z) > d);
+[[3, 5.5, 1.1], [-4, -5, 1]].forEach(([x, z, s]) => tree(x, z, s));
+[[14, 8, 1.2], [-15, -7, 1], [12, -13, .9], [-13, 12, 1.1], [20, -3, 1], [-20, 2, 1.1]].forEach(([x, z, s]) => { x *= SC; z *= SC; if (awayFromGates(x, z)) tree(x, z, s); });
+[[-2, 7], [8, 2], [-9, -2]].forEach(([x, z]) => bush(x, z));
+[[18, 10], [-17, -13]].forEach(([x, z]) => { x *= SC; z *= SC; if (awayFromGates(x, z)) bush(x, z); });
+// 桌子變大了：入口和入口中間、靠桌邊的地方各種一棵樹，不會空空的
+gates.forEach((g, i) => { const a = (i + .5) / gates.length * Math.PI * 2 - Math.PI / 2, r = GATE_R + 5; tree(Math.cos(a) * r, Math.sin(a) * r, .9 + (i % 3) * .12); });
 
 // ---------- 小車＋大頭小孩駕駛 ----------
 const car = new THREE.Group(); scene.add(car);
@@ -259,7 +275,7 @@ function step(dt, t) {
   if (keys.ArrowUp || keys.KeyW) thr += 1; if (keys.ArrowDown || keys.KeyS) thr -= .6;
   if (keys.ArrowLeft || keys.KeyA) st += 1; if (keys.ArrowRight || keys.KeyD) st -= 1;
   if (stick) {
-    const want = Math.atan2(-stick.dy, stick.dx), mag = Math.hypot(stick.dx, stick.dy);
+    const want = Math.atan2(-stick.dy, stick.dx) + camYaw, mag = Math.hypot(stick.dx, stick.dy);   // 手指往畫面上推＝往畫面上開（相機轉了也一樣）
     if (mag > .15) { let d = want - S.h; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; st = clamp(d * 2.5, -1, 1); thr = mag * (Math.abs(d) < Math.PI * .6 ? 1 : -.4); }
   }
   if (autoTarget !== null) {
@@ -411,8 +427,33 @@ function cycle(now, dt) {
 // ---------- 相機：像看一個玩具桌，斜斜地跟著車 ----------
 function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
-const camH = () => innerWidth < innerHeight ? 18 : 12, camBack = () => innerWidth < innerHeight ? 21 : 16;
+// 桌子越大，相機拉得越高越遠一點（入口多了，畫面裡仍看得到車子附近的入口）；霧的遠近跟著相機
+// 量過（pipeline/hub-size.mjs）：手機直式 1.3 以上，停在任何一個入口前都看得到 2 個（8 個入口）、3 個（16 個入口）
+const CAMK = clamp(1 + (SC - 1) * .6, 1.3, 1.5);
+const camH = () => (innerWidth < innerHeight ? 18 : 12) * CAMK, camBack = () => (innerWidth < innerHeight ? 21 : 16) * CAMK;
+scene.fog.near = 34 * CAMK; scene.fog.far = 70 * CAMK;
+camera.far = 120 * CAMK; camera.updateProjectionMatrix();
+Object.assign(sun.shadow.camera, { left: -34 * CAMK, right: 34 * CAMK, top: 34 * CAMK, bottom: -34 * CAMK, far: 90 * CAMK }); sun.shadow.camera.updateProjectionMatrix();
 camera.position.set(S.x, camH(), S.z + camBack());
+// 手機直式：畫面很窄，相機一直朝北的話，圈的上下兩段旁邊的入口永遠在畫面外。
+// 所以直式時相機慢慢轉向「沿著路」（圈的切線），隔壁的入口排在畫面上下，看得到前後 2～3 個；
+// 車子在中間（出生點附近）時不轉，維持原本朝北。橫式、桌機不轉。轉的角度＝camYaw（0＝朝北）。
+let camYaw = 0;
+const wrapA = a => { while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2; return a; };
+const smooth01 = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+function yawTarget() {
+  if (innerWidth >= innerHeight) return 0;
+  const r = Math.hypot(S.x, S.z), w = smooth01((r - 5) / Math.max(4, GATE_R - 12));
+  if (w <= 0) return 0;
+  const th = Math.atan2(S.z, S.x), c1 = wrapA(-th), c2 = wrapA(Math.PI - th);
+  const base = Math.abs(wrapA(c1 - camYaw)) <= Math.abs(wrapA(c2 - camYaw)) ? c1 : c2;   // 兩個方向挑離現在近的，不會突然翻過去
+  return base * w;
+}
+const AHEAD = () => innerWidth < innerHeight ? 4 : -2;     // 直式看前面多一點
+function camAim(x, z, yaw) {
+  const b = camBack(), sy = Math.sin(yaw), cy = Math.cos(yaw), a = AHEAD();
+  return { x: x + sy * b, z: z + cy * b, lx: x - sy * a, lz: z - cy * a };
+}
 
 let prev = performance.now(), raf = 0;
 setInterval(() => { if (performance.now() - prev > 45) { if (raf) cancelAnimationFrame(raf); raf = 0; frame(performance.now()); } }, 20);
@@ -422,13 +463,28 @@ function frame(now) {
   step(dt, t);
   cycle(t, dt);
   const k = 1 - Math.pow(.02, dt);
-  camera.position.x = lerp(camera.position.x, S.x + Math.cos(S.h) * S.v * .25, k);
-  camera.position.z = lerp(camera.position.z, S.z + camBack() - Math.sin(S.h) * S.v * .25, k);
+  camYaw = wrapA(camYaw + wrapA(yawTarget() - camYaw) * (1 - Math.pow(.3, dt)));   // 慢慢轉（約 2 秒轉到位）
+  const ax = S.x + Math.cos(S.h) * S.v * .25, az = S.z - Math.sin(S.h) * S.v * .25, m = camAim(ax, az, camYaw);
+  camera.position.x = lerp(camera.position.x, m.x, k);
+  camera.position.z = lerp(camera.position.z, m.z, k);
   camera.position.y = lerp(camera.position.y, camH(), k);
-  camera.lookAt(camera.position.x, 0, camera.position.z - camBack() + 2);
+  const o = camAim(0, 0, camYaw);
+  camera.lookAt(camera.position.x - o.x + o.lx, 0, camera.position.z - o.z + o.lz);
   renderer.render(scene, camera);
 }
 raf = requestAnimationFrame(frame);
+
+// 測試用：入口位置、把車子放到某處、現在畫面裡看得到哪幾個入口
+window.__hub = {
+  size: () => ({ n: GAMES.length, GATE_R: +GATE_R.toFixed(2), WORLD: +WORLD.toFixed(2), gap: +(2 * GATE_R * Math.sin(Math.PI / GAMES.length)).toFixed(2), spawnToGate: +Math.min(...gates.map(g => Math.hypot(g.x, g.z))).toFixed(2), camH: +camH().toFixed(1), camBack: +camBack().toFixed(1) }),
+  gates: () => gates.map(g => [+g.x.toFixed(2), +g.z.toFixed(2)]),
+  place(x, z) {
+    S.x = x; S.z = z; S.v = 0; camYaw = 0; for (let i = 0; i < 8; i++) camYaw = yawTarget();
+    const m = camAim(x, z, camYaw); camera.position.set(m.x, camH(), m.z); camera.lookAt(m.lx, 0, m.lz); camera.updateMatrixWorld();
+  },
+  yaw: () => +camYaw.toFixed(3),
+  onScreen: () => gates.map((g, i) => { const s = toScreen(g.grp, camera, 1.2); return s.z < 1 && s.x >= 0 && s.x <= innerWidth && s.y >= 0 && s.y <= innerHeight ? i : -1; }).filter(i => i >= 0),
+};
 })();
 </script>
 </body>

@@ -1,5 +1,10 @@
-// 共用引擎（ai-game、bowl-game 用同一份，改的時候兩邊一起改）：
-// 注音排版、VoAI 預錄配音、音效、點擊／鍵盤／拖拉／按住、選擇題、關卡流程。
+// 共用引擎：注音排版、VoAI 預錄配音、音效、點擊／鍵盤／拖拉／按住、選擇題、關卡流程、存檔、聲音開關、每關重來鈕。
+// 2026-11-08 統一成一份：ai-game、bowl-game、space-game、lab/water-game、lab/robot-game、lab/robot-town、lab/science-lab
+// 這七個資料夾的 engine.js 一模一樣，改一個就要全部同步（用 diff 檢查）。重來鈕本身在 restart.js（九個遊戲共用）。
+// 畫面上沒有泡泡／按鈕列／進度點的遊戲也能用（那些 DOM 都是選用的）；
+// 配音用「一個共用的 <audio>」，第一次觸碰時解鎖（iOS Safari 才不會擋後面自動播的句子）；
+// fadeVoice(ms) 淡出正在播的句子；聲音開關只畫圖示、不寫字。
+// 遊戲自己有 sound.js 時直接 G.sfx = …（覆寫）；引擎內部的「點一下」也走它，同一個動作只會有一種聲音。
 window.G = (() => {
   'use strict';
   const TX = window.TX;
@@ -47,8 +52,25 @@ window.G = (() => {
     return h + '</span>';
   }
   function Z(key) {
-    const e = TX[key];
-    if (!e) return esc(String(key));
+    const cells = zcells(key);
+    if (!cells) return esc(String(key));
+    return cells.map(c => c.sp ? ' ' : '<span class="nb">' + c.h + '</span>').join('');
+  }
+  // 標題用：句子在逗號、頓號後面分段（每段 inline-block），手機放不下時從逗號那裡換行，不會從詞的中間斷
+  function Zs(key) {
+    const cells = zcells(key);
+    if (!cells) return esc(String(key));
+    const segs = [[]];
+    cells.forEach(c => {
+      segs[segs.length - 1].push(c.sp ? ' ' : '<span class="nb">' + c.h + '</span>');
+      if (c.brk) segs.push([]);
+    });
+    const out = segs.filter(g => g.length);
+    return out.length < 2 ? out.map(g => g.join('')).join('') : out.map(g => '<span class="seg">' + g.join('') + '</span>').join('');
+  }
+  function zcells(key) {
+    const e = typeof key === 'object' ? key : TX[key];   // 也可以直接給 { z }（字幕分頁用）
+    if (!e) return null;
     const cells = [];
     let pend = '';
     for (const it of e.z) {
@@ -56,7 +78,16 @@ window.G = (() => {
       if (typeof it === 'string') {
         if (it === ' ') { cells.push({ sp: 1 }); continue; }
         h = cell(it, '');
-        if (CLOSE.includes(it) && cells.length && !cells[cells.length - 1].sp) { cells[cells.length - 1].h += h; continue; }
+        // 英文字母、數字（3,952、1/10、0°C）連在一起，不要從中間斷行
+        const asc = /^[A-Za-z0-9,.%°/]$/.test(it);
+        if (asc && cells.length && cells[cells.length - 1].asc) { cells[cells.length - 1].h += h; continue; }
+        if (asc) { if (pend) { h = pend + h; pend = ''; } cells.push({ h, asc: 1 }); continue; }
+        if (CLOSE.includes(it) && cells.length && !cells[cells.length - 1].sp) {
+          const last = cells[cells.length - 1];
+          last.h += h;
+          if ('，、：；！？'.includes(it)) last.brk = 1;
+          continue;
+        }
         if (OPEN.includes(it)) { pend = h; continue; }
       } else if (Array.isArray(it)) {
         h = cell(it[0], it[1]);
@@ -66,7 +97,7 @@ window.G = (() => {
       if (pend) { h = pend + h; pend = ''; }
       cells.push({ h });
     }
-    return cells.map(c => c.sp ? ' ' : '<span class="nb">' + c.h + '</span>').join('');
+    return cells;
   }
 
   // ---------- 音效（WebAudio 合成；不是語音） ----------
@@ -134,7 +165,15 @@ window.G = (() => {
       },
     };
   }
-  function sfx(name) {
+  // 引擎內建的合成音效；遊戲用 G.sfx = … 換掉以後，引擎內部也改走遊戲的聲音。
+  // 答對（ok）、過關（win）都算「有進展」，重來鈕的 90 秒提醒會重新計時。
+  let gameSfx = null;
+  function sfx(name, v) {
+    if ((name === 'ok' || name === 'win') && R()) R().progress();
+    if (gameSfx) return gameSfx(name, v);
+    return sfx0(name);
+  }
+  function sfx0(name) {
     if (!S.sound) return;
     try {
       ac();
@@ -158,41 +197,103 @@ window.G = (() => {
 
   // ---------- 配音：只播 VoAI 預錄的 audio/<id>.mp3（不使用瀏覽器內建的聲音） ----------
   // 還沒錄好的句子會安靜地顯示文字，停一小段「閱讀時間」再繼續。
-  let audioEl = null, finishCur = null;
+  // 一個共用的 <audio>：第一次觸碰時先播一段無聲解鎖，之後換 src 重複用（iOS 才會讓「不是手指剛碰到」時的句子播出來）
+  const VO = new Audio();
+  VO.preload = 'auto';
+  let unlocked = false, unlocking = false, playing = false, finishCur = null, fadeIv = 0, token = 0;
+  const SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+  // 要在「使用者剛碰到」的事件裡呼叫（觸控是 pointerup／touchend，滑鼠是 pointerdown，鍵盤是 keydown）
+  function unlockAudio() {
+    try { ac(); } catch (e) { /* ignore */ }
+    if (unlocked || unlocking || playing) return;
+    unlocking = true;
+    try {
+      VO.src = SILENT;
+      const p = VO.play();
+      if (p && p.then) p.then(() => { unlocked = true; unlocking = false; }, () => { unlocking = false; });
+      else { unlocked = true; unlocking = false; }
+    } catch (e) { unlocking = false; }
+  }
   const missing = new Set();
   function stopVoice() {
-    if (audioEl) { try { audioEl.pause(); } catch (e) { /* ignore */ } audioEl = null; }
+    clearInterval(fadeIv); fadeIv = 0;
+    if (playing) { try { VO.pause(); } catch (e) { /* ignore */ } playing = false; }
+    VO.volume = 1;
     if (finishCur) { const f = finishCur; finishCur = null; f(); }
+  }
+  // 淡出正在播的句子（iOS 不能調音量，就直接在 ms 後停）
+  function fadeVoice(ms = 200) {
+    if (!playing && !finishCur) return;
+    const f = finishCur; finishCur = null;
+    if (f) f();                                // 等這句的人馬上可以往下
+    if (!playing) return;
+    const my = ++token, t0 = performance.now();
+    clearInterval(fadeIv);
+    fadeIv = setInterval(() => {
+      const k = Math.min(1, (performance.now() - t0) / ms);
+      try { VO.volume = Math.max(0, 1 - k); } catch (e) { /* ignore */ }
+      if (k >= 1) {
+        clearInterval(fadeIv); fadeIv = 0;
+        if (my === token) { try { VO.pause(); } catch (e) { /* ignore */ } playing = false; }
+        try { VO.volume = 1; } catch (e) { /* ignore */ }
+      }
+    }, 20);
   }
   function speak(key) {
     return new Promise(res => {
       stopVoice();
       const e = TX[key];
       if (!e) { res(); return; }
+      const my = ++token;
       let done = false, timer = 0;
       const fin = () => { if (done) return; done = true; clearTimeout(timer); if (finishCur === fin) finishCur = null; res(); };
       finishCur = fin;
-      const quiet = () => {                       // 沒聲音時，給小朋友讀注音的時間
-        if (e.v && !missing.has(key)) { missing.add(key); console.info('[配音] 找不到 audio/' + e.v + '.mp3 →', e.t); }
+      // 不播音檔：等這句該有的長度再往下。miss＝音檔真的載不到（404），之後這句就不再試；
+      // 聲音關掉、?fast=1、瀏覽器還不讓播都不算，打開聲音以後要照常出聲
+      const quiet = miss => {
+        if (miss && e.v && !missing.has(key)) { missing.add(key); console.info('[配音] 還沒錄 audio/' + e.v + '.mp3 →', e.t); }
         timer = setTimeout(fin, FAST ? 30 : Math.max(1200, e.t.length * 220));
       };
-      if (!S.sound || !e.v) { quiet(); return; }
-      const a = new Audio('audio/' + e.v + '.mp3');
-      audioEl = a;
-      a.onended = fin;
-      a.onerror = () => { if (audioEl === a) quiet(); };
-      const p = a.play();
-      if (p && p.catch) p.catch(() => { if (audioEl === a) quiet(); });
+      // ?fast=1 是測試用（旁白不等）：不載音檔，免得還沒錄好的句子在試玩報告裡變成 404 錯誤
+      if (!S.sound || !e.v || missing.has(key) || FAST) { quiet(); return; }
+      VO.onended = () => { if (my === token) { playing = false; fin(); } };
+      VO.onerror = () => { if (my === token) { playing = false; if (!done) quiet(true); } };
+      try {
+        VO.volume = 1;
+        VO.src = 'audio/' + e.v + '.mp3';
+        playing = true;
+        const p = VO.play();
+        if (p && p.catch) p.catch(() => { if (my === token) { playing = false; if (!done) quiet(); } });
+      } catch (err) { playing = false; quiet(true); }
     });
   }
-  let lastKey = null;
+  // 現在這句播到哪裡（0～1）；沒有在播音檔（靜音、還沒錄、?fast=1）回傳 null
+  const voicePos = () => playing ? (VO.duration > 0 ? VO.currentTime / VO.duration : 0) : null;
+  let lastKey = null, tipT = 0;
   function say(key) {
     lastKey = key;
-    sayBox.hidden = false;
-    bubble.innerHTML = '<span class="spk">' + speakerIcon + '</span><span class="bt">' + Z(key) + '</span>';
+    clearTimeout(tipT);
+    if (sayBox && bubble) { bubble.classList.remove('tip'); sayBox.hidden = false; bubble.innerHTML = '<span class="spk">' + speakerIcon + '</span><span class="bt">' + Z(key) + '</span>'; }
     return speak(key);
   }
-  bubble.addEventListener('click', () => { if (lastKey) speak(lastKey); });
+  // 答錯提示：沒有配音時也要看得到。泡泡暫時換成提示句（琥珀色），過一會兒換回這關的說明。
+  function tip(key) {
+    const e = TX[key];
+    if (!e) return Promise.resolve();
+    if (!sayBox || !bubble) return speak(key);
+    const back = lastKey;
+    clearTimeout(tipT);
+    sayBox.hidden = false;
+    sayBox.classList.remove('wg-faded');
+    bubble.classList.add('tip');
+    bubble.innerHTML = '<span class="spk">' + speakerIcon + '</span><span class="bt">' + Z(key) + '</span>';
+    tipT = setTimeout(() => {
+      bubble.classList.remove('tip');
+      if (back && lastKey === back) bubble.innerHTML = '<span class="spk">' + speakerIcon + '</span><span class="bt">' + Z(back) + '</span>';
+    }, FAST ? 30 : Math.max(1800, e.t.length * 220));
+    return speak(key);
+  }
+  if (bubble) bubble.addEventListener('click', () => { if (lastKey) speak(lastKey); });
   const speakerIcon = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M10 38 H28 L50 18 V82 L28 62 H10Z" fill="currentColor"/>' +
     '<g fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"><path d="M62 36 Q74 50 62 64"/><path d="M72 24 Q94 50 72 76"/></g></svg>';
 
@@ -234,6 +335,7 @@ window.G = (() => {
     foot.innerHTML = '<button class="big" id="nx">' + Z(label) + ' ▶</button>';
     await waitAction([{ el: $('#nx'), keys: ['enter', 'space'] }]);
     sfx('tap');
+    if (R()) R().progress();
     foot.innerHTML = '';
   }
 
@@ -242,9 +344,10 @@ window.G = (() => {
   // 放下之後東西停在放開的位置，呼叫端再決定 home(el)（彈回）或 dropInto(el, target)。
   function home(el) {
     el.classList.remove('dragging');
+    el.classList.add('homing');                 // 彈回的這 0.25 秒不要被 hover 晃動蓋掉
     el.style.transition = 'transform .25s ease';
     el.style.transform = '';
-    setTimeout(() => { el.style.transition = ''; }, 260);
+    setTimeout(() => { el.style.transition = ''; el.classList.remove('homing'); }, 260);
   }
   function dropInto(el, target) {
     el.classList.remove('dragging', 'picked');
@@ -255,9 +358,10 @@ window.G = (() => {
   function dragPick(items, targets, { itemKeys = [], targetKeys = [] } = {}) {
     return new Promise(res => {
       const offs = [];
-      let picked = -1;
+      let picked = -1, closed = false;
       const on = (el, ev, f, o) => { el.addEventListener(ev, f, o); offs.push(() => el.removeEventListener(ev, f, o)); };
       const finish = (i, t) => {
+        closed = true;                                   // 拖到一半被鍵盤完成：停掉 lerp 迴圈
         offs.forEach(f => f());
         items.forEach(el => el && el.classList.remove('picked'));
         targets.forEach(el => el && el.classList.remove('over', 'ready'));
@@ -279,21 +383,33 @@ window.G = (() => {
         on(el, 'pointerdown', ev => {
           if (ev.button > 0) return;
           ev.preventDefault();
-          st = { x: ev.clientX, y: ev.clientY, moved: false, id: ev.pointerId };
+          st = { x: ev.clientX, y: ev.clientY, moved: false, id: ev.pointerId, tx: 0, ty: 0, cx: 0, cy: 0, raf: 0 };
           try { el.setPointerCapture(ev.pointerId); } catch (e) { /* ignore */ }
         });
         on(el, 'pointermove', ev => {
           if (!st || ev.pointerId !== st.id) return;
           const dx = ev.clientX - st.x, dy = ev.clientY - st.y;
           if (!st.moved && Math.hypot(dx, dy) < 8) return;
-          if (!st.moved) { st.moved = true; el.classList.add('dragging'); el.style.transition = ''; }
-          el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+          st.tx = dx; st.ty = dy;
+          if (!st.moved) {
+            st.moved = true; el.classList.add('dragging'); el.style.transition = '';
+            // 跟手但慢一點點（lerp），往旁邊甩的時候帶一點傾斜，像有重量
+            const s0 = st;
+            const frame = () => {
+              if (st !== s0 || closed) return;
+              s0.cx += (s0.tx - s0.cx) * .3; s0.cy += (s0.ty - s0.cy) * .3;
+              el.style.transform = 'translate(' + s0.cx.toFixed(1) + 'px,' + s0.cy.toFixed(1) + 'px) rotate(' + clamp((s0.tx - s0.cx) * .15, -6, 6).toFixed(2) + 'deg)';
+              s0.raf = requestAnimationFrame(frame);
+            };
+            st.raf = requestAnimationFrame(frame);
+          }
           const t = hit(ev.clientX, ev.clientY);
           targets.forEach((tg, k) => tg && tg.classList.toggle('over', k === t));
         });
         const up = ev => {
           if (!st || ev.pointerId !== st.id) return;
           const was = st; st = null;
+          cancelAnimationFrame(was.raf);
           if (!was.moved) { pick(picked === i ? -1 : i); return; }
           const t = ev.type === 'pointercancel' ? -1 : hit(ev.clientX, ev.clientY);
           el.classList.remove('dragging');
@@ -416,7 +532,7 @@ window.G = (() => {
     setDots(-1);
     sayBox.hidden = true;
     stage.innerHTML = '<div class="hero">' + (cfg.heroArt ? ring(cfg.heroArt, 'lg') : '<div class="stamp">' + cfg.stamp + '</div>') +
-      '<div class="t"><div class="logo">' + Z('ui.title') + '</div><div class="sub">' + Z('ui.sub') + '</div></div></div>';
+      '<div class="t"><div class="logo">' + Zs('ui.title') + '</div><div class="sub">' + Zs('ui.sub') + '</div></div></div>';
     if (S.done > 0 && S.done < N_CH) {
       foot.innerHTML = '<button class="big" id="b1">' + Z('ui.cont') + '</button><button class="big alt" id="b2">' + Z('ui.restart') + '</button>';
       const i = await waitAction([{ el: $('#b1'), keys: ['enter', 'space'] }, { el: $('#b2'), keys: [] }]);
@@ -441,7 +557,7 @@ window.G = (() => {
   async function titleCard(i) {
     sayBox.hidden = true;
     foot.innerHTML = '';
-    stage.innerHTML = '<div class="center"><div class="chnum">' + (i + 1) + '</div><div class="chtitle">' + Z('c' + (i + 1) + '.title') + '</div></div>';
+    stage.innerHTML = '<div class="center"><div class="chnum">' + (i + 1) + '</div><div class="chtitle">' + Zs('c' + (i + 1) + '.title') + '</div></div>';
     await Promise.all([speak('c' + (i + 1) + '.title'), sleep(FAST ? 50 : 1600)]);
   }
 
@@ -450,16 +566,20 @@ window.G = (() => {
     load();
     const qs = new URLSearchParams(location.search);
     let from;
-    if (qs.has('ch')) from = clamp((+qs.get('ch') || 1) - 1, 0, N_CH - 1);   // 測試用：?ch=3 直接跳到第三關
-    else from = await intro(cfg);
+    if (qs.has('fin')) from = N_CH;                                            // 測試用：?fin=1 直接看結尾
+    else if (qs.has('ch')) from = clamp((+qs.get('ch') || 1) - 1, 0, N_CH - 1);   // ?ch=3 直接跳到第三關（重來鈕也是用它）
+    else { if (R()) R().set(null); from = await intro(cfg); }
     for (let i = from; i < N_CH; i++) {
       setDots(i);
+      // 重來：重新載入到這一關（?ch=N），進度不丟
+      if (R()) R().set(() => R().reload({ ch: i + 1 }));
       await titleCard(i);
       stage.innerHTML = ''; foot.innerHTML = '';
       await cfg.chapters[i]();
       stopVoice();
       S.done = i + 1; save();
     }
+    if (R()) R().set(null);
     S.done = N_CH; save();
     setDots(N_CH);
     await cfg.finale();
@@ -468,19 +588,31 @@ window.G = (() => {
     S.done = 0; save(); location.href = location.pathname;
   }
 
+  // ---------- 每關重來鈕（restart.js；沒載入就不出現） ----------
+  function R() { return window.RESTART || null; }
+  if (R()) R().init({ sound: () => S.sound, stop: () => stopVoice() });
+
   // ---------- 上方按鈕 ----------
-  $('#homeBtn').addEventListener('click', () => { stopVoice(); location.href = location.pathname; });
+  const homeBtn = $('#homeBtn');
+  if (homeBtn) homeBtn.addEventListener('click', () => { stopVoice(); location.href = location.pathname; });
+  // 聲音開關：只有圖示（喇叭＋聲波／喇叭＋斜線），不寫字
   const sndBtn = $('#sndBtn');
-  const paintSnd = () => { sndBtn.innerHTML = speakerIcon + '聲音 ' + (S.sound ? '開' : '關'); };
-  sndBtn.addEventListener('click', () => { S.sound = !S.sound; save(); paintSnd(); if (!S.sound) stopVoice(); });
-  // 存檔 key 要等 run() 才知道，所以聲音開關先畫一次，run() 讀檔後再畫
+  const muteIcon = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M10 38 H28 L50 18 V82 L28 62 H10Z" fill="currentColor"/>' +
+    '<g fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"><path d="M64 38 L88 62"/><path d="M88 38 L64 62"/></g></svg>';
+  const paintSnd = () => { if (!sndBtn) return; sndBtn.innerHTML = S.sound ? speakerIcon : muteIcon; sndBtn.classList.toggle('off', !S.sound); sndBtn.setAttribute('aria-pressed', S.sound ? 'true' : 'false'); };
+  if (sndBtn) sndBtn.addEventListener('click', () => { S.sound = !S.sound; save(); paintSnd(); if (!S.sound) stopVoice(); else unlockAudio(); });
   paintSnd();
   const run0 = run;
+  // 不走十關流程的遊戲：自己設存檔 key、讀檔
+  function setSave(key) { SAVE_KEY = key; load(); paintSnd(); }
 
-  return {
-    $, stage, foot, sayBox, S, save, sleep, shuffle, clamp, shake, ring, parent, esc,
-    Z, sfx, strike, hum, speak, say, stopVoice, waitAction, next, keyName,
+  const api = {
+    $, stage, foot, sayBox, S, save, load, setSave, sleep, shuffle, clamp, shake, ring, parent, esc, FAST,
+    Z, Zs, strike, hum, speak, say, tip, stopVoice, fadeVoice, unlockAudio, waitAction, next, keyName, speakerIcon, voicePos,
     dragPick, home, dropInto, holdLoop, track, onKeys, quiz, setDots,
     run: cfg => { SAVE_KEY = cfg.saveKey; load(); paintSnd(); return run0(cfg); },
   };
+  // G.sfx：讀到的永遠是引擎的 sfx（會記「答對了」）；sound.js 寫 G.sfx = f 只是換掉發聲的那一層
+  Object.defineProperty(api, 'sfx', { get: () => sfx, set: f => { gameSfx = typeof f === 'function' ? f : null; }, enumerable: true });
+  return api;
 })();

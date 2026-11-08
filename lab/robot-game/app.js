@@ -421,6 +421,7 @@
   // ---------- 裝上一個零件 ----------
   async function install(i) {
     const my = ++epoch;
+    RESTART.progress();
     fadeVoice(200);
     placed[i] = true;
     cur = i + 1; glowOn = false;
@@ -490,7 +491,7 @@
     ch.hintKey = k;
     return lv === lv0 && lv0 > 0 ? (async () => { await speak(pre + '.intro'); await speak(k); })() : speak(k);
   }
-  async function cheer(key) { SFX.win(); poke(bot, .2); await Promise.all([speak(key), wait(G.FAST ? .1 : .9)]); }
+  async function cheer(key) { RESTART.progress(); SFX.win(); poke(bot, .2); await Promise.all([speak(key), wait(G.FAST ? .1 : .9)]); }
 
   // ---------- 走道與走路 ----------
   const legs = () => [body.children[0], body.children[1]];
@@ -1325,9 +1326,26 @@
     lastW = v.w; lastH = v.h;
   }
 
+  // ---------- 重來鈕（右上角，聲音鈕旁邊） ----------
+  // 小挑戰裡：這一小關重來（?play=N&lv=L）；正在裝的零件：飛回架子、這一步重來（?step=前面裝好的數目）；
+  // 等下一個零件時：同一步重新開始。結尾、自由玩時藏起來（右下角本來就有「拆掉重做」）。重新載入，進度不丟。
+  function rstGo() {
+    if (phase === 'play' && ch && ch.part >= 1 && ch.lv != null) RESTART.reload({ play: ch.part, lv: ch.lv });
+    else if (phase === 'build' || phase === 'play') RESTART.reload({ step: glowOn ? cur : Math.max(0, cur - 1) });
+  }
+  let rstPhase = '';
+  function rstSync() {
+    const on = phase === 'build' || phase === 'play';
+    const m = on ? 'on' : 'off';
+    if (m === rstPhase) return;
+    rstPhase = m;
+    RESTART.set(on ? rstGo : null);
+  }
+
   // ---------- 每一畫面 ----------
   const tmp = new T.Vector3();
   v.on((dt, t) => {
+    rstSync();
     if (v.w !== lastW || v.h !== lastH) fit(true);
     { const kc = 1 - Math.pow(.06, dt); cam.position.lerp(camWant.pos, kc); camLook.lerp(camWant.look, kc); cam.lookAt(camLook); cam.updateMatrixWorld(); }
     for (const tw of [...tweens]) {

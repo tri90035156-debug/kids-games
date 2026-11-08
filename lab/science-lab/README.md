@@ -127,3 +127,7 @@
 8. 桌子高度下重球輕球差不多同時落地；攤開的紙空氣阻力大。〔[Galileo's experiment](https://en.wikipedia.org/wiki/Galileo%27s_Leaning_Tower_of_Pisa_experiment)、[Drag](https://en.wikipedia.org/wiki/Drag_(physics))〕
 9. 倒扣的杯子直壓入水，空氣佔空間，紙不濕；傾斜後空氣跑出、水進來。〔[Diving bell](https://en.wikipedia.org/wiki/Diving_bell)〕
 10. 鋁箔船底越寬、推開的水越多，載得越多；遊戲數字（0、4、10 顆）只是示意，順序在家做會一樣。〔[NOAA: Build a boat](https://www.noaa.gov/office-education/outreach-communication/hands-on-science-activities/build-a-boat)〕
+
+## 重來鈕（2026-11-08）
+
+- 右上角聲音鈕旁邊的圓箭頭「↻」（`restart.js`，九個遊戲共用、檔案一模一樣）：按下去木魚一聲、旁白停下，實驗裡＝這一圈重來（重新載入，從存檔的 `S.cur`／`S.round` 接著做，道具重設）；在實驗桌前＝回到桌子起點（`?desk=1`）。記錄本、已完成的實驗都留著。總結時不出現。實驗裡 90 秒沒完成一步，鈕會輕輕呼吸提醒。

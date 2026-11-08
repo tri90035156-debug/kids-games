@@ -461,7 +461,7 @@
   // ---------- 結尾 ----------
   async function finale() {
     show();
-    stage.innerHTML = '<div class="center"><div class="stamp">AI<br>學者</div><div class="chtitle">' + Z('fin.title') + '</div>' +
+    stage.innerHTML = '<div class="center"><div class="stamp">AI<br>學者</div><div class="chtitle">' + G.Zs('fin.title') + '</div>' +
       '<div class="stickers">' + [A.hammer(), A.computer('happy'), A.ANIMALS.catOrange(), A.knob(), A.chatPhone(), A.book()].map(s => ring(s, 'md')).join('') + '</div>' +
       '<div class="parent"><b>給家長：</b>可以接著聊：①家裡哪些東西用到 AI（地圖導航、相簿搜尋「貓」、語音助理）？②哪些事情適合請 AI 幫忙，哪些應該自己想？③玩「下一個字」接龍，體驗 AI 怎麼說話。</div></div>';
     sfx('win');

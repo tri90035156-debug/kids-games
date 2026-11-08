@@ -1,7 +1,10 @@
-// 共用引擎（從 space-game 複製，robot-game 版）：VoAI 預錄配音、音效、鍵盤、存檔、聲音開關。
-// robot-game 的改動：畫面上沒有泡泡／按鈕列／進度點（那些 DOM 都是選用的）；
+// 共用引擎：注音排版、VoAI 預錄配音、音效、點擊／鍵盤／拖拉／按住、選擇題、關卡流程、存檔、聲音開關、每關重來鈕。
+// 2026-11-08 統一成一份：ai-game、bowl-game、space-game、lab/water-game、lab/robot-game、lab/robot-town、lab/science-lab
+// 這七個資料夾的 engine.js 一模一樣，改一個就要全部同步（用 diff 檢查）。重來鈕本身在 restart.js（九個遊戲共用）。
+// 畫面上沒有泡泡／按鈕列／進度點的遊戲也能用（那些 DOM 都是選用的）；
 // 配音用「一個共用的 <audio>」，第一次觸碰時解鎖（iOS Safari 才不會擋後面自動播的句子）；
 // fadeVoice(ms) 淡出正在播的句子；聲音開關只畫圖示、不寫字。
+// 遊戲自己有 sound.js 時直接 G.sfx = …（覆寫）；引擎內部的「點一下」也走它，同一個動作只會有一種聲音。
 window.G = (() => {
   'use strict';
   const TX = window.TX;
@@ -49,8 +52,25 @@ window.G = (() => {
     return h + '</span>';
   }
   function Z(key) {
+    const cells = zcells(key);
+    if (!cells) return esc(String(key));
+    return cells.map(c => c.sp ? ' ' : '<span class="nb">' + c.h + '</span>').join('');
+  }
+  // 標題用：句子在逗號、頓號後面分段（每段 inline-block），手機放不下時從逗號那裡換行，不會從詞的中間斷
+  function Zs(key) {
+    const cells = zcells(key);
+    if (!cells) return esc(String(key));
+    const segs = [[]];
+    cells.forEach(c => {
+      segs[segs.length - 1].push(c.sp ? ' ' : '<span class="nb">' + c.h + '</span>');
+      if (c.brk) segs.push([]);
+    });
+    const out = segs.filter(g => g.length);
+    return out.length < 2 ? out.map(g => g.join('')).join('') : out.map(g => '<span class="seg">' + g.join('') + '</span>').join('');
+  }
+  function zcells(key) {
     const e = typeof key === 'object' ? key : TX[key];   // 也可以直接給 { z }（字幕分頁用）
-    if (!e) return esc(String(key));
+    if (!e) return null;
     const cells = [];
     let pend = '';
     for (const it of e.z) {
@@ -58,7 +78,16 @@ window.G = (() => {
       if (typeof it === 'string') {
         if (it === ' ') { cells.push({ sp: 1 }); continue; }
         h = cell(it, '');
-        if (CLOSE.includes(it) && cells.length && !cells[cells.length - 1].sp) { cells[cells.length - 1].h += h; continue; }
+        // 英文字母、數字（3,952、1/10、0°C）連在一起，不要從中間斷行
+        const asc = /^[A-Za-z0-9,.%°/]$/.test(it);
+        if (asc && cells.length && cells[cells.length - 1].asc) { cells[cells.length - 1].h += h; continue; }
+        if (asc) { if (pend) { h = pend + h; pend = ''; } cells.push({ h, asc: 1 }); continue; }
+        if (CLOSE.includes(it) && cells.length && !cells[cells.length - 1].sp) {
+          const last = cells[cells.length - 1];
+          last.h += h;
+          if ('，、：；！？'.includes(it)) last.brk = 1;
+          continue;
+        }
         if (OPEN.includes(it)) { pend = h; continue; }
       } else if (Array.isArray(it)) {
         h = cell(it[0], it[1]);
@@ -68,7 +97,7 @@ window.G = (() => {
       if (pend) { h = pend + h; pend = ''; }
       cells.push({ h });
     }
-    return cells.map(c => c.sp ? ' ' : '<span class="nb">' + c.h + '</span>').join('');
+    return cells;
   }
 
   // ---------- 音效（WebAudio 合成；不是語音） ----------
@@ -136,7 +165,15 @@ window.G = (() => {
       },
     };
   }
-  function sfx(name) {
+  // 引擎內建的合成音效；遊戲用 G.sfx = … 換掉以後，引擎內部也改走遊戲的聲音。
+  // 答對（ok）、過關（win）都算「有進展」，重來鈕的 90 秒提醒會重新計時。
+  let gameSfx = null;
+  function sfx(name, v) {
+    if ((name === 'ok' || name === 'win') && R()) R().progress();
+    if (gameSfx) return gameSfx(name, v);
+    return sfx0(name);
+  }
+  function sfx0(name) {
     if (!S.sound) return;
     try {
       ac();
@@ -232,10 +269,28 @@ window.G = (() => {
   }
   // 現在這句播到哪裡（0～1）；沒有在播音檔（靜音、還沒錄、?fast=1）回傳 null
   const voicePos = () => playing ? (VO.duration > 0 ? VO.currentTime / VO.duration : 0) : null;
-  let lastKey = null;
+  let lastKey = null, tipT = 0;
   function say(key) {
     lastKey = key;
-    if (sayBox && bubble) { sayBox.hidden = false; bubble.innerHTML = '<span class="spk">' + speakerIcon + '</span><span class="bt">' + Z(key) + '</span>'; }
+    clearTimeout(tipT);
+    if (sayBox && bubble) { bubble.classList.remove('tip'); sayBox.hidden = false; bubble.innerHTML = '<span class="spk">' + speakerIcon + '</span><span class="bt">' + Z(key) + '</span>'; }
+    return speak(key);
+  }
+  // 答錯提示：沒有配音時也要看得到。泡泡暫時換成提示句（琥珀色），過一會兒換回這關的說明。
+  function tip(key) {
+    const e = TX[key];
+    if (!e) return Promise.resolve();
+    if (!sayBox || !bubble) return speak(key);
+    const back = lastKey;
+    clearTimeout(tipT);
+    sayBox.hidden = false;
+    sayBox.classList.remove('wg-faded');
+    bubble.classList.add('tip');
+    bubble.innerHTML = '<span class="spk">' + speakerIcon + '</span><span class="bt">' + Z(key) + '</span>';
+    tipT = setTimeout(() => {
+      bubble.classList.remove('tip');
+      if (back && lastKey === back) bubble.innerHTML = '<span class="spk">' + speakerIcon + '</span><span class="bt">' + Z(back) + '</span>';
+    }, FAST ? 30 : Math.max(1800, e.t.length * 220));
     return speak(key);
   }
   if (bubble) bubble.addEventListener('click', () => { if (lastKey) speak(lastKey); });
@@ -280,6 +335,7 @@ window.G = (() => {
     foot.innerHTML = '<button class="big" id="nx">' + Z(label) + ' ▶</button>';
     await waitAction([{ el: $('#nx'), keys: ['enter', 'space'] }]);
     sfx('tap');
+    if (R()) R().progress();
     foot.innerHTML = '';
   }
 
@@ -288,9 +344,10 @@ window.G = (() => {
   // 放下之後東西停在放開的位置，呼叫端再決定 home(el)（彈回）或 dropInto(el, target)。
   function home(el) {
     el.classList.remove('dragging');
+    el.classList.add('homing');                 // 彈回的這 0.25 秒不要被 hover 晃動蓋掉
     el.style.transition = 'transform .25s ease';
     el.style.transform = '';
-    setTimeout(() => { el.style.transition = ''; }, 260);
+    setTimeout(() => { el.style.transition = ''; el.classList.remove('homing'); }, 260);
   }
   function dropInto(el, target) {
     el.classList.remove('dragging', 'picked');
@@ -301,9 +358,10 @@ window.G = (() => {
   function dragPick(items, targets, { itemKeys = [], targetKeys = [] } = {}) {
     return new Promise(res => {
       const offs = [];
-      let picked = -1;
+      let picked = -1, closed = false;
       const on = (el, ev, f, o) => { el.addEventListener(ev, f, o); offs.push(() => el.removeEventListener(ev, f, o)); };
       const finish = (i, t) => {
+        closed = true;                                   // 拖到一半被鍵盤完成：停掉 lerp 迴圈
         offs.forEach(f => f());
         items.forEach(el => el && el.classList.remove('picked'));
         targets.forEach(el => el && el.classList.remove('over', 'ready'));
@@ -325,21 +383,33 @@ window.G = (() => {
         on(el, 'pointerdown', ev => {
           if (ev.button > 0) return;
           ev.preventDefault();
-          st = { x: ev.clientX, y: ev.clientY, moved: false, id: ev.pointerId };
+          st = { x: ev.clientX, y: ev.clientY, moved: false, id: ev.pointerId, tx: 0, ty: 0, cx: 0, cy: 0, raf: 0 };
           try { el.setPointerCapture(ev.pointerId); } catch (e) { /* ignore */ }
         });
         on(el, 'pointermove', ev => {
           if (!st || ev.pointerId !== st.id) return;
           const dx = ev.clientX - st.x, dy = ev.clientY - st.y;
           if (!st.moved && Math.hypot(dx, dy) < 8) return;
-          if (!st.moved) { st.moved = true; el.classList.add('dragging'); el.style.transition = ''; }
-          el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+          st.tx = dx; st.ty = dy;
+          if (!st.moved) {
+            st.moved = true; el.classList.add('dragging'); el.style.transition = '';
+            // 跟手但慢一點點（lerp），往旁邊甩的時候帶一點傾斜，像有重量
+            const s0 = st;
+            const frame = () => {
+              if (st !== s0 || closed) return;
+              s0.cx += (s0.tx - s0.cx) * .3; s0.cy += (s0.ty - s0.cy) * .3;
+              el.style.transform = 'translate(' + s0.cx.toFixed(1) + 'px,' + s0.cy.toFixed(1) + 'px) rotate(' + clamp((s0.tx - s0.cx) * .15, -6, 6).toFixed(2) + 'deg)';
+              s0.raf = requestAnimationFrame(frame);
+            };
+            st.raf = requestAnimationFrame(frame);
+          }
           const t = hit(ev.clientX, ev.clientY);
           targets.forEach((tg, k) => tg && tg.classList.toggle('over', k === t));
         });
         const up = ev => {
           if (!st || ev.pointerId !== st.id) return;
           const was = st; st = null;
+          cancelAnimationFrame(was.raf);
           if (!was.moved) { pick(picked === i ? -1 : i); return; }
           const t = ev.type === 'pointercancel' ? -1 : hit(ev.clientX, ev.clientY);
           el.classList.remove('dragging');
@@ -462,7 +532,7 @@ window.G = (() => {
     setDots(-1);
     sayBox.hidden = true;
     stage.innerHTML = '<div class="hero">' + (cfg.heroArt ? ring(cfg.heroArt, 'lg') : '<div class="stamp">' + cfg.stamp + '</div>') +
-      '<div class="t"><div class="logo">' + Z('ui.title') + '</div><div class="sub">' + Z('ui.sub') + '</div></div></div>';
+      '<div class="t"><div class="logo">' + Zs('ui.title') + '</div><div class="sub">' + Zs('ui.sub') + '</div></div></div>';
     if (S.done > 0 && S.done < N_CH) {
       foot.innerHTML = '<button class="big" id="b1">' + Z('ui.cont') + '</button><button class="big alt" id="b2">' + Z('ui.restart') + '</button>';
       const i = await waitAction([{ el: $('#b1'), keys: ['enter', 'space'] }, { el: $('#b2'), keys: [] }]);
@@ -487,7 +557,7 @@ window.G = (() => {
   async function titleCard(i) {
     sayBox.hidden = true;
     foot.innerHTML = '';
-    stage.innerHTML = '<div class="center"><div class="chnum">' + (i + 1) + '</div><div class="chtitle">' + Z('c' + (i + 1) + '.title') + '</div></div>';
+    stage.innerHTML = '<div class="center"><div class="chnum">' + (i + 1) + '</div><div class="chtitle">' + Zs('c' + (i + 1) + '.title') + '</div></div>';
     await Promise.all([speak('c' + (i + 1) + '.title'), sleep(FAST ? 50 : 1600)]);
   }
 
@@ -496,16 +566,20 @@ window.G = (() => {
     load();
     const qs = new URLSearchParams(location.search);
     let from;
-    if (qs.has('ch')) from = clamp((+qs.get('ch') || 1) - 1, 0, N_CH - 1);   // 測試用：?ch=3 直接跳到第三關
-    else from = await intro(cfg);
+    if (qs.has('fin')) from = N_CH;                                            // 測試用：?fin=1 直接看結尾
+    else if (qs.has('ch')) from = clamp((+qs.get('ch') || 1) - 1, 0, N_CH - 1);   // ?ch=3 直接跳到第三關（重來鈕也是用它）
+    else { if (R()) R().set(null); from = await intro(cfg); }
     for (let i = from; i < N_CH; i++) {
       setDots(i);
+      // 重來：重新載入到這一關（?ch=N），進度不丟
+      if (R()) R().set(() => R().reload({ ch: i + 1 }));
       await titleCard(i);
       stage.innerHTML = ''; foot.innerHTML = '';
       await cfg.chapters[i]();
       stopVoice();
       S.done = i + 1; save();
     }
+    if (R()) R().set(null);
     S.done = N_CH; save();
     setDots(N_CH);
     await cfg.finale();
@@ -513,6 +587,10 @@ window.G = (() => {
     await waitAction([{ el: $('#again'), keys: ['enter', 'space'] }]);
     S.done = 0; save(); location.href = location.pathname;
   }
+
+  // ---------- 每關重來鈕（restart.js；沒載入就不出現） ----------
+  function R() { return window.RESTART || null; }
+  if (R()) R().init({ sound: () => S.sound, stop: () => stopVoice() });
 
   // ---------- 上方按鈕 ----------
   const homeBtn = $('#homeBtn');
@@ -528,10 +606,13 @@ window.G = (() => {
   // 不走十關流程的遊戲：自己設存檔 key、讀檔
   function setSave(key) { SAVE_KEY = key; load(); paintSnd(); }
 
-  return {
+  const api = {
     $, stage, foot, sayBox, S, save, load, setSave, sleep, shuffle, clamp, shake, ring, parent, esc, FAST,
-    Z, sfx, strike, hum, speak, say, stopVoice, fadeVoice, unlockAudio, waitAction, next, keyName, speakerIcon, voicePos,
+    Z, Zs, strike, hum, speak, say, tip, stopVoice, fadeVoice, unlockAudio, waitAction, next, keyName, speakerIcon, voicePos,
     dragPick, home, dropInto, holdLoop, track, onKeys, quiz, setDots,
     run: cfg => { SAVE_KEY = cfg.saveKey; load(); paintSnd(); return run0(cfg); },
   };
+  // G.sfx：讀到的永遠是引擎的 sfx（會記「答對了」）；sound.js 寫 G.sfx = f 只是換掉發聲的那一層
+  Object.defineProperty(api, 'sfx', { get: () => sfx, set: f => { gameSfx = typeof f === 'function' ? f : null; }, enumerable: true });
+  return api;
 })();
