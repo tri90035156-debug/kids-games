@@ -71,12 +71,13 @@
     const MAT = { 'c.cotton': () => JY.cottonBall(), 'c.wool': () => JY.woolTuft(), 'c.poly': () => JY.spool() };
     const pairs = [['c.cotton', 'c.field', 'l1.cotton'], ['c.wool', 'c.sheep', 'l1.wool'], ['c.poly', 'c.oil', 'l1.oil']];
     const srcOrder = shuffle([0, 1, 2]);
-    const srcs = srcOrder.map((p, j) => { const g = W(SRC[pairs[p][1]](), 120, 8); g.userData.p = p; K.add(g, (j - 1) * 3.6, 0, -.6); return g; });
-    const mats = pairs.map((p, i) => { const g = W(MAT[p[0]]()); g.userData.p = i; g.userData.j.children[0].scale.setScalar(1.5); K.add(g, (i - 1) * 2.6, 0, 3.6); return g; });
+    const PT1 = K.portrait();     // 手機直的：左一欄來源、右一欄原料，東西放大用滿高度
+    const srcs = srcOrder.map((p, j) => { const g = W(SRC[pairs[p][1]](), 120, 8); g.userData.p = p; if (PT1) { K.add(g, -1.7, 0, -3.3 + j * 3.3); g.userData.j.children[0].scale.setScalar(1.1); } else K.add(g, (j - 1) * 3.6, 0, -.6); return g; });
+    const mats = pairs.map((p, i) => { const g = W(MAT[p[0]]()); g.userData.p = i; g.userData.j.children[0].scale.setScalar(PT1 ? 2 : 1.5); if (PT1) K.add(g, 2, 0, -3.3 + i * 3.3); else K.add(g, (i - 1) * 2.6, 0, 3.6); return g; });
     const pump = srcs.find(g => g.userData.p === 2).userData.j.children[0];
     let tt = 0; K.on(dt => { tt += dt; pump.userData.beam.rotation.z = Math.sin(tt * 2) * .25; });
     const mc = mats.map((g, i) => K.cap(g, 'ABC'[i], 1.2)); srcs.forEach((g, j) => K.cap(g, NUM[j], 2.2));
-    K.frameTo([V(-5.4, 0, 4.8), V(5.4, 0, 4.8), V(-5.4, 2, -1.6), V(5.4, 2, -1.6)], { elev: 36, elevPt: 44 });
+    K.frameTo(PT1 ? [V(-3.4, 0, 4.4), V(3, 0, 4.4), V(-3.4, 1.6, -4.6), V(3, 1.6, -4.6)] : [V(-5.4, 0, 4.8), V(5.4, 0, 4.8), V(-5.4, 2, -1.6), V(5.4, 2, -1.6)], { elev: 36, elevPt: 52 });
     say('l1.q', 'g.match');
     const offC = coach('g.match', () => { const i = mats.findIndex(g => !g.userData.done); return i >= 0 ? K.hand(mats[i], 'drag', srcs.find(s => s.userData.p === i)) : null; });
     let left = 3;
@@ -119,14 +120,16 @@
     if (!K.mount()) return;
     K.level();
     const STEPS = [['c.pump', 'l2.s1', 'pump'], ['c.pellet', 'l2.s2', 'pellet'], ['c.fiber', 'l2.s3', 'fiber'], ['c.weave', 'l2.s4', 'loom'], ['c.dye', 'l2.s5', 'dye']];
-    K.add(JY.belt(14), 0, 0, 1.6);
+    const PT2 = K.portrait();
+    const BZ = PT2 ? 2.8 : 1.6;
+    K.add(JY.belt(PT2 ? 7.4 : 14), 0, 0, BZ);
     const order = shuffle([0, 1, 2, 3, 4]);
-    const ms = order.map((s, j) => { const g = W(JY.machine(STEPS[s][2]), 140, 8); g.userData.s = s; K.add(g, (j - 2) * 2.8, 0, -.4); return g; });
+    const ms = order.map((s, j) => { const g = W(JY.machine(STEPS[s][2]), 140, 8); g.userData.s = s; if (PT2) { K.add(g, j < 3 ? (j - 1) * 2.5 : (j - 3.5) * 2.5, 0, j < 3 ? -3.4 : -.2); g.userData.j.children[0].scale.setScalar(1.25); } else K.add(g, (j - 2) * 2.8, 0, -.4); return g; });
     ms.forEach((g, j) => K.cap(g, NUM[j], 2));
     // 傳送的東西：黑油 → 顆粒 → 細絲 → 絨布 → 粉紅絨布
     const LOOK = [() => JY.oilDrop(), () => JY.pellets(), () => JY.spool('white'), () => JY.cloth('cream'), () => JY.cloth('pink')];
     let token = null;
-    K.frameTo([V(-6.4, 0, 3), V(6.4, 0, 3), V(-6.4, 2.2, -1.2), V(6.4, 2.2, -1.2)], { elev: 30, elevPt: 38 });
+    K.frameTo(PT2 ? [V(-3.6, 0, 3.8), V(3.6, 0, 3.8), V(-3.6, 2.4, -4.2), V(3.6, 2.4, -4.2)] : [V(-6.4, 0, 3), V(6.4, 0, 3), V(-6.4, 2.2, -1.2), V(6.4, 2.2, -1.2)], { elev: 30, elevPt: 46 });
     say('l2.q', 'g.order');
     for (let n = 0; n < 5; n++) {
       const right = ms.findIndex(g => g.userData.s === n);
@@ -134,7 +137,7 @@
       await tapOne(ms, NUM, right, { dy: 1.2, wrongSay: i => STEPS[ms[i].userData.s][0] });
       offC(); clearHints(); K.inputs({});
       const g = ms[right]; K.poke(g.userData.j, .5); sfx('ok');
-      const to = V(g.position.x, .62, 1.6);
+      const to = V(g.position.x, .62, BZ);
       if (token) K.lv.remove(token);
       token = W(LOOK[n]()); token.userData.j.children[0].scale.setScalar(1.2); K.add(token, to.x, 2.4, to.z);
       K.tween(.4, k => { token.position.y = K.lerp(2.4, .62, K.ease(k)); }).then(() => { K.poke(token.userData.j, .4); sfx('bump'); });
@@ -295,12 +298,13 @@
   async function ch7() {
     if (!K.mount()) return;
     K.level();
-    K.add(JY.belt(10), 0, 0, -1.4);
+    const PT7 = K.portrait(), BX = PT7 ? 3 : 4;
+    K.add(JY.belt(PT7 ? 7 : 10), 0, 0, -1.4);
     const det = K.add(JY.detector(), 0, .5, -1.4);
-    const b = W(JY.bear(.8)); K.add(b, -4, .56, -1.4);
-    const opts = [() => JY.needle(), () => JY.scale(), () => JY.nameTag()].map((f, i) => { const g = W(f()); g.userData.j.children[0].scale.setScalar(1.6); K.add(g, (i - 1) * 2.8, 0, 2.6); return g; });
+    const b = W(JY.bear(PT7 ? 1 : .8)); K.add(b, -BX, .56, -1.4);
+    const opts = [() => JY.needle(), () => JY.scale(), () => JY.nameTag()].map((f, i) => { const g = W(f()); g.userData.j.children[0].scale.setScalar(PT7 ? 2.1 : 1.6); K.add(g, (i - 1) * (PT7 ? 2.4 : 2.8), 0, PT7 ? 2.4 : 2.6); return g; });
     opts.forEach((g, i) => K.cap(g, 'ABC'[i], 1.4));
-    K.frameTo([V(-5, 0, 3.8), V(5, 0, 3.8), V(-5, 3.2, -1.8), V(5, 3.2, -1.8)], { elev: 30, elevPt: 36 });
+    K.frameTo(PT7 ? [V(-3.6, 0, 3.6), V(3.6, 0, 3.6), V(-3.6, 3.2, -1.8), V(3.6, 3.2, -1.8)] : [V(-5, 0, 3.8), V(5, 0, 3.8), V(-5, 3.2, -1.8), V(5, 3.2, -1.8)], { elev: 30, elevPt: 40 });
     walk(b, V(0, .56, -1.4), 1.6).then(() => { det.userData.light.material.color.setHex(0xF05A3C); sfx('beep'); K.poke(b.userData.j, .3); });
     say('l7.q', 'g.pick');
     const offC = coach('l7.q', () => K.hand(opts[0], 'tap'));
@@ -309,7 +313,7 @@
     K.poke(opts[0].userData.j, .5); sfx('ok');
     await say('l7.yes');
     det.userData.light.material.color.setHex(0x8fdc8f);
-    walk(b, V(4, .56, -1.4), 1.4);
+    walk(b, V(BX, .56, -1.4), 1.4);
     await say('l7.done');
     await ritual([b]);
   }
@@ -370,10 +374,10 @@
     const WHO = [() => JY.factory(), () => { const g = JY.ship(); g.scale.setScalar(.5); return g; }, () => JY.booth(), () => JY.shop(), () => JY.parents()];
     const WHAT = [() => JY.miniBear(.6), () => { const g = JY.container('container3'); g.scale.setScalar(.6); return g; }, () => JY.shield(), () => JY.shelf(), () => JY.coin()];
     const PT = K.portrait(), sx = PT ? 1.95 : 2.8;
-    const left = WHO.map((f, i) => { const g = W(f(), 120, 8); g.userData.j.children[0].scale.multiplyScalar(PT ? .62 : .8); K.add(g, (i - 2) * sx, 0, 3); return g; });
+    const left = WHO.map((f, i) => { const g = W(f(), 120, 8); g.userData.j.children[0].scale.multiplyScalar(PT ? .7 : .8); if (PT) K.add(g, -1.9, 0, -4 + i * 2); else K.add(g, (i - 2) * sx, 0, 3); return g; });
     const ord = shuffle([0, 1, 2, 3, 4]);
-    const right = ord.map((p, j) => { const g = W(WHAT[p]()); K.add(g, (j - 2) * sx, 0, -1.4); return g; });
-    K.frameTo(PT ? [V(-4.6, 0, 4.4), V(4.6, 0, 4.4), V(-4.6, 1.8, -2), V(4.6, 1.8, -2)] : [V(-6.6, 0, 4.4), V(6.6, 0, 4.4), V(-6.6, 1.8, -2), V(6.6, 1.8, -2)], { elev: 38, elevPt: 46 });
+    const right = ord.map((p, j) => { const g = W(WHAT[p]()); if (PT) { K.add(g, 2.1, 0, -4 + j * 2); g.userData.j.children[0].scale.multiplyScalar(1.15); } else K.add(g, (j - 2) * sx, 0, -1.4); return g; });
+    K.frameTo(PT ? [V(-3.6, 0, 4.6), V(3.4, 0, 4.6), V(-3.6, 1.6, -5), V(3.4, 1.6, -5)] : [V(-6.6, 0, 4.4), V(6.6, 0, 4.4), V(-6.6, 1.8, -2), V(6.6, 1.8, -2)], { elev: 38, elevPt: 60 });
     say('l9.q', 'g.match');
     const offC = coach('g.match', () => { const m = K.match.cur; const i = m ? m.done.findIndex(d => !d) : -1; return i >= 0 ? K.hand(left[i], 'drag', right[ord.indexOf(i)]) : null; });
     winStep = () => { const m = K.match.cur; if (m) m.done.forEach((d, i) => { if (!d) m.link(i, ord.indexOf(i)); }); };

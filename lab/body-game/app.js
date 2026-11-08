@@ -167,8 +167,9 @@
     const sp = PT() ? 2 : 2.4, cx = c.front.x;
     const F = ['rice', 'egg', 'veg'], R = ['power', 'grow', 'poo'];
     const ord = shuffle([0, 1, 2]);
-    const left = F.map((k, i) => { const g = W(BD.food(k)); K.add(g, cx + (i - 1) * sp, 0, c.front.z + 3.6); K.tag(g, Z('f.' + k), -.2); return g; });
-    const right = ord.map((r, j) => { const g = W(BD.result(R[r])); K.add(g, cx + (j - 1) * sp, 0, c.front.z - .2); K.tag(g, Z('r.' + R[r]), j % 2 ? 2.3 : 1.4); return g; });
+    const big = PT() ? 1.7 : 1.3;
+    const left = F.map((k, i) => { const g = W(BD.food(k)); g.userData.j.children[0].scale.setScalar(big); K.add(g, cx + (i - 1) * sp, 0, c.front.z + 3.6); K.tag(g, Z('f.' + k), -.2); return g; });
+    const right = ord.map((r, j) => { const g = W(BD.result(R[r])); g.userData.j.children[0].scale.setScalar(big); K.add(g, cx + (j - 1) * sp, 0, c.front.z - .2); K.tag(g, Z('r.' + R[r]), j % 2 ? 2.3 : 1.4); return g; });
     K.frameTo(PT() ? [V(-3.2, 0, 5.8), V(3.2, 0, 5.8), V(-2.6, 3, -4.2), V(2.6, 3, -4.2)] : [V(-5.4, 0, 5), V(5.2, 0, 5), V(-5, 4.4, -1.6), V(5, 4.6, -1.6)], { elev: 40, elevPt: 50 });
     say(c.k('task'));
     await link(c, { left, right, truth: [0, 1, 2].map(i => ord.indexOf(i)), says: ['c4.rice', 'c4.egg', 'c4.veg'] });
@@ -186,16 +187,17 @@
     const KEYS = ['mouth', 'eso', 'stomach', 'small', 'large'];
     const ord = shuffle([0, 1, 2, 3, 4]);
     const sp = PT() ? 1.5 : 1.9, cx = c.front.x;
-    const gs = ord.map((k, j) => { const g = W(BD.ORGAN_MINI[KEYS[k]]()); g.userData.k = k; K.add(g, cx + (j - 2) * sp, 0, c.front.z + 2.4); K.tag(g, Z('o.' + KEYS[k]), -.2); K.cap(g, String(j + 1), 1.8); return g; });
-    const rb = W(BD.riceBall(.4)); K.add(rb, cx - 3 * sp, .4, c.front.z + 3.6);
-    K.frameTo(PT() ? [V(-3.6, 0, 5.2), V(3.6, 0, 5.2), V(-2.6, 4.6, -4.2), V(2.6, 4.6, -4.2)] : [V(-5.4, 0, 4.4), V(5.4, 0, 4.4), V(-5, 4.4, -1.6), V(5, 4.6, -1.6)], { elev: 22, elevPt: 26 });
+    const pt5 = PT();
+    const gs = ord.map((k, j) => { const g = W(BD.ORGAN_MINI[KEYS[k]]()); g.userData.k = k; g.userData.j.children[0].scale.setScalar(pt5 ? 1.95 : 1.7); if (pt5) K.add(g, j < 3 ? (j - 1) * 2.5 : (j - 3.5) * 2.5, 0, c.front.z + (j < 3 ? 1.2 : 4)); else K.add(g, cx + (j - 2) * 2.4, 0, c.front.z + 2.4); K.tag(g, Z('o.' + KEYS[k]), -.1); K.cap(g, String(j + 1), 2.6); return g; });
+    const rb = W(BD.riceBall(.4)); K.add(rb, pt5 ? -3 : cx - 3 * 2.4, .4, c.front.z + (pt5 ? 5.4 : 3.6));
+    K.frameTo(pt5 ? [V(-3.4, 0, 6.6), V(3.4, 0, 6.6), V(-2.6, 4.4, -4.2), V(2.6, 4.4, -4.2)] : [V(-6, 0, 5), V(6, 0, 5), V(-5, 4.4, -1.6), V(5, 4.6, -1.6)], { elev: 30, elevPt: 40 });
     say(c.k('task'));
     for (let s = 0; s < 5; s++) {
       const right = gs.findIndex(g => g.userData.k === s);
       const offC = coach(c.k('task'), () => K.hand(gs[right], 'tap'));
       await tapOne(gs, '12345', right, .8);
       offC(); clearHints(); K.inputs({}); aid = null;
-      const from = rb.position.clone(), to = K.pos(gs[right]).add(V(0, 1.4, 0));
+      const from = rb.position.clone(), to = K.pos(gs[right]).add(V(0, 2.2, 0));
       await K.tween(.45, t => { rb.position.lerpVectors(from, to, K.ease(t)); rb.position.y += Math.sin(t * Math.PI) * 1.2; rb.scale.setScalar(1 - s * .12); });
       K.poke(gs[right].userData.j, .4); sfx('ok');
       await say('c5.n' + (s + 1));

@@ -63,8 +63,9 @@ window.K3 = (() => {
     lv = new T.Group(); scene.add(lv);
     return lv;
   }
-  // 手機直的嗎（看 #stage 的大小；畫布剛放回去時 v.w 還沒更新）
-  function portrait() { const r = stage.getBoundingClientRect(); const w = r.width || innerWidth, h = r.height || innerHeight; return w / Math.max(1, h) < .8; }
+  // 手機直的嗎
+  // 看整個視窗（字幕泡泡變高時 #stage 會變矮，用它判斷會誤判成橫的）
+  function portrait() { return innerWidth / Math.max(1, innerHeight) < .8; }
   const on = f => { fns.push(f); return () => { fns = fns.filter(g => g !== f); }; };
   // 一個東西：放進這關、投影子、可以果凍回彈
   function add(o, x = 0, y = 0, z = 0, parent = null) { o.position.set(x, y, z); (parent || lv).add(o); shade(o); return o; }
@@ -345,7 +346,16 @@ window.K3 = (() => {
     for (const f of fns.slice()) f(dt, t);
     const br = .5 + .5 * Math.sin(t * 2.6);
     halos.forEach(h => { h.s.position.copy(pos(h.o)); h.s.position.y += .05; const s = h.size * (1 + .1 * br); h.s.scale.set(s, s, 1); h.s.material.opacity = .35 + .35 * br; });
-    caps.forEach(c => { const q = v.toScreen(pos(c.o).add(tmpV.set(0, c.dy, 0))); c.el.style.transform = 'translate(' + q.x.toFixed(1) + 'px,' + q.y.toFixed(1) + 'px) translate(-50%,-100%)'; });
+    // 同一個東西有標籤又有鍵帽：鍵帽放在標籤右邊（底對齊），兩個不重疊
+    const tagOf = new Map(); caps.forEach(c => { if (c.tag) tagOf.set(c.o, c); });
+    caps.forEach(c => {
+      const t = !c.tag && tagOf.get(c.o);
+      const q = v.toScreen(pos(c.o).add(tmpV.set(0, t ? t.dy : c.dy, 0)));
+      if (t) q.x += (t.el.offsetWidth + c.el.offsetWidth) / 2 + 4;
+      // dy < 0 的標籤＝放在東西下面：上緣對齊那一點、往下長，不蓋住東西
+      const below = (c.tag ? c.dy : t ? t.dy : 1) < 0;
+      c.el.style.transform = 'translate(' + q.x.toFixed(1) + 'px,' + q.y.toFixed(1) + 'px) translate(-50%,' + (below ? '4px' : '-100%') + ')';
+    });
     hands.forEach(hd => {
       hd.t += dt;
       const a = v.toScreen(pos(hd.o));

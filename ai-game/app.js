@@ -169,7 +169,7 @@
     if (!base({ cz: -3.8 })) return;
     await say('c3.intro');
     const lv = ['a', 'b'].map((r, i) => { const g = W(DK.lever(i ? 'pink' : 'gold')); K.add(g, (i ? 1 : -1) * (PT() ? 2.6 : 3.4), 0, -1.6); K.tag(g, Z('c3.r' + r), 1.9); K.cap(g, 'AB'[i], 2.6); return g; });
-    const pics = RULE_PICS.map(([id], i) => { const g = W(DK.photo(A.ANIMALS[id]())); g.rotation.x = -.5; K.add(g, (i - 1.5) * (PT() ? 2.1 : 2.6), .7, 2.6); return g; });
+    const pics = RULE_PICS.map(([id], i) => { const pt = PT(); const g = W(DK.photo(A.ANIMALS[id](), pt ? 2.2 : 1.3)); g.rotation.x = -.5; if (pt) K.add(g, (i % 2 ? 1.3 : -1.3), 1, i < 2 ? 1.2 : 3.6); else K.add(g, (i - 1.5) * 2.6, .7, 2.6); return g; });
     const stamps = [];
     K.frameTo(deskPts(), { elev: 30, elevPt: 40 });
     say('c3.pick');
@@ -213,7 +213,7 @@
     if (!base({ cz: -3.8, cs: .75 })) return;
     await say('c4.intro');
     const bY = W(DK.basket('green'), 120, 8), bN = W(DK.basket('pink'), 120, 8);
-    K.add(bY, PT() ? -2.6 : -4, 0, .2); K.add(bN, PT() ? 2.6 : 4, 0, .2);
+    K.add(bY, PT() ? -2.3 : -4, 0, .2); K.add(bN, PT() ? 2.3 : 4, 0, .2); if (PT()) [bY, bN].forEach(b => b.userData.j.children[0].scale.setScalar(1.25));
     K.tag(bY, Z('c4.yes'), 1.2); K.tag(bN, Z('c4.no'), 1.2); K.cap(bY, '←', 1.9); K.cap(bN, '→', 1.9);
     // 電腦旁邊的學習條
     const meter = K.box(.01, .2, .3, K.clay(0xF2A23A), 0, 2.4, -3.4); meter.position.x = -1.4; K.lv.add(meter);
@@ -223,7 +223,7 @@
     const pile = [0, 0];
     for (let n = 0; n < order.length; n++) {
       const id = order[n];
-      const card = W(DK.photo(A.ANIMALS[id](), 1.5)); card.rotation.x = -.7; K.add(card, 0, .8, 3.4); K.poke(card.userData.j, .5); sfx('pop');
+      const card = W(DK.photo(A.ANIMALS[id](), PT() ? 2.6 : 1.5)); card.rotation.x = -.7; K.add(card, 0, PT() ? 1.2 : .8, 3.4); K.poke(card.userData.j, .5); sfx('pop');
       const want = TRUTH[id] ? 0 : 1, bins = [bY, bN];
       const offC = coach('c4.how', () => K.hand(card, 'drag', bins[want]));
       await new Promise(res => {

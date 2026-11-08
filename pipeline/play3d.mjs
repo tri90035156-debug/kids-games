@@ -62,7 +62,7 @@ while (Date.now() - t0 < 300000) {
   if (st.again) break;
   if (st.ch !== cur) { if (cur >= 0) lv.push({ L: cur + 1, sec: +((Date.now() - tl) / 1000).toFixed(1), maxMesh: maxMesh[cur] || 0 }); cur = st.ch; tl = Date.now(); }
   if (st.aid) maxMesh[cur] = Math.max(maxMesh[cur] || 0, st.mesh);     // 只算這關互動進行中（上一關的道具在標題卡時還沒清）
-  if (st.k3 && st.aid && !shot.has(cur)) { shot.add(cur); await sleep(250); await page.screenshot({ path: path.join(OUT, MODE + '-L' + String(cur + 1).padStart(2, '0') + '.png') }); }
+  if (st.k3 && st.aid && !shot.has(cur)) { shot.add(cur); await sleep(1500); await page.screenshot({ path: path.join(OUT, MODE + '-L' + String(cur + 1).padStart(2, '0') + '.png') }); }
   if (st.nx) { if (MODE === 'kb') await page.keyboard.press('Enter'); else await page.click('#nx'); continue; }
   if (!st.aid) continue;
   if (MODE === 'kb') await doKb(st.aid.kb); else await doPtr(st.aid.ptr || {});

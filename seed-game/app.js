@@ -105,7 +105,7 @@
   async function orderTap({ intro, done, items, ring = false }) {
     const n = items.length, ord = shuffle(items.map((_, i) => i));
     const two = PT() && n >= 5;
-    const gs = ord.map((k, j) => { const g = W(items[k].make()); g.userData.k = k; if (two) P(g, j < 3 ? (j - 1) * 2.8 : (j - 3.5) * 2.8, 0, j < 3 ? 3.2 : 5.2); else P(g, (j - (n - 1) / 2) * (PT() ? 1.9 : 2.4), 0, 3.6); return g; });
+    const gs = ord.map((k, j) => { const g = W(items[k].make()); g.userData.k = k; if (PT()) g.userData.j.children[0].scale.multiplyScalar(1.3); if (two) P(g, j < 3 ? (j - 1) * 2.8 : (j - 3.5) * 2.8, 0, j < 3 ? 3.2 : 5.2); else P(g, (j - (n - 1) / 2) * (PT() ? 1.9 : 2.4), 0, 3.6); return g; });
     gs.forEach((g, j) => { K.tag(g, Z(items[g.userData.k].label), -.15); K.cap(g, String(j + 1), 1.9); });
     // 目的地：一排（或一圈）木頭小圓盤
     const R = 2.6;
@@ -149,14 +149,15 @@
   async function ch3() {
     if (!K.mount()) return;
     K.level(); X = 36;
-    const pt = W(GD.pot(), 120, 8); P(pt, 0, 0, .4);
+    const PT3 = PT();
+    const pt = W(GD.pot(), 120, 8); P(pt, 0, 0, .4); if (PT3) pt.userData.j.children[0].scale.setScalar(1.35);
     const gr = GD.growing(); pt.userData.j.add(gr);
-    const can = W(GD.can()); P(can, -3.2, 0, 2.4);
-    const sn = W(GD.sun(.8)); P(sn, 3.2, 4, -1.6);
+    const can = W(GD.can()); P(can, PT3 ? -2.2 : -3.2, 0, 2.4); if (PT3) can.userData.j.children[0].scale.setScalar(1.4);
+    const sn = W(GD.sun(PT3 ? 1 : .8)); P(sn, PT3 ? 2.2 : 3.2, 4, -1.6);
     const drops = K.dots(18, .08, GD.mat('water')); K.lv.add(drops);
     K.on(dt => { drops.userData.P.forEach(q => { if (q.life > 0) { q.p.y -= dt * 3; q.life -= dt; if (q.p.y < 1) q.life = 0; } }); drops.userData.sync(); });
     const kw = K.cap(can, 'W', 1.3), ks = K.cap(sn, 'S', 1.2);
-    frame([V(-4.4, 0, 3.6), V(4.4, 0, 3.6), V(-3, 5.2, -1.6), V(4.2, 5, -1.6)], { elev: 18, elevPt: 24 });
+    frame(PT3 ? [V(-3, 0, 3.4), V(3, 0, 3.4), V(-2.4, 5.4, -1.6), V(3.2, 5.2, -1.6)] : [V(-4.4, 0, 3.6), V(4.4, 0, 3.6), V(-3, 5.2, -1.6), V(4.2, 5, -1.6)], { elev: 18, elevPt: 22 });
     // 先點一下泥土把種子種進去
     say('c3.intro');
     await new Promise(res => {
@@ -220,7 +221,7 @@
     if (!K.mount()) return;
     K.level(); X = 54;
     const pt = PT();
-    const seeds = IDS.map((id, i) => { const g = W(GD.SEED[id](1.6)); g.userData.id = id; if (pt) P(g, (i % 3 - 1) * 2.8, 0, 1.4 + Math.floor(i / 3) * 3.2); else P(g, (i - 2.5) * 2.4, 0, 3); return g; });
+    const seeds = IDS.map((id, i) => { const g = W(GD.SEED[id](pt ? 2.3 : 1.6)); g.userData.id = id; if (pt) P(g, (i % 3 - 1) * 2.8, 0, 1.4 + Math.floor(i / 3) * 3.2); else P(g, (i - 2.5) * 2.4, 0, 3); return g; });
     const trees = IDS.map((id, i) => { const t = GD.tree(id, .01); t.position.copy(seeds[i].position).add(V(0, 0, -1)); K.lv.add(t); return t; });
     seeds.forEach((g, i) => K.cap(g, String(i + 1), 1.2));
     frame(pt ? [V(-3.8, 0, 5.6), V(3.8, 0, 5.6), V(-3.8, 3.2, -.6), V(3.8, 3.2, -.6)] : [V(-6.6, 0, 4.4), V(6.6, 0, 4.4), V(-6.6, 3.4, 1), V(6.6, 3.4, 1)], { elev: 22, elevPt: 30 });
@@ -285,9 +286,10 @@
     const HELP = [['h.wind', () => GD.wind()], ['h.water', () => GD.stream()], ['h.animal', () => GD.squirrel()]];
     for (const r of rounds) {
       K.level();
-      const hs = HELP.map(([lab, f], i) => { const g = W(f(), 120, 8); P(g, (i - 1) * 3.2, 0, -.6); K.tag(g, Z(lab), -.2); K.cap(g, 'ABC'[i], 2); return g; });
-      const sd = W(GD.SEED[r.id](1.5)); P(sd, 0, 0, 3.8);
-      frame([V(-4.8, 0, 4.8), V(4.8, 0, 4.8), V(-4.8, 2.6, -1.6), V(4.8, 2.6, -1.6)], { elev: 30, elevPt: 40 });
+      const PT6 = PT();     // 手機直的：風、水、松鼠排一直欄，放大；種子在最下面
+      const hs = HELP.map(([lab, f], i) => { const g = W(f(), 120, 8); if (PT6) { P(g, 0, 0, -4.4 + i * 2.7); g.userData.j.children[0].scale.setScalar(1.6); } else P(g, (i - 1) * 3.2, 0, -.6); K.tag(g, Z(lab), -.2); K.cap(g, 'ABC'[i], 2); return g; });
+      const sd = W(GD.SEED[r.id](PT6 ? 2 : 1.5)); P(sd, 0, 0, PT6 ? 3.8 : 3.8);
+      frame(PT6 ? [V(-2.4, 0, 4.8), V(2.4, 0, 4.8), V(-2.4, 2, -5.4), V(2.4, 2, -5.4)] : [V(-4.8, 0, 4.8), V(4.8, 0, 4.8), V(-4.8, 2.6, -1.6), V(4.8, 2.6, -1.6)], { elev: 30, elevPt: 64 });
       say('c6.q' + r.n);
       const offC = coach('c6.q' + r.n, () => K.hand(sd, 'drag', hs[r.who]));
       await new Promise(res => {
@@ -336,14 +338,15 @@
     K.level(); X = 126;
     const ITEMS = [[() => GD.fern(), 'c8.l1', 'c8.n1'], [() => GD.pinecone(true), 'c8.l2', 'c8.n2'], [() => GD.flower(), 'c8.l3', 'c8.n3']];
     // 時間軸：一條木頭長條，左邊很久很久以前 → 右邊
-    P(K.box(9, .14, .6, GD.mat('trunk')), 0, .07, -.8);
-    const ar = new T.Mesh(new T.ConeGeometry(.35, .7, 10), GD.mat('trunk')); ar.rotation.z = -Math.PI / 2; P(ar, 4.8, .14, -.8);
-    const slots = [-3, 0, 3].map(x => at(x, .14, -.8));
+    const PT8 = PT(), TW = PT8 ? 2.5 : 3;
+    P(K.box(TW * 3, .14, .6, GD.mat('trunk')), 0, .07, -.8);
+    const ar = new T.Mesh(new T.ConeGeometry(.35, .7, 10), GD.mat('trunk')); ar.rotation.z = -Math.PI / 2; P(ar, TW * 1.6, .14, -.8);
+    const slots = [-TW, 0, TW].map(x => at(x, .14, -.8));
     slots.forEach(s => K.add(GD.slotDisc('cream'), s.x, .1, s.z));
     const ord = shuffle([0, 1, 2]);
-    const gs = ord.map((k, j) => { const g = W(ITEMS[k][0]()); g.userData.k = k; P(g, (j - 1) * 3, 0, 3.2); K.tag(g, Z(ITEMS[k][1]), -.15); return g; });
+    const gs = ord.map((k, j) => { const g = W(ITEMS[k][0]()); g.userData.k = k; if (PT8) g.userData.j.children[0].scale.setScalar(1.45); P(g, (j - 1) * TW, 0, 3.2); K.tag(g, Z(ITEMS[k][1]), -.15); return g; });
     const caps = gs.map((g, j) => K.cap(g, String(j + 1), 1.8));
-    frame([V(-5, 0, 4.4), V(5.2, 0, 4.4), V(-5, 1.8, -1.6), V(5.2, 1.8, -1.6)], { elev: 30, elevPt: 40 });
+    frame(PT8 ? [V(-3.6, 0, 4.4), V(4.2, 0, 4.4), V(-3.6, 1.8, -1.6), V(4.2, 1.8, -1.6)] : [V(-5, 0, 4.4), V(5.2, 0, 4.4), V(-5, 1.8, -1.6), V(5.2, 1.8, -1.6)], { elev: 30, elevPt: 44 });
     say('c8.intro');
     let n = 0;
     const offC = coach('c8.intro', () => { const i = gs.findIndex(g => g.userData.k === n); return K.hand(gs[i], 'drag', slots[n]); });
